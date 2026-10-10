@@ -14,7 +14,11 @@
     "build:server": "tsc -p tsconfig.server.json",
     "start": "node dist/server/apps/api/src/main.js",
     "dev:api": "tsx watch --env-file=.env.local apps/api/src/main.ts",
-    "db:migrate": "node --env-file=.env.local --import tsx apps/api/src/migrate.ts"
+    "db:migrate": "node --env-file=.env.local --import tsx apps/api/src/migrate.ts",
+    "dev:web": "vite",
+    "build:web": "vite build",
+    "build": "npm run build:server && npm run build:web",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.3",

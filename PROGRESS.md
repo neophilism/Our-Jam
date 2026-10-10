@@ -21,3 +21,7 @@ P001: plan dependency validation. The core API now has 14 passing local domain/A
 ## Core implementation
 
 Persistent events, guest/operator sessions, five-point voting, immutable round closure, public/private snapshots, SSE invalidation, queue insertion, artist-supplied releases and feedback are implemented. Provider generation is explicitly blocked. See docs/implementation-map.md for partial roadmap coverage.
+
+## Web client slice
+
+PR #2 merged after PostgreSQL 18 CI passed at 84b8e970a6c91f6c0eb0cb7ac30e7433c7ee51ce. The initial schema applied on the isolated Neon branch through the connector. The responsive audience, public display and performer UI now build. GitHub browser checks are required before merging this slice; local browser installation returned invalid archives. The Render dashboard inspection timed out. No deployment is claimed.
