@@ -13,9 +13,9 @@
       "acceptance": "A new developer can identify every service, planned PR, environment and next action without chat history.",
       "verification": "Check documentation links and clean bootstrap; record Engine Room access or pending sync.",
       "rollout": "Documentation only; no deployment or new spending.",
-      "status": "planned",
-      "pr_url": null,
-      "verified_sha": null
+      "status": "implemented",
+      "pr_url": "https://github.com/neophilism/Our-Jam/pull/1",
+      "verified_sha": "416ec4ecf0f4881f6718efe692d1fbcc9432663e"
     },
     {
       "id": "P002",
@@ -43,7 +43,7 @@
       "acceptance": "Tenant relationships and uniqueness constraints exist; migration applies to an empty database and upgrades the prior schema.",
       "verification": "Migration integration, schema compatibility and cross-tenant foreign-key negative tests.",
       "rollout": "Use additive migrations; rollback app code without dropping collected data.",
-      "status": "planned",
+      "status": "in_progress",
       "pr_url": null,
       "verified_sha": null
     },
@@ -59,7 +59,7 @@
       "acceptance": "A commit deploys to the correct staging project with health checks and no production data or secrets in previews.",
       "verification": "Deploy smoke test, wrong-environment guard and synthetic fixture inspection.",
       "rollout": "Use only authorized resources; disable automatic production rollout during live events.",
-      "status": "planned",
+      "status": "in_progress",
       "pr_url": null,
       "verified_sha": null
     },
@@ -75,7 +75,7 @@
       "acceptance": "Tabs share one budget identity; privilege escalation and unauthorized artist access are rejected.",
       "verification": "Session lifecycle, CSRF/origin, expired token and role-matrix integration tests.",
       "rollout": "Feature flag guest linking; preserve existing guest participation on rollout.",
-      "status": "planned",
+      "status": "in_progress",
       "pr_url": null,
       "verified_sha": null
     },
@@ -90,7 +90,7 @@
       "acceptance": "Artist can configure a complete event; invalid prompts or missing assets prevent arming the show.",
       "verification": "Setup E2E, validation and cross-artist write tests.",
       "rollout": "Configuration versioning; event settings are snapshotted when armed.",
-      "status": "planned",
+      "status": "in_progress",
       "pr_url": null,
       "verified_sha": null
     },
@@ -123,7 +123,7 @@
       "acceptance": "Each eligible source track opens and closes one round; stale leadership suspends generation and local music continues.",
       "verification": "Clock, duplicate boundary, two-leader, pause/seek and disconnect integration tests plus audible transition check.",
       "rollout": "Expose album-only mode; new epochs fence off stale controllers.",
-      "status": "planned",
+      "status": "in_progress",
       "pr_url": null,
       "verified_sha": null
     },
@@ -139,7 +139,7 @@
       "acceptance": "No sequence of concurrent requests exceeds five points or accepts votes after the cutoff.",
       "verification": "Randomized invariant tests, concurrent tabs and vote-versus-close transaction races.",
       "rollout": "Additive counters with reconciliation; disable mutation on invariant alarms.",
-      "status": "planned",
+      "status": "in_progress",
       "pr_url": null,
       "verified_sha": null
     },
@@ -154,7 +154,7 @@
       "acceptance": "Unsafe or invalid phrases never reach public rendering; removing a wave returns points consistently.",
       "verification": "Injection, Unicode, duplicate, moderated allocation and creator-edit tests.",
       "rollout": "Retain audit and undo where appropriate; fail closed for unvalidated new text.",
-      "status": "planned",
+      "status": "in_progress",
       "pr_url": null,
       "verified_sha": null
     },
@@ -170,7 +170,7 @@
       "acceptance": "An acknowledged vote survives an API restart; reconnects produce an accurate view without duplicate actions.",
       "verification": "Crash after commit, duplicate delivery, event gap and unauthorized subscription tests.",
       "rollout": "Backpressure and polling fallback; replay schema remains compatible.",
-      "status": "planned",
+      "status": "in_progress",
       "pr_url": null,
       "verified_sha": null
     },
@@ -237,7 +237,7 @@
       "acceptance": "UI and payload share rank order; complete waves fit without truncating the core; each closed round has one generation identity.",
       "verification": "Golden payload, Unicode budget, tie, incompatible-wave and close/dispatch integration tests.",
       "rollout": "Version prompt compiler; rollback never rewrites a frozen prompt.",
-      "status": "planned",
+      "status": "in_progress",
       "pr_url": null,
       "verified_sha": null
     },
@@ -255,7 +255,7 @@
       "acceptance": "A published release is playable and downloadable before its notification; late jobs do not delay stage audio.",
       "verification": "Partial file, invalid audio, failed upload, duplicate publish and final-set drain tests.",
       "rollout": "Publication kill switch and artist hold; assets remain immutable.",
-      "status": "planned",
+      "status": "in_progress",
       "pr_url": null,
       "verified_sha": null
     },
@@ -271,7 +271,7 @@
       "acceptance": "Counts distinguish starts from actual listening; a seek does not qualify a full play or completion.",
       "verification": "Media E2E, repeated heartbeat, seek, mute/preview labeling and network recovery.",
       "rollout": "Version metric definitions; retain bounded events for aggregate reconciliation.",
-      "status": "planned",
+      "status": "in_progress",
       "pr_url": null,
       "verified_sha": null
     },
@@ -287,7 +287,7 @@
       "acceptance": "Votes toggle idempotently; OS termination defers feedback to next visit; downloading never requires a rating.",
       "verification": "Navigation, exact-half boundary, duplicate reaction, harassment-report and delete-own tests.",
       "rollout": "Comments and feedback prompt can be independently disabled.",
-      "status": "planned",
+      "status": "in_progress",
       "pr_url": null,
       "verified_sha": null
     },
@@ -322,7 +322,7 @@
       "acceptance": "Play next is one action with undo; repeated requests do not duplicate a track or interrupt the current song.",
       "verification": "Two-controller queue conflicts, last-second insertion and unready-asset E2E.",
       "rollout": "Only validated cached media is eligible; next album item remains fallback.",
-      "status": "planned",
+      "status": "in_progress",
       "pr_url": null,
       "verified_sha": null
     },
