@@ -1,0 +1,11 @@
+{
+  "name": "our-jam",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24 <25" },
+  "scripts": {
+    "plan:check": "node scripts/check-plan.mjs",
+    "check": "npm run plan:check"
+  }
+}

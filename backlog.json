@@ -1,0 +1,914 @@
+{
+  "project": "Our Jam",
+  "version": "2026-10-10",
+  "status": "implementation-in-progress",
+  "rules": "Dependencies are minimum prerequisites. Numerical order is the default. Read DEVELOPMENT_PLAN.md and feature specifications.",
+  "prs": [
+    {
+      "id": "P001",
+      "title": "Repository and operating contract",
+      "phase": "Foundation",
+      "depends_on": [],
+      "scope": "Create the monorepo, plans, ADR index, progress log, credential inventory, contribution rules and Engine Room registration record.",
+      "acceptance": "A new developer can identify every service, planned PR, environment and next action without chat history.",
+      "verification": "Check documentation links and clean bootstrap; record Engine Room access or pending sync.",
+      "rollout": "Documentation only; no deployment or new spending.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P002",
+      "title": "Provider audio and security feasibility",
+      "phase": "Foundation",
+      "depends_on": [
+        "P001"
+      ],
+      "scope": "Benchmark candidate generation within approved credits; obtain applicable rights evidence; inspect exact Rave routing; map the full security standard to data flows.",
+      "acceptance": "Record a supported provider route, measured latency sample, recording tier and explicit unresolved launch gates.",
+      "verification": "Real provider request and file playback, physical mic capture test, account entitlement and trust-boundary review.",
+      "rollout": "Keep live generation disabled until G0 evidence passes.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P003",
+      "title": "Domain contracts and initial schema",
+      "phase": "Foundation",
+      "depends_on": [
+        "P001"
+      ],
+      "scope": "Define artist, event, source track, round, wave, allocations, jobs, releases and outbox schemas; add versioned API and event contracts.",
+      "acceptance": "Tenant relationships and uniqueness constraints exist; migration applies to an empty database and upgrades the prior schema.",
+      "verification": "Migration integration, schema compatibility and cross-tenant foreign-key negative tests.",
+      "rollout": "Use additive migrations; rollback app code without dropping collected data.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P004",
+      "title": "Continuous integration and staging infrastructure",
+      "phase": "Foundation",
+      "depends_on": [
+        "P001",
+        "P003"
+      ],
+      "scope": "Add build, lint, type, domain-test and security checks; Render deployment configuration; isolated Neon staging and secret references.",
+      "acceptance": "A commit deploys to the correct staging project with health checks and no production data or secrets in previews.",
+      "verification": "Deploy smoke test, wrong-environment guard and synthetic fixture inspection.",
+      "rollout": "Use only authorized resources; disable automatic production rollout during live events.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P005",
+      "title": "Guest identity accounts and role boundaries",
+      "phase": "Foundation",
+      "depends_on": [
+        "P003",
+        "P004"
+      ],
+      "scope": "Implement guest sessions, recoverable accounts, artist memberships, display pairing and scoped performer and moderator roles.",
+      "acceptance": "Tabs share one budget identity; privilege escalation and unauthorized artist access are rejected.",
+      "verification": "Session lifecycle, CSRF/origin, expired token and role-matrix integration tests.",
+      "rollout": "Feature flag guest linking; preserve existing guest participation on rollout.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P006",
+      "title": "Artist album and event preparation",
+      "phase": "Foundation",
+      "depends_on": [
+        "P005"
+      ],
+      "scope": "Build artist profile, source-track metadata, core prompt versions, set order, event settings and spending/participation caps.",
+      "acceptance": "Artist can configure a complete event; invalid prompts or missing assets prevent arming the show.",
+      "verification": "Setup E2E, validation and cross-artist write tests.",
+      "rollout": "Configuration versioning; event settings are snapshotted when armed.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P007",
+      "title": "Durable media ingest and local album cache",
+      "phase": "Foundation",
+      "depends_on": [
+        "P002",
+        "P006"
+      ],
+      "scope": "Add scoped uploads, object storage, media inspection, waveform metadata and show-laptop download/cache management.",
+      "acceptance": "Original album stays private unless explicitly published; cached tracks are verified playable before readiness is green.",
+      "verification": "Interrupted upload, malformed media, checksum, storage access and offline cache tests.",
+      "rollout": "Keep immutable originals; expire only incomplete uploads under a documented policy.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P008",
+      "title": "Playback leader queue and round lifecycle",
+      "phase": "Crowd",
+      "depends_on": [
+        "P003",
+        "P006",
+        "P007"
+      ],
+      "scope": "Implement the sole playback leader, ordered queue commands, gapless scheduled boundaries, heartbeat, pause, skip, replay and inserted-track policy.",
+      "acceptance": "Each eligible source track opens and closes one round; stale leadership suspends generation and local music continues.",
+      "verification": "Clock, duplicate boundary, two-leader, pause/seek and disconnect integration tests plus audible transition check.",
+      "rollout": "Expose album-only mode; new epochs fence off stale controllers.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P009",
+      "title": "Atomic five-point voting",
+      "phase": "Crowd",
+      "depends_on": [
+        "P005",
+        "P008"
+      ],
+      "scope": "Implement complete allocation replacement, expected revisions, command deduplication, atomic submission vote and zero-support disappearance.",
+      "acceptance": "No sequence of concurrent requests exceeds five points or accepts votes after the cutoff.",
+      "verification": "Randomized invariant tests, concurrent tabs and vote-versus-close transaction races.",
+      "rollout": "Additive counters with reconciliation; disable mutation on invariant alarms.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P010",
+      "title": "Wave moderation and duplicate handling",
+      "phase": "Crowd",
+      "depends_on": [
+        "P009"
+      ],
+      "scope": "Normalize exact duplicates, limit text, enforce core constraints, protect supported phrases from edits and add moderator controls.",
+      "acceptance": "Unsafe or invalid phrases never reach public rendering; removing a wave returns points consistently.",
+      "verification": "Injection, Unicode, duplicate, moderated allocation and creator-edit tests.",
+      "rollout": "Retain audit and undo where appropriate; fail closed for unvalidated new text.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P011",
+      "title": "Durable realtime subscriptions and recovery",
+      "phase": "Crowd",
+      "depends_on": [
+        "P009",
+        "P010"
+      ],
+      "scope": "Ship WSS subscriptions, transactional outbox delivery, sequence replay, snapshot fallback and public-screen filtering.",
+      "acceptance": "An acknowledged vote survives an API restart; reconnects produce an accurate view without duplicate actions.",
+      "verification": "Crash after commit, duplicate delivery, event gap and unauthorized subscription tests.",
+      "rollout": "Backpressure and polling fallback; replay schema remains compatible.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P012",
+      "title": "Audience web app and stable voting controls",
+      "phase": "Crowd",
+      "depends_on": [
+        "P011"
+      ],
+      "scope": "Build QR join, live round header, submission, five-point controls, searchable ranked waves, guest profile and pending/error states.",
+      "acceptance": "A real iPhone and Android browser can join and vote; animation never moves the active input control.",
+      "verification": "Mobile E2E, keyboard/VoiceOver/TalkBack flow and poor-network recovery.",
+      "rollout": "Roll out on a private rehearsal event first; core list works without 3D.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P013",
+      "title": "Production screen and baseline 3D waves",
+      "phase": "Crowd",
+      "depends_on": [
+        "P011",
+        "P012"
+      ],
+      "scope": "Implement luminous wave bodies, bounded size/rank motion, readable labels, beat envelope input, screen cap and fixed free/buy QR zones.",
+      "acceptance": "Real votes animate on the screen; sparse and crowded scenes fill the field without overlap or unreadable controls.",
+      "verification": "Actual display-distance and QR tests; reduced motion, context loss and frame-time benchmark.",
+      "rollout": "Quality presets and automatic 2D fallback; no simulation in public production events.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P014",
+      "title": "Generation adapter durable jobs and cost reservation",
+      "phase": "Generation",
+      "depends_on": [
+        "P002",
+        "P004",
+        "P007",
+        "P010"
+      ],
+      "scope": "Add provider capabilities, leased jobs, paid-request lifecycle, budget reservations, request lookup and UNKNOWN reconciliation.",
+      "acceptance": "Retrying a worker cannot blindly issue a second paid generation; cost caps survive restarts.",
+      "verification": "Provider fixture tests plus approved live call, timeout-after-acceptance and worker-kill scenarios.",
+      "rollout": "Live provider feature flag; preserve unknown jobs for operator review.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P015",
+      "title": "Prompt compiler and boundary dispatch",
+      "phase": "Generation",
+      "depends_on": [
+        "P008",
+        "P009",
+        "P010",
+        "P014"
+      ],
+      "scope": "Freeze ranked snapshots, preserve the core, apply actual provider limits, save inclusion reasons and enqueue one generation.",
+      "acceptance": "UI and payload share rank order; complete waves fit without truncating the core; each closed round has one generation identity.",
+      "verification": "Golden payload, Unicode budget, tie, incompatible-wave and close/dispatch integration tests.",
+      "rollout": "Version prompt compiler; rollback never rewrites a frozen prompt.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P016",
+      "title": "Validated synchronized releases and downloads",
+      "phase": "Generation",
+      "depends_on": [
+        "P007",
+        "P011",
+        "P014",
+        "P015"
+      ],
+      "scope": "Validate outputs, retain originals, upload durable assets, release ready jobs at boundaries or as-ready, and drain at set end.",
+      "acceptance": "A published release is playable and downloadable before its notification; late jobs do not delay stage audio.",
+      "verification": "Partial file, invalid audio, failed upload, duplicate publish and final-set drain tests.",
+      "rollout": "Publication kill switch and artist hold; assets remain immutable.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P017",
+      "title": "Listener player and trustworthy play metrics",
+      "phase": "Generation",
+      "depends_on": [
+        "P012",
+        "P016"
+      ],
+      "scope": "Add user-initiated audio, seek/resume, range delivery, listened intervals, unique listener and qualified-play metrics.",
+      "acceptance": "Counts distinguish starts from actual listening; a seek does not qualify a full play or completion.",
+      "verification": "Media E2E, repeated heartbeat, seek, mute/preview labeling and network recovery.",
+      "rollout": "Version metric definitions; retain bounded events for aggregate reconciliation.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P018",
+      "title": "Reactions comments and listening prompts",
+      "phase": "Generation",
+      "depends_on": [
+        "P010",
+        "P017"
+      ],
+      "scope": "Add one mutable like/dislike, comment reporting and moderation, and nonblocking completion or greater-than-half navigation prompts.",
+      "acceptance": "Votes toggle idempotently; OS termination defers feedback to next visit; downloading never requires a rating.",
+      "verification": "Navigation, exact-half boundary, duplicate reaction, harassment-report and delete-own tests.",
+      "rollout": "Comments and feedback prompt can be independently disabled.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P019",
+      "title": "Release email push and preferences",
+      "phase": "Generation",
+      "depends_on": [
+        "P005",
+        "P016",
+        "P017"
+      ],
+      "scope": "Add verified-email event subscriptions, foreground notifications, supported web push, preferences and delivery outbox.",
+      "acceptance": "Each opted-in recipient gets at most one logical release notification per channel; email works alongside app push.",
+      "verification": "Bounce/unsubscribe, retry/deduplication, denied permission and iOS browser-versus-installed tests.",
+      "rollout": "Provider spending cap, channel kill switch and event digest fallback.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P020",
+      "title": "Performer feedback dashboard and Play next",
+      "phase": "Performance",
+      "depends_on": [
+        "P008",
+        "P016",
+        "P017",
+        "P018"
+      ],
+      "scope": "Expose real-time popularity with sample size, source lineage, favorites, private preview entry and ordered queue insertion.",
+      "acceptance": "Play next is one action with undo; repeated requests do not duplicate a track or interrupt the current song.",
+      "verification": "Two-controller queue conflicts, last-second insertion and unready-asset E2E.",
+      "rollout": "Only validated cached media is eligible; next album item remains fallback.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P021",
+      "title": "Private headphone cue and audio diagnostics",
+      "phase": "Performance",
+      "depends_on": [
+        "P002",
+        "P017",
+        "P020"
+      ],
+      "scope": "Ship phone headphone preview and desktop capability detection, distinct cue/public buses and routing diagnostics.",
+      "acceptance": "Cue is physically inaudible on the public speaker and excluded from public recording and popularity counts.",
+      "verification": "Exact OS/browser/device routing test, output change and cue-network-failure rehearsal.",
+      "rollout": "Default to phone cue; desktop multi-output stays gated until verified.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P022",
+      "title": "Recoverable recording and hardware tier support",
+      "phase": "Performance",
+      "depends_on": [
+        "P002",
+        "P007",
+        "P008",
+        "P021"
+      ],
+      "scope": "Implement input selection, meters, channel/codec detection, chunk capture, local manifest, resumable upload and tier labels.",
+      "acceptance": "Capture recovers completed chunks; the declared Rave or alternate interface route is demonstrated or clearly marked unsupported.",
+      "verification": "Continuous real input test, storage pressure, crash, unplug and upload resume; listen to recovered audio.",
+      "rollout": "Private recordings by default; room-record fallback is explicit and does not close the clean-mic requirement.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P023",
+      "title": "Profiles avatars and core leaderboards",
+      "phase": "Performance",
+      "depends_on": [
+        "P005",
+        "P015",
+        "P016"
+      ],
+      "scope": "Add musical seeded avatars, optional uploads, anonymity, event/weekly/monthly/all-time boards and release-settled credits.",
+      "acceptance": "Changing votes cannot farm points; public anonymity propagates; failed generations do not count as released contributions.",
+      "verification": "Ledger recomputation, timezone boundaries, profile sanitization and hide-track tests.",
+      "rollout": "Rebuildable aggregates and independent leaderboard visibility switch.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P024",
+      "title": "Artist pages event archives and album commerce",
+      "phase": "Performance",
+      "depends_on": [
+        "P006",
+        "P016",
+        "P017",
+        "P023"
+      ],
+      "scope": "Create public artist/event pages, remote listen mode, explicit remote-voting option, original album purchase links and event track lists.",
+      "acceptance": "Both QR codes resolve persistently; remote rules are visible; purchase clicks are not counted as sales.",
+      "verification": "Late-arrival, archived event, external-link safety and remote-admission tests.",
+      "rollout": "Use existing storefront; native commerce decisions remain deferred to store review.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P025",
+      "title": "Security privacy and content release review",
+      "phase": "Performance",
+      "depends_on": [
+        "P005",
+        "P010",
+        "P018",
+        "P019",
+        "P022",
+        "P024"
+      ],
+      "scope": "Complete trust-boundary evidence, authorization matrix, deletion/export, contact consent, recording permissions and incident/takedown controls.",
+      "acceptance": "No unresolved critical access or secret issue; actual encryption boundaries are recorded without unsupported compliance claims.",
+      "verification": "Tenant isolation, SSRF/XSS/CSRF, signed asset, deletion and secret-scan gates.",
+      "rollout": "Close unsafe surfaces; preserve necessary audit records with documented retention.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P026",
+      "title": "Load monitoring recovery and full show rehearsal",
+      "phase": "Performance",
+      "depends_on": [
+        "P013",
+        "P019",
+        "P020",
+        "P021",
+        "P022",
+        "P023",
+        "P025"
+      ],
+      "scope": "Add dashboards, alerts, event cost telemetry, load profiles, deployment freeze, backup/restore and show checklist.",
+      "acceptance": "The declared attendance cap, offline playback, generation failure and recording recovery pass on the actual setup.",
+      "verification": "At least a full set rehearsal; load at twice planned attendance, restore and worker/API restart exercises.",
+      "rollout": "Admission cap and listen-only degradation; record exact limitations.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P027",
+      "title": "First production event release gate",
+      "phase": "Performance",
+      "depends_on": [
+        "P026",
+        "P024"
+      ],
+      "scope": "Promote the tested commit, verify project-specific production resources, run smoke tests and package operator runbook and evidence.",
+      "acceptance": "G0\u2013G4 pass; release notes name the supported hardware and enabled features; no first-show promise if gates are red.",
+      "verification": "Production QR-to-vote-to-generation-to-download-to-cue smoke test with bounded credits.",
+      "rollout": "Rollback app to last known good commit; no destructive schema downgrade; traditional-show fallback.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P028",
+      "title": "Cinematic wave rendering and visual identity",
+      "phase": "Complete V1",
+      "depends_on": [
+        "P013",
+        "P027"
+      ],
+      "scope": "Refine custom deformation, lighting, depth, filaments, transitions, event palettes and audio-driven independent motion.",
+      "acceptance": "Scene meets the desired living 3D aesthetic without losing readability or stable controls.",
+      "verification": "Visual review on show display and representative phones; long thermal/performance session.",
+      "rollout": "Ship graded presets and visual feature flags.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P029",
+      "title": "Dense crowds adaptive layout and discovery",
+      "phase": "Complete V1",
+      "depends_on": [
+        "P028",
+        "P011"
+      ],
+      "scope": "Support high submission volume, overflow representation, rank-stable discovery, venue presets and screen-size controls.",
+      "acceptance": "All eligible waves remain discoverable while only the configured number have readable labels.",
+      "verification": "10/100/1000-wave scenarios, rapid rank churn, search access and projection-distance tests.",
+      "rollout": "Participation cap remains distinct from visual capacity.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P030",
+      "title": "Advanced recognition and leaderboard analytics",
+      "phase": "Complete V1",
+      "depends_on": [
+        "P023",
+        "P029"
+      ],
+      "scope": "Add release receipts, Late breakout and Early spark criteria, per-round averages and anti-farming analysis.",
+      "acceptance": "Every award is reproducible from stored evidence and does not alter voting weight.",
+      "verification": "Ledger replay, duplicate author, late-wave and minimum-sample tests.",
+      "rollout": "Version awards; preserve historic rule version.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P031",
+      "title": "Fan collections following and return journeys",
+      "phase": "Complete V1",
+      "depends_on": [
+        "P019",
+        "P024",
+        "P030"
+      ],
+      "scope": "Build follows, personal favorites, event collections, consented future-event reminders and shareable contribution receipts.",
+      "acceptance": "Fans can return directly to their artist and contributions without exposing private identity.",
+      "verification": "Account link/recovery, consent, unfollow and private/public sharing tests.",
+      "rollout": "Default marketing off; notifications obey saved preferences.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P032",
+      "title": "Native iOS and Android foundation",
+      "phase": "Complete V1",
+      "depends_on": [
+        "P005",
+        "P012",
+        "P027"
+      ],
+      "scope": "Add Expo applications, secure credential storage, shared domain/contracts, build signing and deep-link foundations.",
+      "acceptance": "Installable internal builds on both platforms authenticate against staging with no embedded secrets.",
+      "verification": "Real-device install, login/logout, token expiry and contract parity checks.",
+      "rollout": "Internal distribution first; store credentials remain project-specific.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P033",
+      "title": "Native voting profiles and optimized visualization",
+      "phase": "Complete V1",
+      "depends_on": [
+        "P029",
+        "P031",
+        "P032"
+      ],
+      "scope": "Implement Live, Tracks, Leaders and You with mobile wave renderer and accessible stable controls.",
+      "acceptance": "Native budgets and rankings match web; thermal limits degrade effects without disabling play.",
+      "verification": "iOS/Android parity E2E, VoiceOver/TalkBack, reconnect and device GPU tests.",
+      "rollout": "Keep list fallback; feature parity tracked per platform.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P034",
+      "title": "Native audio offline downloads and media sessions",
+      "phase": "Complete V1",
+      "depends_on": [
+        "P017",
+        "P032",
+        "P033"
+      ],
+      "scope": "Add background playback, explicit downloads, local file management, lock-screen controls and interruption handling.",
+      "acceptance": "Downloaded public tracks play offline; phone calls and output changes preserve recoverable playback state.",
+      "verification": "Real devices, screen lock, airplane mode, storage full, Bluetooth change and app restart.",
+      "rollout": "Quota-managed local storage; private media is not accidentally made public.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P035",
+      "title": "Native notifications and event deep links",
+      "phase": "Complete V1",
+      "depends_on": [
+        "P019",
+        "P032",
+        "P034"
+      ],
+      "scope": "Integrate APNs/FCM or approved Expo push route, token lifecycle and release/account deep links.",
+      "acceptance": "Release taps resolve the correct public track and preferences suppress unwanted notices.",
+      "verification": "Foreground/background/terminated app tests, invalid token receipts and duplicate delivery.",
+      "rollout": "Push kill switch; email and foreground feed remain independent.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P036",
+      "title": "Store readiness privacy and user content review",
+      "phase": "Complete V1",
+      "depends_on": [
+        "P025",
+        "P033",
+        "P034",
+        "P035"
+      ],
+      "scope": "Complete store metadata, account deletion, reporting/blocking, privacy declarations, age policy and regional purchase-link decisions.",
+      "acceptance": "Both builds satisfy documented current submission requirements with usable reviewer access.",
+      "verification": "Policy checklist against official sources plus real-device release builds and accessibility review.",
+      "rollout": "Staged release after actual approval; approval timing is external.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P037",
+      "title": "Advanced recording exports and live performance releases",
+      "phase": "Complete V1",
+      "depends_on": [
+        "P022",
+        "P025",
+        "P034"
+      ],
+      "scope": "Complete multichannel support on verified hardware, alignment/export, performer permissions and separate rap-version publishing; decide on companion app only if tests require it.",
+      "acceptance": "Backing and vocal channels are correctly identified where available; public release requires the distinct recording workflow.",
+      "verification": "Long recording/drift/recovery tests, consent revocation before publish and manifest import.",
+      "rollout": "Private originals retained; publish new versions rather than overwriting raw takes.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P038",
+      "title": "Artist onboarding quotas and cost administration",
+      "phase": "Complete V1",
+      "depends_on": [
+        "P024",
+        "P025",
+        "P031"
+      ],
+      "scope": "Add self-service artist configuration, resource quotas, usage statements and administrator cost controls; billing integration remains optional until business terms are chosen.",
+      "acceptance": "Multiple artists remain isolated and one event cannot exhaust another artist's authorized budget.",
+      "verification": "Multi-tenant concurrency, cap enforcement and cost reconciliation tests.",
+      "rollout": "No paid audience voting; newly billable services require spending approval.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P039",
+      "title": "Event album export and distributor handoff",
+      "phase": "Complete V1",
+      "depends_on": [
+        "P016",
+        "P023",
+        "P024",
+        "P037"
+      ],
+      "scope": "Create sequenced audio/artwork/credits packages with rights and AI metadata, and a distributor adapter only if an authorized API is confirmed.",
+      "acceptance": "An event can become a reviewable distribution package; DSP delivery is never described as instantaneous.",
+      "verification": "Export validation, checksum/metadata review and a sandbox integration if available.",
+      "rollout": "Manual export is supported; no automatic external submission without authorization.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P040",
+      "title": "Horizontal scale and high attendance validation",
+      "phase": "Complete V1",
+      "depends_on": [
+        "P026",
+        "P029",
+        "P038"
+      ],
+      "scope": "Add shared fanout coordination when needed, tune database access and certify larger declared event capacities.",
+      "acceptance": "Multiple API instances cannot diverge votes or leader state; 1000-participant target is enabled only after measured success.",
+      "verification": "Cross-instance reconnect, burst load, noisy-artist isolation and database saturation tests.",
+      "rollout": "Canary rollout and admission caps; broker is not sole vote storage.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P041",
+      "title": "Disaster recovery and provider continuity",
+      "phase": "Complete V1",
+      "depends_on": [
+        "P014",
+        "P026",
+        "P039",
+        "P040"
+      ],
+      "scope": "Automate reconciliation and restore drills; add a second provider only if approved for rights, cost and sound; document key rotation and vendor outage handling.",
+      "acceptance": "An operator can recover published assets and state; provider uncertainty cannot trigger duplicate charges.",
+      "verification": "Isolated disaster restore, credential rotation and primary-provider outage exercise.",
+      "rollout": "Failover off by default until approved and rehearsed.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "P042",
+      "title": "Complete production V1 acceptance",
+      "phase": "Complete V1",
+      "depends_on": [
+        "P028",
+        "P029",
+        "P030",
+        "P031",
+        "P036",
+        "P037",
+        "P038",
+        "P039",
+        "P040",
+        "P041"
+      ],
+      "scope": "Run full requirements traceability, real show acceptance, native/store deployment evidence and post-event operational review.",
+      "acceptance": "All V1 requirements are implemented or expressly documented as hardware/provider-dependent limitations accepted for a supported configuration.",
+      "verification": "Cross-platform and live-hardware acceptance matrix, production smoke, security and restore evidence.",
+      "rollout": "Tag release, retain rollback plan and move unresolved optional integrations into explicit later work.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "D001",
+      "title": "DJ round and performance segment model",
+      "phase": "DJ V2",
+      "depends_on": [
+        "P042"
+      ],
+      "scope": "Define performer-controlled rounds independently of file ends, eligible source anchors, minimum participation windows and one-time close commands.",
+      "acceptance": "Loops, crossfades and multiple source tracks have an explicit core prompt; only one close triggers generation.",
+      "verification": "State-machine tests with loop, seek, early close, replay and stale commands.",
+      "rollout": "Feature flag DJ event type; album-release V1 semantics remain versioned.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "D002",
+      "title": "DJ controls and boundary gestures",
+      "phase": "DJ V2",
+      "depends_on": [
+        "D001"
+      ],
+      "scope": "Add Open round, Close and generate, Hold and Cancel controls, performer shortcuts and optional MIDI mappings.",
+      "acceptance": "The DJ can close once during a transition without accidental repeated charges; crowd sees clear round state.",
+      "verification": "Rapid repeated controls, MIDI bounce, accidental tap undo rules and lost-controller tests.",
+      "rollout": "Hardware controls require deliberate mapping and an emergency disable.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "D003",
+      "title": "External decks timing and audio bridges",
+      "phase": "DJ V2",
+      "depends_on": [
+        "D001",
+        "D002"
+      ],
+      "scope": "Implement one documented DJ integration selected from actual available SDK, MIDI, OSC or playback metadata; add manual bridge where no supported integration exists.",
+      "acceptance": "Metadata, beat clock and performer boundaries have explicit authority and licensing; no claim of universal DJ-software support.",
+      "verification": "Actual target software/hardware and reconnect tests; verify control and audio clocks separately.",
+      "rollout": "Manual boundary mode always available; integration-specific feature flag.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "D004",
+      "title": "Mix-aware prompt and generation policies",
+      "phase": "DJ V2",
+      "depends_on": [
+        "D001",
+        "D003"
+      ],
+      "scope": "Support selected source cores, DJ tempo/key constraints, bounded mixtures and optional preapproved reference audio.",
+      "acceptance": "Crowd additions preserve DJ locks; changing the mix does not mutate already submitted prompts.",
+      "verification": "Prompt lineage, conflicting keys, multi-source rights and rapid-transition tests.",
+      "rollout": "Reference audio and optional provider features remain gated by entitlement.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "D005",
+      "title": "Two-deck preview and performance queue",
+      "phase": "DJ V2",
+      "depends_on": [
+        "D002",
+        "D003",
+        "D004"
+      ],
+      "scope": "Add preview decks, next-slot placement, cue markers and approved crossfade controls with separate public and cue buses.",
+      "acceptance": "The DJ can audition and bring a crowd output into the mix without leaking preview or duplicating a queue item.",
+      "verification": "Real mixer/interface routing, last-second transitions and missing-asset fallback rehearsal.",
+      "rollout": "Keep original deck playback authoritative; instant live synthesis is not promised.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "D006",
+      "title": "DJ crowd display and release timing",
+      "phase": "DJ V2",
+      "depends_on": [
+        "D004",
+        "D005"
+      ],
+      "scope": "Adapt display progress for open-ended rounds, DJ-triggered countdowns, stage transitions and ready-result release controls.",
+      "acceptance": "The audience always knows whether voting is open; a loop or crossfade cannot silently close the round.",
+      "verification": "Variable-length rounds, prolonged holds, countdown cancellation and result-ready E2E.",
+      "rollout": "Clear non-countdown state when the DJ has not set a deadline.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "D007",
+      "title": "DJ recording and set lineage",
+      "phase": "DJ V2",
+      "depends_on": [
+        "D005",
+        "P037"
+      ],
+      "scope": "Capture supported mixer or interface outputs, preserve cue isolation, segment the set and maintain source and contributor lineage.",
+      "acceptance": "Recorded set and separate generations have correct rights and timestamps; unsupported deck signals are labeled.",
+      "verification": "Long-set drift, recording recovery, consent and export inspection.",
+      "rollout": "Private capture until explicit set-release workflow completes.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "D008",
+      "title": "DJ production release and field acceptance",
+      "phase": "DJ V2",
+      "depends_on": [
+        "D001",
+        "D002",
+        "D003",
+        "D004",
+        "D005",
+        "D006",
+        "D007"
+      ],
+      "scope": "Run actual DJ session with unpredictable transitions, crowd participation, network failure and provider slowdown.",
+      "acceptance": "DJ version passes independent operational gates without regressing album V1.",
+      "verification": "Hardware-in-the-loop rehearsal, cross-platform regression and event recovery run.",
+      "rollout": "Release as V2 with supported integration matrix and rollback.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "M001",
+      "title": "Isolated demonstration sessions",
+      "phase": "Demonstration",
+      "depends_on": [
+        "P042"
+      ],
+      "scope": "Add a separate demo event namespace with keyboard-first single-user operation and disposable state.",
+      "acceptance": "Demo data cannot enter real events, public leaderboards, artist analytics or notifications.",
+      "verification": "Isolation tests and demo reset E2E.",
+      "rollout": "No production override tokens; explicit Demo label.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "M002",
+      "title": "Presentation controls and simulated crowd",
+      "phase": "Demonstration",
+      "depends_on": [
+        "M001"
+      ],
+      "scope": "Provide seeded crowd playback, pause, scrub, reveal, reset and venue visualization presets.",
+      "acceptance": "Presenters can explain the game reproducibly; simulated votes and recorded audio are unmistakably identified.",
+      "verification": "Deterministic replay, reset and side-effect suppression tests.",
+      "rollout": "Simulation mode never calls a paid provider.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "M003",
+      "title": "Optional real-generation demonstration",
+      "phase": "Demonstration",
+      "depends_on": [
+        "M001",
+        "M002"
+      ],
+      "scope": "Add an explicit live-provider option with its own event budget and a clearly marked prerecorded fallback.",
+      "acceptance": "Real and prerecorded results cannot be confused; no email, publication or leader credit occurs implicitly.",
+      "verification": "Budget, provider failure and output-label tests.",
+      "rollout": "Real generation requires configured approved credits and a deliberate mode switch.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    },
+    {
+      "id": "M004",
+      "title": "Demonstration packaging and regression gate",
+      "phase": "Demonstration",
+      "depends_on": [
+        "M001",
+        "M002",
+        "M003"
+      ],
+      "scope": "Create presenter instructions, sample assets with rights, reset scripts and an isolated deploy configuration.",
+      "acceptance": "A new presenter can run offline simulation or explicitly enabled real generation without production access.",
+      "verification": "Clean-start walkthrough, offline mode and production regression tests.",
+      "rollout": "Ship secondarily after production V1; maintain separate credentials and metrics.",
+      "status": "planned",
+      "pr_url": null,
+      "verified_sha": null
+    }
+  ]
+}

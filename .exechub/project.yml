@@ -1,0 +1,16 @@
+project:
+  name: Our-Jam
+  display_name: Our Jam
+  repository: neophilism/Our-Jam
+  status: active-development
+roadmap:
+  version: 1
+  planned_prs: 54
+  approved: true
+milestones:
+  - name: Production V1
+    prs: 42
+  - name: DJ V2
+    prs: 8
+  - name: Secondary demonstration
+    prs: 4
