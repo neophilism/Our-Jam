@@ -4,7 +4,7 @@ Implementation authorized October 10, 2026. All original acceptance criteria rem
 
 ## Current work
 
-- P001: repository, complete approved plan, project identity, CI and Engine Room discovery manifest prepared.
+- P001: PR #1 merged after GitHub CI passed at 416ec4ecf0f4881f6718efe692d1fbcc9432663e.
 - GitHub repository confirmed empty before initialization. One minimal bootstrap commit establishes the PR base.
 - Neon production branch confirmed empty. Development migrations will be tested in isolation before production.
 - No Our Jam Render service found. Deployment must target project `prj-db5btotckfvc739m1ck0`.
@@ -16,4 +16,8 @@ Music provider access and download permissions, approved spend, album audio and 
 
 ## Evidence
 
-P001: plan dependency validation. Application behavior is not yet implemented at this commit.
+P001: plan dependency validation. The core API now has 14 passing local domain/API tests and a passing TypeScript server build. They use embedded PostgreSQL locally; hosted PostgreSQL CI is a separate gate. Direct workspace Neon access failed with DNS resolution, so no direct-network test is claimed.
+
+## Core implementation
+
+Persistent events, guest/operator sessions, five-point voting, immutable round closure, public/private snapshots, SSE invalidation, queue insertion, artist-supplied releases and feedback are implemented. Provider generation is explicitly blocked. See docs/implementation-map.md for partial roadmap coverage.

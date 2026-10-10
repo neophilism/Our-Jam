@@ -8,6 +8,20 @@ permissions:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: ourjam
+          POSTGRES_PASSWORD: ourjam-ci-only
+          POSTGRES_DB: ourjam_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ourjam -d ourjam_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://ourjam:ourjam-ci-only@localhost:5432/ourjam_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,3 +30,5 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - run: npm run build:server
+      - run: npm audit --audit-level=high
