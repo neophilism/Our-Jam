@@ -1,0 +1,10 @@
+ALTER TABLE generation_jobs ADD COLUMN reserved_cents integer NOT NULL DEFAULT 0 CHECK(reserved_cents>=0);
+ALTER TABLE generation_jobs ADD COLUMN provider text;
+ALTER TABLE generation_jobs ADD COLUMN model text;
+ALTER TABLE generation_jobs ADD COLUMN duration_seconds integer;
+ALTER TABLE generation_jobs ADD COLUMN asset_key text;
+ALTER TABLE generation_jobs ADD COLUMN asset_sha256 text;
+ALTER TABLE releases ADD COLUMN asset_key text;
+ALTER TABLE releases ADD COLUMN asset_sha256 text;
+ALTER TABLE releases ADD COLUMN provenance jsonb NOT NULL DEFAULT '{}'::jsonb;
+CREATE INDEX generation_dispatch ON generation_jobs(state,created_at) WHERE state='queued';

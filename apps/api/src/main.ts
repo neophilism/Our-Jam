@@ -1,4 +1,9 @@
 import { postgres, migrate } from "./db.js";
+import {
+  configuredStorage,
+  configuredGeneration,
+} from "./generation-config.js";
+import { generationTick } from "./generation.js";
 import { tickRounds } from "./playback.js";
 import { createApp } from "./app.js";
 const production = process.env.NODE_ENV === "production";
@@ -25,19 +30,22 @@ if (process.env.RUN_MIGRATIONS === "1") {
     await migrationDb.close();
   }
 }
+const mediaStore = configuredStorage();
+const generation = configuredGeneration(mediaStore);
 const app = await createApp(db, {
   origin,
   operatorToken: process.env.OPERATOR_TOKEN,
   secureCookies: production,
   serveWeb: true,
-  providerReady: false,
+  providerReady: Boolean(generation),
+  mediaStore,
 });
 await app.listen({ port: Number(process.env.PORT ?? 3001), host: "0.0.0.0" });
 console.log(
   JSON.stringify({
     application: "Our Jam",
     status: "listening",
-    generation: "not_configured",
+    generation: generation ? "configured" : "not_configured",
   }),
 );
 let ticking = false;
@@ -45,7 +53,7 @@ const roundTimer = setInterval(async () => {
   if (ticking) return;
   ticking = true;
   try {
-    await tickRounds(db);
+    await tickRounds(db, Boolean(generation));
   } catch {
     console.error(JSON.stringify({ event: "round_tick_failed" }));
   } finally {
@@ -53,9 +61,26 @@ const roundTimer = setInterval(async () => {
   }
 }, 1000);
 roundTimer.unref();
+let generating = false;
+const generationTimer =
+  generation && process.env.RUN_INLINE_GENERATION === "1"
+    ? setInterval(async () => {
+        if (generating) return;
+        generating = true;
+        try {
+          await generationTick(db, generation);
+        } catch {
+          console.error(JSON.stringify({ event: "generation_worker_failed" }));
+        } finally {
+          generating = false;
+        }
+      }, 2000)
+    : undefined;
+generationTimer?.unref();
 for (const signal of ["SIGINT", "SIGTERM"])
   process.on(signal, async () => {
     clearInterval(roundTimer);
+    clearInterval(generationTimer);
     await app.close();
     await db.close();
     process.exit(0);
