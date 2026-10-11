@@ -10,6 +10,7 @@ import {
 } from "./api";
 import { WaveField } from "./Visual";
 import "./style.css";
+import { Moderation } from "./Moderation";
 import { Leaderboard } from "./Leaderboard";
 import { useAudioPulse } from "./AudioPulse";
 import {
@@ -836,7 +837,12 @@ function Listener({
     void api(`/releases/${release.id}/comments`)
       .then((r) => setComments(r.comments))
       .catch((e) => setError(e.message));
-    const timer = setInterval(() => void send(), 10000);
+    const timer = setInterval(() => {
+      void send();
+      void api(`/releases/${release.id}/comments`)
+        .then((r) => setComments(r.comments))
+        .catch(() => {});
+    }, 10000);
     return () => {
       clearInterval(timer);
       listenerPresence(null);
@@ -1349,6 +1355,7 @@ function Console({ slug }: { slug: string }) {
               data={data}
               refresh={refresh}
               onError={setError}
+              onRelease={() => setMainOutput(false)}
               onClaim={() => {
                 setMainOutput(true);
                 setPreview(null);
@@ -1546,6 +1553,7 @@ function Console({ slug }: { slug: string }) {
             </details>
           ))}
         </section>
+        <Moderation eventId={data.event.id} />
         <Recorder
           eventId={data.event.id}
           currentId={data.current?.id ?? null}
