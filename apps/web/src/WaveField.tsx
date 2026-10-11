@@ -20,7 +20,7 @@ const palette = [
 const vertex = `uniform float uTime; uniform float uPulse; varying vec3 vNormal; varying vec3 vPosition;
 void main(){vec3 n=normalize(position);float wobble=sin(n.x*5.+uTime*.8)*cos(n.y*4.-uTime*.6)*sin(n.z*4.+uTime*.4);vec3 p=position*(1.+wobble*.13+uPulse*.055);vNormal=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(p,1.);vPosition=mv.xyz;gl_Position=projectionMatrix*mv;}`;
 const fragment = `uniform vec3 uColor;uniform float uTime;varying vec3 vNormal;varying vec3 vPosition;
-void main(){vec3 n=normalize(vNormal);vec3 view=normalize(-vPosition);float facing=max(dot(n,view),0.);float rim=pow(1.-facing,2.2);float light=max(dot(n,normalize(vec3(-.5,.8,1.))),0.);float bands=sin((vPosition.y+vPosition.x*.2)*23.+uTime)*.5+.5.;vec3 c=uColor*(.17+light*.64)+vec3(.76,.8,.5)*pow(light,22.)+uColor*rim*1.5; c+=uColor*bands*.10;gl_FragColor=vec4(c,.94);}`;
+void main(){vec3 n=normalize(vNormal);vec3 view=normalize(-vPosition);float facing=max(dot(n,view),0.);float rim=pow(1.-facing,2.2);float light=max(dot(n,normalize(vec3(-.5,.8,1.))),0.);float bands=sin((vPosition.y+vPosition.x*.2)*23.+uTime)*0.5+0.5;vec3 c=uColor*(.17+light*.64)+vec3(.76,.8,.5)*pow(light,22.)+uColor*rim*1.5; c+=uColor*bands*.10;gl_FragColor=vec4(c,.94);}`;
 function Orb({
   x,
   y,
@@ -45,7 +45,7 @@ function Orb({
     }),
     [color],
   );
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime();
     uniforms.uTime.value = t;
     uniforms.uPulse.value = beat?.current ?? 0;
@@ -53,15 +53,28 @@ function Orb({
       mesh.current.rotation.y = t * 0.08;
       mesh.current.rotation.z = Math.sin(t * 0.25 + x * 4) * 0.1;
     }
-    if (group.current) group.current.rotation.z = Math.sin(t * 0.15 + x) * 0.18;
+    if (group.current) {
+      group.current.rotation.z = Math.sin(t * 0.15 + x) * 0.18;
+      group.current.position.lerp(
+        new THREE.Vector3(
+          (x - 0.5) * viewport.width,
+          (0.5 - y) * viewport.height,
+          0,
+        ),
+        1 - Math.exp(-delta * 5),
+      );
+    }
   });
   const radius = Math.min(viewport.width, viewport.height) * size;
   return (
-    <group
-      ref={group}
-      position={[(x - 0.5) * viewport.width, (0.5 - y) * viewport.height, 0]}
-    >
-      <mesh ref={mesh}>
+    <group ref={group}>
+      <mesh
+        ref={mesh}
+        onAfterRender={(renderer) => {
+          if (!renderer.domElement.dataset.rendered)
+            renderer.domElement.dataset.rendered = "true";
+        }}
+      >
         <sphereGeometry args={[radius, 48, 40]} />
         <shaderMaterial
           vertexShader={vertex}
@@ -109,6 +122,17 @@ export function WaveField({
   beat?: React.RefObject<number>;
 }) {
   const [reduced, setReduced] = useState(false);
+  const field = useRef<HTMLDivElement>(null);
+  const [aspect, setAspect] = useState(1.4);
+  useEffect(() => {
+    if (!field.current) return;
+    const o = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      if (height > 0) setAspect(width / height);
+    });
+    o.observe(field.current);
+    return () => o.disconnect();
+  }, []);
   useEffect(() => {
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     const sync = () => setReduced(media.matches);
@@ -118,18 +142,24 @@ export function WaveField({
   }, []);
   const shown = waves.slice(0, limit);
   const n = shown.length || 1;
-  const columns = n === 1 ? 1 : n <= 4 ? 2 : n <= 9 ? 3 : 4;
+  const columns =
+    n === 1 ? 1 : Math.min(n, Math.max(1, Math.round(Math.sqrt(n * aspect))));
   const rows = Math.ceil(n / columns);
   const orbs = (shown.length ? shown : [null]).map((wave, i) => ({
     wave,
     x: ((i % columns) + 0.5) / columns,
     y: (Math.floor(i / columns) + 0.5) / rows,
     size:
-      Math.min(0.34 / Math.max(rows, 1), 0.37 / Math.max(columns * 0.64, 1)) *
+      ((Math.min(aspect / columns, 1 / rows) * 0.38) / Math.min(aspect, 1)) *
       (wave?.votes && shown[0]?.votes?.valueOf()
         ? 0.77 + 0.23 * Math.sqrt(wave.votes / shown[0].votes)
         : 1),
-    color: palette[i % palette.length],
+    color:
+      palette[
+        wave
+          ? parseInt(wave.id.slice(0, 2), 16) % palette.length
+          : i % palette.length
+      ],
   }));
   const fallback = (
     <div className="orb-fallback">
@@ -149,6 +179,7 @@ export function WaveField({
   );
   return (
     <div
+      ref={field}
       className={"wave-field " + (stage ? "stage-field" : "")}
       aria-label={
         shown.length
@@ -162,6 +193,7 @@ export function WaveField({
       ) : (
         <GraphicsBoundary fallback={fallback}>
           <Canvas
+            style={{ position: "absolute", inset: 0 }}
             dpr={[1, 1.5]}
             camera={{ position: [0, 0, 10], fov: 45 }}
             gl={{ alpha: true, antialias: true, powerPreference: "low-power" }}
@@ -178,7 +210,12 @@ export function WaveField({
           <div
             className="wave-label"
             key={o.wave?.id ?? i}
-            style={{ left: o.x * 100 + "%", top: o.y * 100 + "%" }}
+            style={{
+              left: o.x * 100 + "%",
+              top: o.y * 100 + "%",
+              width: `${85 / columns}%`,
+              minWidth: 0,
+            }}
           >
             {o.wave ? (
               <>

@@ -87,6 +87,7 @@ function Avatar({ seed = "music" }: { seed?: string }) {
 function useEvent(slug: string, operator = false) {
   const [data, setData] = useState<EventState | null>(null),
     [error, setError] = useState(""),
+    [fetchError, setFetchError] = useState(""),
     [connected, setConnected] = useState(false);
   const refresh = useCallback(async () => {
     try {
@@ -94,9 +95,9 @@ function useEvent(slug: string, operator = false) {
         `${operator ? "/operator" : ""}/events/${encodeURIComponent(slug)}`,
       );
       setData(next);
-      setError("");
+      setFetchError("");
     } catch (e) {
-      setError((e as Error).message);
+      setFetchError((e as Error).message);
     }
   }, [slug, operator]);
   useEffect(() => {
@@ -125,7 +126,7 @@ function useEvent(slug: string, operator = false) {
       clearTimeout(pending);
     };
   }, [slug, refresh]);
-  return { data, error, setError, refresh, connected };
+  return { data, error: error || fetchError, setError, refresh, connected };
 }
 function Home() {
   const [events, setEvents] = useState<any[]>([]),

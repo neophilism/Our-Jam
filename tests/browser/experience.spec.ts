@@ -45,6 +45,10 @@ test("a phone can join, contribute, reallocate and receive another participantâ€
     .getByRole("button", { name: "Remove a point from " + text, exact: true })
     .click();
   await expect(page.getByLabel("4 of 5 points remaining")).toBeVisible();
+  await expect(page.locator("canvas").first()).toHaveAttribute(
+    "data-rendered",
+    "true",
+  );
   await page.screenshot({
     path: `test-results/${test.info().project.name}-audience.png`,
     fullPage: true,
@@ -79,6 +83,10 @@ test("performer authentication is required and console can open crowd view", asy
       events.events.find((e: any) => e.title === "The first wave").slug,
   );
   await expect(page.getByText("FREE Â· JOIN & DOWNLOAD")).toBeVisible();
+  await expect(page.locator("canvas").first()).toHaveAttribute(
+    "data-rendered",
+    "true",
+  );
   await page.screenshot({
     path: `test-results/${test.info().project.name}-screen.png`,
     fullPage: true,

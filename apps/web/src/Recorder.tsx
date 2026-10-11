@@ -80,10 +80,12 @@ export function Recorder({
   }, [active]);
   async function start() {
     let stream: MediaStream | undefined;
+    let stage = "local storage";
     try {
       if (!window.MediaRecorder || !navigator.mediaDevices)
         throw new Error("Microphone recording is unavailable in this browser.");
       await listTakes(eventId);
+      stage = "microphone access";
       stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: false,
@@ -91,10 +93,11 @@ export function Recorder({
           autoGainControl: false,
         },
       });
+      stage = "audio encoder";
       const mimeType = [
+        "audio/webm",
         "audio/webm;codecs=opus",
         "audio/mp4",
-        "audio/webm",
       ].find((x) => MediaRecorder.isTypeSupported(x));
       const media = new MediaRecorder(
         stream,
@@ -115,9 +118,11 @@ export function Recorder({
         channels: settings.channelCount,
         timeline: [{ at: new Date().toISOString(), queueItemId: currentId }],
       };
+      stage = "saving recording manifest";
       await saveTake(take.current);
       writes.current = Promise.resolve();
       pending.current = 0;
+      stage = "microphone input meter";
       const ctx = new AudioContext();
       context.current = ctx;
       const analyser = ctx.createAnalyser();
@@ -189,6 +194,7 @@ export function Recorder({
       input.onended = () => {
         if (media.state === "recording") media.stop();
       };
+      stage = "starting audio encoder";
       media.start(2000);
       recorder.current = media;
       setElapsed(0);
@@ -196,7 +202,7 @@ export function Recorder({
       setError("");
     } catch (e) {
       stream?.getTracks().forEach((t) => t.stop());
-      setError((e as Error).message);
+      setError(`Could not start ${stage}: ${(e as Error).name} ${(e as Error).message}`);
     }
   }
   return (
@@ -294,7 +300,9 @@ export function Recorder({
                     `our-jam-${t.id}-manifest.json`,
                   );
                 } catch (e) {
-                  setError((e as Error).message);
+                  setError(
+                    (e as Error).message,
+                  );
                 }
               }}
             >
