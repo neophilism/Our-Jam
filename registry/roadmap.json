@@ -39,7 +39,10 @@
       "title": "Artist album and event preparation",
       "origin": "original",
       "status": "in_progress",
-      "implementationNotes": "Revision-fenced show settings, private unplayed-track editing and browser metadata checks implemented; durable ingest and real-show preparation remain open."
+      "implementationNotes": "Revision-fenced show settings, private unplayed-track editing and browser metadata checks implemented; durable ingest and real-show preparation remain open.",
+      "pullRequests": [
+        12
+      ]
     },
     {
       "id": "OJ-007",
@@ -103,15 +106,20 @@
     },
     {
       "id": "OJ-019",
-      "title": "Production V1 \u2014 approved work package 19 of 42",
-      "origin": "original"
+      "title": "Release email push and preferences",
+      "origin": "original",
+      "status": "in_progress",
+      "implementationNotes": "Opt-in verified event email, encrypted contacts, bounded durable outbox, unsubscribe, signed suppression callbacks and foreground web release notices implemented behind disabled delivery configuration. Real sender delivery, web/native push, large-crowd throughput and production migration remain open."
     },
     {
       "id": "OJ-020",
       "title": "Performer feedback dashboard and Play next",
       "origin": "original",
       "status": "in_progress",
-      "implementationNotes": "Reorder queued tracks with one-click Next, Up and Down; commands preserve current playback and reject stale queue state. Physical private-cue rehearsal remains open."
+      "implementationNotes": "Reorder queued tracks with one-click Next, Up and Down; commands preserve current playback and reject stale queue state. Physical private-cue rehearsal remains open.",
+      "pullRequests": [
+        12
+      ]
     },
     {
       "id": "OJ-021",

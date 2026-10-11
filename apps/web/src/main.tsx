@@ -21,6 +21,8 @@ import {
 } from "./FeedbackNudge";
 import { ShowPlayer } from "./ShowPlayer";
 import { ShowSetup } from "./ShowSetup";
+import { ReleaseEmail, EmailAction, EmailStatus } from "./ReleaseEmail";
+import { ReleaseNotice } from "./ReleaseNotice";
 import { Recorder } from "./Recorder";
 
 function Mark() {
@@ -651,6 +653,7 @@ function Audience({ slug }: { slug: string }) {
             </aside>
           </div>
         )}
+        <ReleaseNotice releases={data.releases} open={() => setTab("tracks")} />
         {tab === "tracks" && <Tracks data={data} refresh={refresh} />}
         {tab === "people" && (
           <section className="people">
@@ -678,6 +681,7 @@ function Audience({ slug }: { slug: string }) {
             <Leaderboard artistId={data.event.artistId} slug={slug} />
           </section>
         )}
+        <ReleaseEmail eventId={data.event.id} joined={data.joined} />
         <div className="support-artist">
           <div>
             <span className="eyebrow">IT STARTED WITH THE ALBUM</span>
@@ -1593,6 +1597,7 @@ function Console({ slug }: { slug: string }) {
           ))}
         </section>
         <ShowSetup data={data} refresh={refresh} />
+        <EmailStatus eventId={data.event.id} />
         <Moderation eventId={data.event.id} />
         <Recorder
           eventId={data.event.id}
@@ -1619,6 +1624,11 @@ else if (segments[0] === "performer")
       slug={segments[1] ? decodeURIComponent(segments[1]) : undefined}
     />
   );
+else if (
+  segments[0] === "email" &&
+  (segments[1] === "verify" || segments[1] === "unsubscribe")
+)
+  screen = <EmailAction kind={segments[1]} />;
 else screen = <Home />;
 createRoot(document.getElementById("root")!).render(
   <>

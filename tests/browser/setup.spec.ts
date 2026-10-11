@@ -7,9 +7,10 @@ test("performer prepares audio, reorders tracks and preserves unsaved settings a
   const post = (path: string, data: unknown) =>
     page.request.post("/api" + path, { headers: { Origin: origin }, data });
   await page.goto("/");
-  await post("/operator/login", {
+  const login = await post("/operator/login", {
     token: "browser-test-only-operator-token-123456",
   });
+  expect(login.ok(), await login.text()).toBeTruthy();
   const slug = "setup-" + Date.now(),
     media = "https://media.example.test/setup.wav";
   const created = await post("/operator/events", {
@@ -35,7 +36,7 @@ test("performer prepares audio, reorders tracks and preserves unsaved settings a
       },
     ],
   });
-  expect(created.ok()).toBeTruthy();
+  expect(created.ok(), await created.text()).toBeTruthy();
   const event = await created.json();
   // Twenty-second PCM metadata fixture. No audio device or physical routing is claimed.
   const bytes = Buffer.alloc(44 + 8000 * 20 * 2);

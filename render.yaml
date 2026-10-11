@@ -28,3 +28,5 @@ services:
         value: "0"
       - key: RUN_MIGRATIONS
         value: "0"
+      - key: EMAIL_ENABLED
+        value: "0"

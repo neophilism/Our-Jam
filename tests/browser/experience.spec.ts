@@ -104,6 +104,9 @@ test("performer owns playback, pauses voting, and recovers saved recording chunk
     .fill("browser-test-only-operator-token-123456");
   await page.getByRole("button", { name: "Open my console" }).click();
   const slug = "control-" + Date.now();
+  await expect(
+    page.getByRole("heading", { name: "Set up your album session." }),
+  ).toBeVisible();
   const response = await page.request.post("/api/operator/events", {
     headers: { Origin: "http://127.0.0.1:4173" },
     data: {
@@ -120,7 +123,7 @@ test("performer owns playback, pauses voting, and recovers saved recording chunk
       ],
     },
   });
-  expect(response.ok()).toBeTruthy();
+  expect(response.ok(), await response.text()).toBeTruthy();
   await page.goto("/performer/" + slug);
   await page
     .getByRole("button", { name: "Use this device for show playback" })

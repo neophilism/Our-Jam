@@ -5,6 +5,8 @@ import { createEvent, advance } from "../apps/api/src/service.js";
 import { eventInput } from "../packages/contracts/src/index.js";
 import { claimPlayback, heartbeat } from "../apps/api/src/playback.js";
 import { randomUUID } from "node:crypto";
+import type { EmailConfig, Mail } from "../apps/api/src/email-config.js";
+import { emailTick } from "../apps/api/src/email.js";
 const db = await testDatabase();
 const slug = "rehearsal-" + Date.now();
 const e = await createEvent(
@@ -35,11 +37,35 @@ const keepAlive = setInterval(
   () => void heartbeat(db, "our-jam", e.id, lease),
   8000,
 );
+const messages: Mail[] = [];
+const email: EmailConfig = {
+  origin: "http://127.0.0.1:4173",
+  from: "fixture@example.test",
+  key: Buffer.alloc(32, 7),
+  webhookSecret: "whsec_" + Buffer.alloc(32, 9).toString("base64"),
+  maxPerDay: 100000,
+  send: async (mail) => {
+    if (mail.to.some((to) => !to.endsWith("@example.test")))
+      throw new Error("Test mail requires a reserved address");
+    messages.push(mail);
+    return randomUUID();
+  },
+};
 const app = await createApp(db, {
   origin: "http://127.0.0.1:4173",
   operatorToken: "browser-test-only-operator-token-123456",
   secureCookies: false,
   serveWeb: true,
+  email,
+});
+// Fixture-only endpoints are absent from the production build and public entry point.
+app.get("/__test__/email", async () => ({ messages }));
+app.post("/__test__/email/tick", async () => {
+  await db.query(
+    "UPDATE email_dispatch_control SET next_send_at=now()-interval '1 second'",
+  );
+  await emailTick(db, email);
+  return { ok: true };
 });
 await app.listen({ host: "127.0.0.1", port: 4173 });
 for (const signal of ["SIGINT", "SIGTERM"])
