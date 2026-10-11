@@ -8,16 +8,21 @@ export function ShowPlayer({
   onError,
   onClaim,
   onRelease,
+  disabled,
+  stopForBackup,
 }: {
   data: EventState;
   refresh: () => Promise<void>;
   onError: (message: string) => void;
   onClaim: () => void;
   onRelease: () => void;
+  disabled: boolean;
+  stopForBackup: { current: (() => void) | null };
 }) {
   const lease = useRef<Lease | null>(null),
     audio = useRef<HTMLAudioElement>(null),
-    pending = useRef(false);
+    pending = useRef(false),
+    modeEpoch = useRef(0);
   const [owned, setOwned] = useState(false),
     [busy, setBusy] = useState(false),
     [auto, setAuto] = useState(true),
@@ -34,11 +39,15 @@ export function ShowPlayer({
     [onError],
   );
   async function claim() {
+    if (disabled) return;
+    const epoch = modeEpoch.current;
     setBusy(true);
     try {
-      lease.current = await api(root + "/playback/claim", "POST", {
+      const claimed: Lease = await api(root + "/playback/claim", "POST", {
         existingToken: lease.current?.leaseToken,
       });
+      if (epoch !== modeEpoch.current) return;
+      lease.current = claimed;
       setOwned(true);
       onClaim();
       onError("");
@@ -64,7 +73,8 @@ export function ShowPlayer({
   }, [owned, root, fail]);
   const control = useCallback(
     async (action: "advance" | "pause" | "release", pause?: boolean) => {
-      if (pending.current || !lease.current || !owned) return false;
+      if (disabled || pending.current || !lease.current || !owned) return false;
+      const epoch = modeEpoch.current;
       pending.current = true;
       setBusy(true);
       const command = {
@@ -88,6 +98,7 @@ export function ShowPlayer({
               }
             : { ...command, commandId: crypto.randomUUID(), pause },
         );
+        if (epoch !== modeEpoch.current) return false;
         if (action === "release") {
           lease.current = null;
           setOwned(false);
@@ -104,12 +115,53 @@ export function ShowPlayer({
         setBusy(false);
       }
     },
-    [owned, root, data.event.revision, refresh, onError, onRelease, fail],
+    [
+      disabled,
+      owned,
+      root,
+      data.event.revision,
+      refresh,
+      onError,
+      onRelease,
+      fail,
+    ],
   );
+  useEffect(() => {
+    stopForBackup.current = () => {
+      modeEpoch.current++;
+      audio.current?.pause();
+      const previous = lease.current;
+      lease.current = null;
+      setOwned(false);
+      onRelease();
+      if (previous)
+        void api(
+          root + "/playback/release",
+          "POST",
+          {
+            ...previous,
+            sequence: previous.sequence + 1,
+            commandId: crypto.randomUUID(),
+            pause: true,
+          },
+          AbortSignal.timeout(5000),
+        )
+          .then(() => refresh())
+          .catch(() =>
+            onError(
+              "Backup audio is local. The audience round will pause when the previous playback lease expires; refresh live control after reconnecting.",
+            ),
+          );
+    };
+    return () => {
+      stopForBackup.current = null;
+    };
+  }, [root, stopForBackup, onRelease, onError, refresh]);
   // A new browser-played source starts with voting paused until audio actually starts.
   const started = useRef<string | null>(null);
   useEffect(() => {
     if (
+      disabled ||
       !owned ||
       !data.current?.audio_url ||
       started.current === data.current.id
@@ -125,9 +177,9 @@ export function ShowPlayer({
           "Tap Play show audio to allow playback. Voting is paused until audio starts.",
         ),
       );
-  }, [data.current?.id, owned, control, onError]);
+  }, [data.current?.id, disabled, owned, control, onError]);
   async function toggle() {
-    if (!owned || busy) return;
+    if (disabled || !owned || busy) return;
     const a = audio.current;
     if (!a) return;
     if (a.paused) {
@@ -151,7 +203,7 @@ export function ShowPlayer({
             Use one device for the speaker. Other devices can preview and manage
             the queue.
           </p>
-          <button disabled={busy} onClick={claim}>
+          <button disabled={disabled || busy} onClick={claim}>
             Use this device for show playback
           </button>
         </div>
@@ -159,7 +211,7 @@ export function ShowPlayer({
       {owned && (
         <button
           className="text-button"
-          disabled={busy}
+          disabled={disabled || busy}
           onClick={() => {
             audio.current?.pause();
             void control("release", true);
@@ -177,9 +229,10 @@ export function ShowPlayer({
             onPause={() => setPlaying(false)}
             onTimeUpdate={() => setPosition(audio.current?.currentTime ?? 0)}
             onEnded={() => {
-              if (auto && owned) void control("advance");
+              if (!disabled && auto && owned) void control("advance");
             }}
             onError={() => {
+              if (disabled) return;
               void control("pause", true).finally(() =>
                 onError(
                   "Show audio could not load. Use your local album backup; check that the round is paused.",
@@ -190,7 +243,7 @@ export function ShowPlayer({
           <div className="player-actions">
             <button
               className="ghost"
-              disabled={!owned || busy}
+              disabled={disabled || !owned || busy}
               onClick={toggle}
             >
               {playing ? "Pause show audio" : "Play show audio"}
@@ -210,7 +263,7 @@ export function ShowPlayer({
       )}
       <div className="player-actions">
         <button
-          disabled={!owned || busy}
+          disabled={disabled || !owned || busy}
           onClick={() => void control("advance")}
         >
           {data.current
@@ -222,7 +275,7 @@ export function ShowPlayer({
           ["open", "paused"].includes(data.round.state) && (
             <button
               className="ghost"
-              disabled={!owned || busy}
+              disabled={disabled || !owned || busy}
               onClick={() =>
                 void control("pause", data.round?.state === "open")
               }

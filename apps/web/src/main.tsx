@@ -26,6 +26,7 @@ import { ArtistPage, ArtistEditor, LikedLibrary } from "./ArtistPage";
 import { ReleaseEmail, EmailAction, EmailStatus } from "./ReleaseEmail";
 import { ReleaseNotice } from "./ReleaseNotice";
 import { Recorder } from "./Recorder";
+import { AlbumBackup } from "./AlbumBackup";
 
 function Mark() {
   return (
@@ -1040,10 +1041,13 @@ function Performer({ slug }: { slug?: string }) {
     api("/session")
       .then((r) => setSigned(r.operator))
       .catch((e) => setError(e.message));
-    api("/events")
-      .then((r) => setEvents(r.events))
-      .catch(() => {});
   }, []);
+  useEffect(() => {
+    if (!signed) return;
+    api("/operator/events")
+      .then((r) => setEvents(r.events))
+      .catch((e) => setError(e.message));
+  }, [signed]);
   if (signed && slug) return <Console slug={slug} />;
   return (
     <>
@@ -1275,6 +1279,8 @@ function Console({ slug }: { slug: string }) {
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [mainOutput, setMainOutput] = useState(false);
+  const [backupSource, setBackupSource] = useState<string | null>(null);
+  const stopForBackup = useRef<(() => void) | null>(null);
   const beat = useRef(0);
   const queued = data?.queue?.filter((q) => q.state === "queued") ?? [];
   function move(id: string, to: number) {
@@ -1346,6 +1352,8 @@ function Console({ slug }: { slug: string }) {
           <section className="card show-player">
             <span className="eyebrow">TO THE SPEAKER</span>
             <ShowPlayer
+              disabled={Boolean(backupSource)}
+              stopForBackup={stopForBackup}
               data={data}
               refresh={refresh}
               onError={setError}
@@ -1459,7 +1467,7 @@ function Console({ slug }: { slug: string }) {
               </div>
               <button
                 className="ghost"
-                disabled={mainOutput}
+                disabled={mainOutput || Boolean(backupSource)}
                 title={
                   mainOutput
                     ? "Preview on your separate headphone device."
@@ -1572,11 +1580,25 @@ function Console({ slug }: { slug: string }) {
           ))}
         </section>
         <ShowSetup data={data} refresh={refresh} />
+        <AlbumBackup
+          data={data}
+          active={Boolean(backupSource)}
+          onBegin={(source) => {
+            stopForBackup.current?.();
+            setPreview(null);
+            setBackupSource(source);
+          }}
+          onEnd={() => setBackupSource(null)}
+        />
         <EmailStatus eventId={data.event.id} />
         <Moderation eventId={data.event.id} />
         <Recorder
           eventId={data.event.id}
-          currentId={data.current?.id ?? null}
+          currentId={
+            backupSource
+              ? `local-backup:${backupSource}`
+              : (data.current?.id ?? null)
+          }
         />
 
         <p className="tiny muted">

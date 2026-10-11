@@ -20,14 +20,39 @@ export function Recorder({
     take = useRef<Take | null>(null),
     writes = useRef(Promise.resolve()),
     pending = useRef(0),
-    context = useRef<AudioContext | null>(null);
+    context = useRef<AudioContext | null>(null),
+    startingRef = useRef(false);
   const [active, setActive] = useState(false),
     [saving, setSaving] = useState(false),
+    [starting, setStarting] = useState(false),
     [error, setError] = useState(""),
     [takes, setTakes] = useState<Take[]>([]),
     [level, setLevel] = useState(0),
     [elapsed, setElapsed] = useState(0),
     [space, setSpace] = useState<number | null>(null);
+  const [inputs, setInputs] = useState<MediaDeviceInfo[]>([]),
+    [inputId, setInputId] = useState(""),
+    [choosing, setChoosing] = useState(false);
+  async function chooseInputs() {
+    setChoosing(true);
+    setError("");
+    let permission: MediaStream | undefined;
+    try {
+      if (!navigator.mediaDevices?.getUserMedia)
+        throw new Error("This browser cannot select a recording input.");
+      permission = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setInputs(
+        (await navigator.mediaDevices.enumerateDevices()).filter(
+          (d) => d.kind === "audioinput",
+        ),
+      );
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      permission?.getTracks().forEach((t) => t.stop());
+      setChoosing(false);
+    }
+  }
   const refresh = () =>
     listTakes(eventId)
       .then(setTakes)
@@ -79,6 +104,14 @@ export function Recorder({
     };
   }, [active]);
   async function start() {
+    if (
+      startingRef.current ||
+      recorder.current?.state === "recording" ||
+      saving
+    )
+      return;
+    startingRef.current = true;
+    setStarting(true);
     let stream: MediaStream | undefined;
     let stage = "local storage";
     try {
@@ -88,6 +121,8 @@ export function Recorder({
       stage = "microphone access";
       stream = await navigator.mediaDevices.getUserMedia({
         audio: {
+          ...(inputId ? { deviceId: { exact: inputId } } : {}),
+          channelCount: { ideal: 2 },
           echoCancellation: false,
           noiseSuppression: false,
           autoGainControl: false,
@@ -105,6 +140,18 @@ export function Recorder({
       );
       const input = stream.getAudioTracks()[0],
         settings = input.getSettings();
+      input.addEventListener(
+        "ended",
+        () => {
+          if (media.state === "recording") {
+            setError(
+              "The recording input disconnected. Export the saved chunks and choose the input again.",
+            );
+            media.stop();
+          }
+        },
+        { once: true },
+      );
       take.current = {
         id: crypto.randomUUID(),
         eventId,
@@ -205,6 +252,9 @@ export function Recorder({
       setError(
         `Could not start ${stage}: ${(e as Error).name} ${(e as Error).message}`,
       );
+    } finally {
+      startingRef.current = false;
+      setStarting(false);
     }
   }
   return (
@@ -236,16 +286,50 @@ export function Recorder({
           )}
         </>
       )}
+      <div className="player-actions">
+        <button
+          className="ghost small"
+          disabled={active || saving || choosing || starting}
+          onClick={() => void chooseInputs()}
+        >
+          Choose recording input
+        </button>
+        <div>
+          <label htmlFor="recording-input">Recording input</label>
+          <select
+            id="recording-input"
+            value={inputId}
+            disabled={active || saving || choosing || starting}
+            onChange={(e) => setInputId(e.target.value)}
+          >
+            <option value="">System default microphone</option>
+            {inputs
+              .filter((d) => d.deviceId !== "default")
+              .map((d) => (
+                <option key={d.deviceId} value={d.deviceId}>
+                  {d.label || "Audio input " + d.deviceId.slice(0, 6)}
+                </option>
+              ))}
+          </select>
+        </div>
+      </div>
+      <p className="muted">
+        Choose the system input or USB interface carrying your microphones. A
+        speaker’s playback connection does not automatically expose its karaoke
+        microphones to the browser.
+      </p>
       <button
-        disabled={saving}
+        disabled={saving || choosing || starting}
         className={active ? "danger" : ""}
         onClick={() => (active ? recorder.current?.stop() : void start())}
       >
-        {saving
-          ? "Saving final chunk…"
-          : active
-            ? "■ Stop recording"
-            : "● Record browser microphone"}
+        {starting
+          ? "Opening recording input…"
+          : saving
+            ? "Saving final chunk…"
+            : active
+              ? "■ Stop recording"
+              : "● Record browser microphone"}
       </button>
       {space !== null && (
         <span className="muted">

@@ -514,6 +514,17 @@ export async function createApp(db: Database, config: AppConfig) {
     const op = await session(req, "operator");
     return createEvent(db, op.artist_id, eventInput.parse(req.body));
   });
+  app.get("/api/operator/events", async (req) => {
+    const op = await session(req, "operator");
+    return {
+      events: (
+        await db.query(
+          "SELECT id,slug,title,artist_name,state FROM events WHERE artist_id=$1 ORDER BY created_at DESC,id LIMIT 100",
+          [op.artist_id],
+        )
+      ).rows,
+    };
+  });
   app.get("/api/events/:slug", async (req) => {
     const { slug } = req.params as { slug: string };
     const guest = await session(req, "guest", false);

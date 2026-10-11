@@ -35,7 +35,7 @@ P002 remains blocked on real provider entitlement/rights and physical Soundcore 
 
 Deployment inside the supplied Render project; album files, durations and private core prompts; purchase URL; approved provider/storage credentials and budget; verified free-download rights; exact Soundcore Rave model and audio route; physical iPhone/Android, headphones and long recording rehearsal; venue connectivity/load/recovery checks. The current server-authorized architecture is not end-to-end encrypted and no independent security certification is claimed.
 
-Responsive mobile browsers are implemented. Native iOS/Android builds, email/push delivery, recoverable cross-device accounts, offline album playback, multitrack routing and store submissions remain open. Provider/storage adapters use contract fixtures in CI; browser recording uses a real synthetic Web Audio stream, not physical karaoke microphones. This repository is not yet a show-ready deployed service.
+Responsive mobile browsers are implemented. Native iOS/Android builds, email/push delivery, recoverable cross-device accounts, offline console reload, multitrack routing and store submissions remain open. Provider/storage adapters use contract fixtures in CI; browser recording uses a real synthetic Web Audio stream, not physical karaoke microphones. This repository is not yet a show-ready deployed service.
 
 ## Show preparation increment
 
@@ -56,3 +56,9 @@ PR [#13](https://github.com/neophilism/Our-Jam/pull/13) merged at `507a959b94446
 Public artist profiles, music links, filtered event archives, listener-first navigation and guest-scoped liked-track collections are implemented in the archive increment. Reconnect guards disable voting while state is unavailable/stale and prevent old responses from replacing newer snapshots. See `docs/artist-archives.md`; event admission remains open to anyone with the link, and cross-device guest recovery is not yet implemented.
 
 Migration 005 was applied transactionally to isolated Neon branch `br-blue-unit-b5rk1hit`; production is unchanged.
+
+## Local audio resilience increment
+
+PR [#14](https://github.com/neophilism/Our-Jam/pull/14) merged at `ba43b5d62c26fe8eae26849682dd21925d8b2d41` after CI run `38130841019`: 32 domain/API/media tests, sixteen desktop/mobile browser scenarios, dependency audit and Docker build passed. Artist archives, liked-track collections and voting reconnect guards are on main.
+
+The local backup increment adds device-selected album copies with metadata checks, SHA-256 verification and offline album-order continuation in an already open performer console. Entering backup mode stops local show audio and releases server control; the online queue and generation do not advance. Recording gains explicit input selection and disconnect handling. The performer home now lists only its authenticated artist's events. Physical audio, long-session storage/recovery and offline page reload acceptance remain open. See `docs/local-album-backup.md`.
