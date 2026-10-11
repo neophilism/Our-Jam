@@ -12,7 +12,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   simulator:
-    runs-on: macos-15
+    # Standard public-repository runner, not a paid larger runner.
+    runs-on: macos-15-intel
     timeout-minutes: 20
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
@@ -20,7 +21,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install backend dependencies
+        timeout-minutes: 4
+        run: npm ci
+      - run: npm run build
       - name: Initialize the selected Simulator service
+        timeout-minutes: 4
         run: |
           mkdir -p ios-evidence
           test -d "$DEVELOPER_DIR"
@@ -28,17 +38,29 @@ jobs:
           xcodebuild -version | tee ios-evidence/xcode-version.txt
           open -a "$DEVELOPER_DIR/Applications/Simulator.app"
           python3 -c 'import subprocess; subprocess.run(["xcrun","simctl","list","devices","available","-j"],check=True,timeout=180)' > ios-evidence/initial-devices.json
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci && npm run build
       - name: Generate dependency-free Xcode project
         run: python3 apps/ios/make-project.py
       - name: Build actual simulator application
+        timeout-minutes: 5
         run: |
           set -o pipefail
           xcodebuild -project apps/ios/OurJam.xcodeproj -scheme OurJam -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-build CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO build 2>&1 | tee ios-evidence/build.log
+      - name: Preserve compiled binary and exact source
+        run: |
+          mkdir -p ios-artifact
+          ditto -c -k --sequesterRsrc --keepParent ios-build/Build/Products/Release-iphonesimulator/OurJam.app ios-artifact/OurJam-Simulator.zip
+          cp 'apps/ios/Open Simulator.command' ios-artifact/
+          cp apps/ios/README.md ios-artifact/README.md
+          git archive --format=zip --prefix=OurJam-Local/ HEAD > ios-artifact/OurJam-Local-Source.zip
+          cp docs/local-real-rehearsal.md ios-artifact/LOCAL-SETUP.md
+          git rev-parse HEAD > ios-artifact/COMMIT.txt
+          shasum -a 256 ios-artifact/*.zip > ios-artifact/SHA256SUMS.txt
+          printf '%s\n' 'Compilation succeeded. This artifact alone is NOT evidence that native interaction tests passed. Check the exact workflow run. This is not a signed TestFlight build.' > ios-artifact/BUILD-STATUS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OurJam-iOS-Simulator-Compiled
+          path: ios-artifact/
+          retention-days: 7
       - name: Start isolated native integration backend
         run: |
           node --import tsx scripts/native-test-server.ts > ios-evidence/server.log 2>&1 &
@@ -53,16 +75,9 @@ jobs:
         run: |
           python3 scripts/run-native-simulator.py
           curl -fsS http://127.0.0.1:4173/__test__/native-evidence > ios-evidence/participation.json
-      - name: Package actual app and complete local source
+      - name: Mark native acceptance
         run: |
-          mkdir -p ios-artifact
-          ditto -c -k --sequesterRsrc --keepParent ios-build/Build/Products/Release-iphonesimulator/OurJam.app ios-artifact/OurJam-Simulator.zip
-          cp 'apps/ios/Open Simulator.command' ios-artifact/
-          cp apps/ios/README.md ios-artifact/README.md
-          git archive --format=zip --prefix=OurJam-Local/ HEAD > ios-artifact/OurJam-Local-Source.zip
-          cp docs/local-real-rehearsal.md ios-artifact/LOCAL-SETUP.md
-          git rev-parse HEAD > ios-artifact/COMMIT.txt
-          shasum -a 256 ios-artifact/*.zip > ios-artifact/SHA256SUMS.txt
+          printf '%s\n' 'Native simulator interaction test passed on this exact commit. Review the independent Our Jam checks run for full backend/browser acceptance. This is not TestFlight or full V1 certification.' > ios-artifact/BUILD-STATUS.txt
       - uses: actions/upload-artifact@v4
         with:
           name: OurJam-iOS-Simulator
