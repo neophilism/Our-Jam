@@ -7,6 +7,7 @@ import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import path from "node:path";
 import { existsSync } from "node:fs";
 import { z } from "zod";
+import type { MediaStore } from "../../../packages/providers/src/storage.js";
 import type { Database } from "./db.js";
 import {
   DomainError,
@@ -46,6 +47,7 @@ export type AppConfig = {
   secureCookies: boolean;
   providerReady?: boolean;
   serveWeb?: boolean;
+  mediaStore?: MediaStore;
 };
 export async function createApp(db: Database, config: AppConfig) {
   const app = Fastify({ logger: false, bodyLimit: 65536, trustProxy: false });
@@ -181,7 +183,17 @@ export async function createApp(db: Database, config: AppConfig) {
     commit: process.env.RENDER_GIT_COMMIT ?? "local",
   }));
   app.get("/api/ready", async () => {
-    await db.query("SELECT name FROM schema_migrations LIMIT 1");
+    const rows = (
+      await db.query(
+        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql')",
+      )
+    ).rows;
+    requireThat(
+      rows.length === 3,
+      "schema_not_ready",
+      "Required database migrations have not been applied.",
+      503,
+    );
     return {
       database: "ready",
       generation: config.providerReady ? "configured" : "not_configured",
@@ -302,7 +314,10 @@ export async function createApp(db: Database, config: AppConfig) {
   app.get("/api/operator/events/:slug", async (req) => {
     const { slug } = req.params as { slug: string };
     const op = await session(req, "operator");
-    return db.transaction(async tx => {await tx.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");return snapshot(tx,slug,undefined,op.artist_id);});
+    return db.transaction(async (tx) => {
+      await tx.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
+      return snapshot(tx, slug, undefined, op.artist_id);
+    });
   });
   app.post("/api/events/:slug/join", async (req) => {
     const s = await session(req, "guest");
@@ -518,6 +533,28 @@ export async function createApp(db: Database, config: AppConfig) {
       return { ok: true };
     });
   });
+  app.get("/api/operator/jobs/:id", async (req) => {
+    const op = await session(req, "operator");
+    const job = (
+      await db.query("SELECT * FROM generation_jobs WHERE id=$1", [
+        id.parse((req.params as any).id),
+      ])
+    ).rows[0];
+    requireThat(job, "not_found", "Generation not found.", 404);
+    await ownedEvent(db, job.event_id, op.artist_id);
+    return {
+      id: job.id,
+      state: job.state,
+      reason: job.reason,
+      prompt: job.prompt,
+      promptHash: job.prompt_hash,
+      snapshot: job.snapshot,
+      provider: job.provider,
+      model: job.model,
+      attempts: job.attempts,
+      reservedCents: job.reserved_cents,
+    };
+  });
   app.post("/api/operator/jobs/:id/asset", async (req) => {
     const op = await session(req, "operator");
     const jobId = id.parse((req.params as any).id);
@@ -583,6 +620,22 @@ export async function createApp(db: Database, config: AppConfig) {
     requireThat(r, "not_found", "Track not found.", 404);
     return r;
   }
+  for (const download of [false, true])
+    app.get(
+      "/api/releases/:id/" + (download ? "download" : "audio"),
+      async (req, reply) => {
+        const release = await publicRelease(id.parse((req.params as any).id));
+        requireThat(
+          release.asset_key && config.mediaStore,
+          "media_unavailable",
+          "This media file is not available.",
+          503,
+        );
+        return reply.redirect(
+          await config.mediaStore.url(release.asset_key, download),
+        );
+      },
+    );
   app.put("/api/releases/:id/reaction", async (req) => {
     const s = await session(req, "guest");
     const release = await publicRelease(id.parse((req.params as any).id));

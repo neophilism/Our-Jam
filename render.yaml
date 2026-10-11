@@ -1,0 +1,30 @@
+# Attach this service to the EXISTING project prj-db5btotckfvc739m1ck0.
+# Project/environment names must be verified in Render before Blueprint sync.
+# A flat Blueprint intentionally does not invent a second project by name.
+services:
+  - type: web
+    name: our-jam
+    runtime: docker
+    repo: https://github.com/neophilism/Our-Jam
+    branch: main
+    region: ohio
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/ready
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PUBLIC_ORIGIN
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: OPERATOR_TOKEN
+        generateValue: true
+      - key: GENERATION_ENABLED
+        value: "0"
+      - key: RUN_INLINE_GENERATION
+        value: "0"
+      - key: RUN_MIGRATIONS
+        value: "0"

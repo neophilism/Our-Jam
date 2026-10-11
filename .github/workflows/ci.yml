@@ -29,11 +29,13 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: npm run check
       - run: npm run build
       - run: npm audit --audit-level=high
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - run: docker build -t our-jam:ci .
       - uses: actions/upload-artifact@v4
         if: always()
         with:

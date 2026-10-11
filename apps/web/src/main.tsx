@@ -1436,6 +1436,17 @@ function Console({ slug }: { slug: string }) {
                 Generation {j.id.slice(0, 8)} · {j.state.replaceAll("_", " ")}
                 {j.reason && ` · ${j.reason.replaceAll("_", " ")}`}
               </summary>
+              <button
+                className="ghost small"
+                onClick={() =>
+                  void action(async () => {
+                    const job = await api(`/operator/jobs/${j.id}`);
+                    await navigator.clipboard.writeText(job.prompt);
+                  })
+                }
+              >
+                Copy this round's generation prompt
+              </button>
               {j.state === "blocked" &&
                 j.reason === "provider_not_configured" && (
                   <form

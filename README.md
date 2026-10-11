@@ -18,3 +18,11 @@ The shared TypeScript application uses a React web client, Fastify API, PostgreS
 - Neon production branch: `br-aged-sea-b55fzq0v`
 
 Never reuse credentials or services from another project. Never commit secret values. The artist's core prompts and unpublished recordings are private. See [security boundaries](docs/security-implementation.md).
+
+## Running the implemented application
+
+Install with `npm ci`. Configure `.env.local` from `.env.example` using only Our Jam's development database. Apply migrations with `npm run db:migrate`, then run `npm run dev:api` and `npm run dev:web` in separate terminals. Production builds use `npm run build` and `npm start` with runtime environment variables.
+
+The performer route is `/performer`; audience entry is `/event/<code>` and the public display is `/screen/<code>`. Artist core prompts remain private. Music generation starts disabled and needs approved provider/storage configuration. No demonstration data is seeded by production startup.
+
+See [deployment](docs/deployment.md), [generation activation](docs/generation-implementation.md), and [playback/recording recovery](docs/playback-and-recovery.md). Responsive browser clients are implemented; native iOS/Android delivery remains a separate V1 milestone.

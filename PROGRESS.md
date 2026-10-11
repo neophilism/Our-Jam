@@ -31,3 +31,9 @@ PR #2 merged after PostgreSQL 18 CI passed at 84b8e970a6c91f6c0eb0cb7ac30e7433c7
 PR #3 merged at b4340aa52633df79b6f8b993dff98d912360bc1d after CI run 38096503809 passed all PostgreSQL/API and four desktop/mobile browser scenarios. Screenshots reviewed: audience controls and QR display are legible; cinematic graphics remain an active refinement.
 
 This slice adds fenced playback ownership, sequenced and replayable commands, pause-aware voting, durable deadline closure, paused startup until linked audio starts, monotonic client countdown, and IndexedDB recording chunks/checksums/recovery exports. Random unvalidated cookies no longer create independent rate-limit buckets. API source is formatted for review. New browser coverage exercises recording persistence using Chromium's synthetic microphone; this is not a Rave or real-device recording test.
+
+## Verified playback and generation work
+
+PR #4 merged at e3c057485f1d3b740668b42c281a788fcde9d1e0 after CI run 38097751070 passed. This includes 15 domain/API tests and six desktop/mobile browser scenarios. Browser screenshots now show the shader surfaces and correctly sized stage canvas. The recording recovery test uses a real synthetic Web Audio stream because CI microphone access returned NotSupportedError; real hardware remains unverified.
+
+Migrations 002 and 003 applied successfully on the isolated Neon development branch. Production remains untouched. The generation/deployment slice now passes 18 local tests and both builds. Its provider adapter is implemented against the documented Stable Audio 2.5 contract, but real provider and storage integration are disabled/unverified. Render project assignment is still blocked by connector capability and dashboard timeout. The Docker build and Blueprint are reviewable repository artifacts, not a deployed service.
