@@ -1,3 +1,8 @@
+import {
+  AudioRouting,
+  useAudioRouting,
+  HeadphonePreview,
+} from "./AudioRouting";
 import { Account } from "./Account";
 import { VisualPreferences } from "./VisualPreferences";
 import { AdmissionSettings } from "./AdmissionSettings";
@@ -1354,7 +1359,23 @@ function Console({ slug }: { slug: string }) {
   const [preview, setPreview] = useState<string | null>(null);
   const [mainOutput, setMainOutput] = useState(false);
   const [backupSource, setBackupSource] = useState<string | null>(null);
-  const stopForBackup = useRef<(() => void) | null>(null);
+  const stopForBackup = useRef<((reason?: string) => void) | null>(null);
+  const stopBackupForOutput = useRef<(() => void) | null>(null);
+  const routes = useAudioRouting(
+    () => setPreview(null),
+    () => {
+      stopForBackup.current?.(
+        "The show output disappeared. Live control was released; the round pauses when the release arrives or its lease expires.",
+      );
+      stopBackupForOutput.current?.();
+      setBackupSource(null);
+    },
+  );
+  const showActive = mainOutput || Boolean(backupSource);
+  const previewBlocked = showActive && !routes.canPreviewWithShow;
+  useEffect(() => {
+    if (previewBlocked) setPreview(null);
+  }, [previewBlocked]);
   const beat = useRef(0);
   const queued = data?.queue?.filter((q) => q.state === "queued") ?? [];
   function move(id: string, to: number) {
@@ -1422,11 +1443,13 @@ function Console({ slug }: { slug: string }) {
           <Countdown data={data} />
         </div>
         <Notice error={error} />
+        <AudioRouting routing={routes} showActive={showActive} />
         <div className="console-grid">
           <section className="card show-player">
             <span className="eyebrow">TO THE SPEAKER</span>
             <ShowPlayer
-              disabled={Boolean(backupSource)}
+              output={routes.main?.deviceId ?? ""}
+              disabled={Boolean(backupSource) || routes.mainUnavailable}
               stopForBackup={stopForBackup}
               data={data}
               refresh={refresh}
@@ -1541,14 +1564,18 @@ function Console({ slug }: { slug: string }) {
               </div>
               <button
                 className="ghost"
-                disabled={mainOutput || Boolean(backupSource)}
+                disabled={previewBlocked}
                 title={
-                  mainOutput
-                    ? "Preview on your separate headphone device."
+                  previewBlocked
+                    ? "Use another headphone device or test separate outputs above."
                     : undefined
                 }
                 onClick={() =>
-                  setPreview(preview === r.audio_url ? null : r.audio_url)
+                  setPreview(
+                    preview === `/api/operator/releases/${r.id}/audio`
+                      ? null
+                      : `/api/operator/releases/${r.id}/audio`,
+                  )
                 }
               >
                 Headphone preview ▷
@@ -1571,7 +1598,11 @@ function Console({ slug }: { slug: string }) {
           {preview && (
             <div className="private-preview">
               <strong>Private preview — use headphones</strong>
-              <audio src={preview} controls autoPlay />
+              <HeadphonePreview
+                src={preview}
+                output={routes.preview?.deviceId ?? ""}
+                onError={setError}
+              />
             </div>
           )}
           {!data.releases.length && (
@@ -1619,7 +1650,7 @@ function Console({ slug }: { slug: string }) {
                         <>
                           <button
                             className="ghost small"
-                            disabled={mainOutput || Boolean(backupSource)}
+                            disabled={previewBlocked}
                             onClick={() =>
                               setPreview(
                                 `/api/operator/releases/${j.release_id}/audio`,
@@ -1742,6 +1773,9 @@ function Console({ slug }: { slug: string }) {
         <AdmissionSettings data={data} refresh={refresh} />
         <ShowSetup data={data} refresh={refresh} />
         <AlbumBackup
+          outputAvailable={!routes.mainUnavailable}
+          stopForOutput={stopBackupForOutput}
+          output={routes.main?.deviceId ?? ""}
           data={data}
           active={Boolean(backupSource)}
           onBegin={(source) => {

@@ -23,6 +23,8 @@ The canonical `registry/roadmap.json` contains 54 approved work packages; `backl
 | #18 | Remembered still/light rendering, reduced-motion/data-saving path and WebGL fallback | Sustained hardware performance, deeper visual design and accessibility rehearsal |
 
 | #19 | Shared-network budgets, bounded snapshot work, slow-stream recovery and deployment preparation | Render workspace capacity, approved production migration and deployed load testing |
-| Recoverable profile increment | Private recovery keys, web/native session restoration, artist follows and personal release feed | Verified accounts, artist roles, native recovery UI and privacy export/anonymization |
+| #20 | Private recovery keys, web/native session restoration, artist follows and personal release feed | Verified accounts, artist roles, native recovery UI and privacy export/anonymization |
+
+| Headphone cue increment | Separate browser outputs with test/confirmation gates and disconnect recovery | Physical speaker/headphone/recording isolation, native routing and device rehearsal |
 
 See `PROGRESS.md` for merged-head CI evidence. P002 provider/hardware feasibility remains blocked on real account/assets/model. Native P032–P036, DJ V2 and the secondary demonstration version are not completed by mobile browser coverage. No deployed app is called show-ready without G0–G4 from `09-first-show-readiness.md`.
