@@ -74,7 +74,7 @@
       "title": "Durable realtime subscriptions and recovery",
       "origin": "original",
       "status": "in_progress",
-      "implementationNotes": "Existing durable event-log streaming and snapshot fallback now reject older arriving responses and disable audience voting while offline, stale or awaiting foreground refresh. Multi-instance fanout and venue/load acceptance remain open."
+      "implementationNotes": "Existing durable event-log streaming and snapshot fallback now reject older arriving responses and disable audience voting while offline, stale or awaiting foreground refresh. Multi-instance fanout and venue/load acceptance remain open. Per-process snapshot concurrency/wait bounds, in-flight identity isolation, shared-network read budgets and slow-socket disconnection added; deployment-scale evidence remains open."
     },
     {
       "id": "OJ-012",
@@ -176,8 +176,10 @@
     },
     {
       "id": "OJ-026",
-      "title": "Production V1 \u2014 approved work package 26 of 42",
-      "origin": "original"
+      "title": "Deployment and live-show operations",
+      "origin": "original",
+      "status": "in_progress",
+      "implementationNotes": "Free Render rehearsal service creation rejected by 25-service Hobby workspace limit; production initialization rejected by automatic approval review. Isolated Neon runtime role privileges verified; origin validation and bounded venue traffic implemented. Deployment and real venue evidence remain open."
     },
     {
       "id": "OJ-027",
