@@ -1,3 +1,4 @@
+import { FollowArtist, FollowingFeed } from "./Account";
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import { Leaderboard } from "./Leaderboard";
@@ -63,6 +64,7 @@ export function ArtistPage({ id }: { id: string }) {
                 {data.artist.bio ||
                   "Every show starts with a signature sound and becomes something we make together."}
               </p>
+              <FollowArtist artistId={id} />
               <div className="artist-links">
                 {data.artist.links.map((l: any) => (
                   <a
@@ -180,15 +182,17 @@ export function LikedLibrary() {
       <span className="eyebrow">YOUR PART OF THE SOUND</span>
       <h1>The tracks you love.</h1>
       <p>
-        Likes from this browser’s guest profile stay here. A cleared or expired
-        guest session won’t recover this collection yet; download your favorites
-        to keep them.
+        These likes belong to your profile. Save a private recovery key to bring
+        your music to another device, and download your favorite tracks to keep
+        them.
       </p>
       {error && (
         <p role="alert" className="notice">
           {error} <a href="/">Find an event</a>
         </p>
       )}
+      <FollowingFeed />
+      <h2>Your liked tracks</h2>
       {data?.tracks.map((track: any) => (
         <article className="track" key={track.id}>
           <div className="track-info">

@@ -1800,3 +1800,56 @@ summary {
   padding: 5px;
   border-radius: 4px;
 }
+
+.account-page {
+  max-width: 860px;
+}
+.account-page > .panel {
+  margin: 24px 0;
+  padding: clamp(20px, 4vw, 32px);
+}
+.account-page form {
+  display: grid;
+  gap: 14px;
+}
+.account-page .check {
+  margin: 18px 0;
+}
+.account-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.recovery-key {
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px solid var(--accent, #eea04b);
+  border-radius: 16px;
+}
+.recovery-key textarea {
+  width: 100%;
+  margin-top: 10px;
+  overflow-wrap: anywhere;
+  font: 14px monospace;
+}
+.follow-artist {
+  margin: 20px 0;
+}
+.follow-artist > span {
+  margin-left: 14px;
+}
+.following-feed {
+  padding: 24px 0;
+  border-block: 1px solid #ffffff18;
+  margin: 28px 0;
+}
+.following-tracks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 12px;
+}
+.following-tracks > a {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+}

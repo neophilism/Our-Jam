@@ -31,8 +31,10 @@
     },
     {
       "id": "OJ-005",
-      "title": "Production V1 \u2014 approved work package 5 of 42",
-      "origin": "original"
+      "title": "Identity roles and scoped authorization",
+      "origin": "original",
+      "status": "in_progress",
+      "implementationNotes": "Guest web/native identities and private recovery keys are implemented. Multi-artist provisioning, staff roles, display pairing and stronger artist authentication remain open."
     },
     {
       "id": "OJ-006",
@@ -176,7 +178,7 @@
     },
     {
       "id": "OJ-026",
-      "title": "Deployment and live-show operations",
+      "title": "Load monitoring recovery and full show rehearsal",
       "origin": "original",
       "status": "in_progress",
       "implementationNotes": "Free Render rehearsal service creation rejected by 25-service Hobby workspace limit; production initialization rejected by automatic approval review. Isolated Neon runtime role privileges verified; origin validation and bounded venue traffic implemented. Deployment and real venue evidence remain open."
@@ -208,7 +210,7 @@
       "title": "Fan collections following and return journeys",
       "origin": "original",
       "status": "in_progress",
-      "implementationNotes": "Positive reactions are available as a private cross-event liked-track collection for the current guest identity. Cross-device recovery, artist following and richer collections remain open."
+      "implementationNotes": "Recoverable guest profiles with revocable private keys, artist following and private public-release feeds implemented. Verified accounts, native UI and richer engagement remain open."
     },
     {
       "id": "OJ-032",

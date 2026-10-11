@@ -1,3 +1,4 @@
+import { Account } from "./Account";
 import { VisualPreferences } from "./VisualPreferences";
 import { AdmissionSettings } from "./AdmissionSettings";
 import React, { useEffect, useRef, useState, useCallback } from "react";
@@ -289,7 +290,7 @@ function Profile({ close }: { close: () => void }) {
         </form>
         <p className="tiny muted">
           Your musical avatar is created automatically. Guest profiles stay with
-          this browser.
+          this browser. <a href="/account">Save or recover your profile ↗</a>
         </p>
       </section>
     </div>
@@ -1791,6 +1792,13 @@ else if (segments[0] === "artist" && segments[1])
     <>
       <Header />
       <ArtistPage id={decodeURIComponent(segments[1])} />
+    </>
+  );
+else if (segments[0] === "account")
+  screen = (
+    <>
+      <Header />
+      <Account />
     </>
   );
 else if (segments[0] === "library")

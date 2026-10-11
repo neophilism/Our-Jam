@@ -1,4 +1,16 @@
 import {
+  accountStatus,
+  createRecoveryKey,
+  disableRecovery,
+  recoverProfile,
+  recoveryInput,
+  followStatus,
+  followArtist,
+  followInput,
+  followingFeed,
+  artistIdInput,
+} from "./accounts.js";
+import {
   configureAdmission,
   joinEvent,
   admissionInput,
@@ -257,11 +269,11 @@ export async function createApp(db: Database, config: AppConfig) {
   app.get("/api/ready", async () => {
     const rows = (
       await db.query(
-        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql','005_artist_profiles.sql','006_release_controls.sql','007_audience_admission.sql')",
+        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql','005_artist_profiles.sql','006_release_controls.sql','007_audience_admission.sql','008_profile_recovery.sql')",
       )
     ).rows;
     requireThat(
-      rows.length === 7,
+      rows.length === 8,
       "schema_not_ready",
       "Required database migrations have not been applied.",
       503,
@@ -485,6 +497,81 @@ export async function createApp(db: Database, config: AppConfig) {
       [s.token_hash],
     );
     return { ok: true };
+  });
+  app.get("/api/account", async (req) => {
+    const s = await session(req, "guest", false);
+    return s
+      ? accountStatus(db, s.participant_id)
+      : { recoveryEnabled: false, sessions: 0 };
+  });
+  app.post(
+    "/api/account/recovery-key",
+    { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
+    async (req) => {
+      const s = await session(req, "guest");
+      return createRecoveryKey(db, s.participant_id, s.token_hash);
+    },
+  );
+  app.delete("/api/account/recovery-key", async (req) => {
+    const s = await session(req, "guest");
+    return disableRecovery(db, s.participant_id, s.token_hash);
+  });
+  app.post(
+    "/api/account/recover",
+    {
+      config: {
+        rateLimit: {
+          max: 6,
+          timeWindow: "1 minute",
+          keyGenerator: (req: any) => req.ip,
+        },
+      },
+    },
+    async (req, reply) => {
+      const input = recoveryInput.parse(req.body);
+      const result = await recoverProfile(db, input);
+      if (input.channel === "web") {
+        setSession(reply, "oj_guest", result.token, 30 * 86400);
+        return { participantId: result.participantId };
+      }
+      return result;
+    },
+  );
+  app.delete("/api/account/session", async (req, reply) => {
+    const s = await session(req, "guest", false);
+    if (s)
+      await db.query(
+        "DELETE FROM sessions WHERE token_hash=$1 AND kind='guest'",
+        [s.token_hash],
+      );
+    reply.clearCookie("oj_guest", {
+      path: "/",
+      httpOnly: true,
+      secure: config.secureCookies,
+      sameSite: "strict",
+    });
+    return { ok: true };
+  });
+  app.get("/api/artists/:id/follow", async (req) => {
+    const s = await session(req, "guest", false);
+    return followStatus(
+      db,
+      artistIdInput.parse((req.params as any).id),
+      s?.participant_id,
+    );
+  });
+  app.put("/api/artists/:id/follow", async (req) => {
+    const s = await session(req, "guest");
+    return followArtist(
+      db,
+      s.participant_id,
+      artistIdInput.parse((req.params as any).id),
+      followInput.parse(req.body).following,
+    );
+  });
+  app.get("/api/following", async (req) => {
+    const s = await session(req, "guest");
+    return followingFeed(db, s.participant_id);
   });
   app.patch("/api/profile", async (req) => {
     const s = await session(req, "guest");

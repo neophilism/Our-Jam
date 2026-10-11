@@ -26,7 +26,7 @@ P002 remains blocked on real provider entitlement/rights and physical Soundcore 
 ## External resource state
 
 - GitHub initially empty; application and all planning documents now live in this repository.
-- Migrations 001–007 rehearsed on isolated Neon branch `br-blue-unit-b5rk1hit`. Production branch `br-aged-sea-b55fzq0v` is untouched. Workspace direct Neon DNS failed, so connector rehearsal and CI PostgreSQL tests are distinct evidence.
+- Migrations 001–008 rehearsed on isolated Neon branch `br-blue-unit-b5rk1hit`. Production branch `br-aged-sea-b55fzq0v` is untouched. Workspace direct Neon DNS failed, so connector rehearsal and CI PostgreSQL tests are distinct evidence.
 - No Our Jam service deployed to Render. The October 11 free rehearsal-service creation was rejected: the Hobby workspace has reached its 25-service limit. Project assignment remains unavailable through the connector. Target remains `prj-db5btotckfvc739m1ck0`; see `docs/deployment.md`.
 - Engine Room discovery manifest is committed. Actual ingestion is unverified.
 - No real generation requests, email deliveries, paid resource creation or production database changes occurred.
@@ -35,7 +35,7 @@ P002 remains blocked on real provider entitlement/rights and physical Soundcore 
 
 Deployment inside the supplied Render project; album files, durations and private core prompts; purchase URL; approved provider/storage credentials and budget; verified free-download rights; exact Soundcore Rave model and audio route; physical iPhone/Android, headphones and long recording rehearsal; venue connectivity/load/recovery checks. The current server-authorized architecture is not end-to-end encrypted and no independent security certification is claimed.
 
-Responsive mobile browsers are implemented. Native iOS/Android builds, email/push delivery, recoverable cross-device accounts, offline console reload, multitrack routing and store submissions remain open. Provider/storage adapters use contract fixtures in CI; browser recording uses a real synthetic Web Audio stream, not physical karaoke microphones. This repository is not yet a show-ready deployed service.
+Responsive mobile browsers are implemented. Native iOS/Android builds, email/push delivery, verified cross-device accounts, offline console reload, multitrack routing and store submissions remain open. Provider/storage adapters use contract fixtures in CI; browser recording uses a real synthetic Web Audio stream, not physical karaoke microphones. This repository is not yet a show-ready deployed service.
 
 ## Show preparation increment
 
@@ -92,3 +92,11 @@ PR [#18](https://github.com/neophilism/Our-Jam/pull/18) merged at `5a67a1f5434e2
 Deployment was attempted with a free dedicated rehearsal service, but Render rejected creation at the workspace's 25-service limit. Automatic approval review separately rejected production schema initialization, despite the branch being empty; explicit approval is needed for that migration set. The production branch remains unchanged. The rehearsed development branch now has a restricted SQL runtime role, with its privileges verified. No service or paid resource was created.
 
 The venue-traffic increment separates assets, public reads, session bootstrap and participation budgets; preserves performer login and admission limits; bounds and coalesces snapshot work without retaining completed results; and disconnects slow invalidation streams. Deterministic tests exercise 100 real database guest identities at one address. This is not a deployed capacity claim. See `docs/live-traffic.md`.
+
+## Recoverable profile and fan-following increment
+
+PR [#19](https://github.com/neophilism/Our-Jam/pull/19) merged at `fe6e9007ee269516e00a31970129bc9384d5421d` after CI run `38149192907`: 41 API/domain/media tests, 24 desktop/mobile browser scenarios, dependency audit and Docker build passed. Crowd traffic bounds and deployment diagnostics are on main.
+
+Fans can now save a private recovery key, restore their existing profile on another device, replace/disable the key and sign out. Recovery preserves participant identity and revokes prior guest sessions. Artist following and a personal feed of published, visible crowd releases are implemented; following never opts the fan into email. These are recoverable guest profiles, not verified accounts or performer authentication. See `docs/profile-recovery.md`.
+
+Migration 008 was rehearsed on the isolated development branch with restricted-role grants. Production schema changes and the Render capacity block remain unresolved. Native recovery endpoints are tested; the native UI and store/device acceptance remain open.
