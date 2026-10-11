@@ -58,7 +58,7 @@ test("empty local deployment accepts a song, shows real participation and persis
     const audience = await guest.newPage(), screen = await display.newPage();
     await screen.goto("/screen/" + slug);
     await audience.goto("/event/" + slug);
-    await audience.getByRole("button", { name: "I'm in. Let's make music" }).click();
+    await audience.getByRole("button", { name: "I'm in. Let's make music", exact: true }).click();
     await audience.getByLabel("What would you mix this with?").fill("Local brass section");
     await audience.getByRole("button", { name: "Contribute Sound Wave" }).click();
     await expect(screen.getByText("Local brass section", { exact: true }).first()).toBeVisible();
