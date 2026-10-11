@@ -329,15 +329,16 @@ export function ArtistEditor() {
               onChange={(e) => setData({ ...data, name: e.target.value })}
             />
           </label>
-          <label>
-            About your music
+          <div>
+            <label htmlFor="artist-biography">About your music</label>
             <textarea
+              id="artist-biography"
               maxLength={1200}
               rows={4}
               value={data.bio}
               onChange={(e) => setData({ ...data, bio: e.target.value })}
             />
-          </label>
+          </div>
           {data.links.map((link: any, i: number) => (
             <fieldset className="form-grid" key={i}>
               <legend>Music link {i + 1}</legend>
