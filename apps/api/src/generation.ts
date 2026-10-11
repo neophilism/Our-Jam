@@ -17,11 +17,12 @@ export type GenerationConfig = {
   priceVerifiedUntil?: string;
   validate?: typeof validateAudio;
 };
+type DispatchJob = { id: string; event_id: string; round_id: string; prompt: string; prompt_hash: string; attempt_id: string; selectedProvider: MusicProvider };
 
 export async function generationTick(db: Database, config: GenerationConfig) {
   // Never automatically resubmit an ambiguous acceptance.
   await db.query("UPDATE generation_jobs SET state='unknown',reason='worker_interrupted',updated_at=now() WHERE state='submitting' AND lease_until<clock_timestamp()");
-  const job = await db.transaction(async (tx) => {
+  const job = await db.transaction<DispatchJob | null>(async (tx) => {
     await tx.query("SELECT id FROM artists WHERE id='our-jam' FOR UPDATE");
     const candidate = (await tx.query("SELECT j.id,j.event_id FROM generation_jobs j JOIN events e ON e.id=j.event_id WHERE j.state='queued' AND e.artist_id='our-jam' ORDER BY j.created_at LIMIT 1")).rows[0];
     if (!candidate) return null;
@@ -56,10 +57,10 @@ export async function generationTick(db: Database, config: GenerationConfig) {
     const attempt = randomUUID();
     await tx.query("UPDATE generation_jobs SET state='submitting',attempt_id=$1,attempts=attempts+1,lease_until=now()+interval '8 minutes',reserved_cents=$2,provider=$3,model=$4,duration_seconds=$5,updated_at=now() WHERE id=$6", [attempt, cost, provider!.name, provider!.model, provider!.variableDuration ? null : config.durationSeconds, row.id]);
     await logEvent(tx, row.event_id, "generation.started");
-    return { ...row, attempt_id: attempt, selectedProvider: provider! };
+    return { id: row.id, event_id: row.event_id, round_id: row.round_id, prompt: row.prompt, prompt_hash: row.prompt_hash, attempt_id: attempt, selectedProvider: provider! };
   });
   if (!job) return false;
-  const provider = job.selectedProvider as MusicProvider;
+  const provider = job.selectedProvider;
   try {
     const audio = await provider.generate(job.prompt, config.durationSeconds, {
       onAccepted: async (reference) => {
