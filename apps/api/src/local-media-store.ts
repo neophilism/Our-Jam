@@ -1,5 +1,5 @@
 import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import { mkdir, readdir, readFile, rename, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, stat, writeFile, rm } from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
@@ -31,21 +31,25 @@ export async function localMediaStore(root: string, origin: string, secret: stri
       requireThat((await usedBytes(root)) + bytes.length <= 1024 * 1024 * 1024, "local_storage_full", "The local audio limit is 1 GiB. Back up and manage old sessions before adding more files.", 507);
       await mkdir(path.dirname(destination), { recursive: true, mode: 0o700 });
       const temporary = destination + "." + randomUUID() + ".tmp";
-      await writeFile(temporary, bytes, { mode: 0o600, flag: "wx" });
-      await rename(temporary, destination);
+      try {
+        await writeFile(temporary, bytes, { mode: 0o600, flag: "wx" });
+        await rename(temporary, destination);
+      } finally { await rm(temporary, { force: true }); }
       const saved = await readFile(destination);
       requireThat(createHash("sha256").update(saved).digest("hex") === sha, "invalid_media", "Stored audio failed its integrity check.");
     },
     async url(key, download) {
       requireThat(keyPattern.test(key), "invalid_media_key", "Invalid private media identity.");
       const until = Math.floor(Date.now() / 1000) + 600;
-      return `${origin}/local-media/${Buffer.from(key).toString("base64url")}?until=${until}&download=${download ? "1" : "0"}&sig=${signature(key, until, download)}`;
+      // Each validated segment is shorter than the router's parameter limit.
+      return `${origin}/local-media/${key}?until=${until}&download=${download ? "1" : "0"}&sig=${signature(key, until, download)}`;
     },
   };
   return { store, register(app) {
-    app.get("/local-media/:ticket", async (req, reply) => {
+    app.get("/local-media/:namespace/:eventId/:sourceId/:file", async (req, reply) => {
       const query = req.query as Record<string, string>;
-      const key = Buffer.from(String((req.params as any).ticket), "base64url").toString("utf8");
+      const params = req.params as Record<string, string>;
+      const key = [params.namespace, params.eventId, params.sourceId, params.file].join("/");
       const until = Number(query.until), now = Math.floor(Date.now() / 1000), download = query.download === "1";
       const supplied = Buffer.from(query.sig ?? "", "hex"), expected = Buffer.from(signature(key, until, download), "hex");
       requireThat(keyPattern.test(key) && Number.isSafeInteger(until) && until >= now && until <= now + 900 && supplied.length === expected.length && timingSafeEqual(supplied, expected), "private_media", "This private audio link is invalid or expired.", 403);
