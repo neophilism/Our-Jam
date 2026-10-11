@@ -13,9 +13,11 @@ The approved 54-slice roadmap is preserved in `backlog.json`. Implementation PRs
 | [#5](https://github.com/neophilism/Our-Jam/pull/5) | Guarded generation worker, Stable Audio adapter, private S3 adapter, media validation, Docker and Render Blueprint | 18 domain/API/media tests + 6 browser scenarios + Docker build; run `38098080304` |
 | [#6](https://github.com/neophilism/Our-Jam/pull/6) | Contributor credits, artist/event leaderboards, deferred feedback, opt-in room-audio animation | 19 domain/API/media tests + 8 browser scenarios + Docker build; run `38098501258` |
 
-## Current slice
+## Latest verified work
 
-Explicit playback release/handoff, takeover timing fixes, artist-scoped moderation and final author comment deletion. Local verification: 21 passing domain/API/media tests and both production builds. Browser handoff acceptance is included in the existing playback scenario; exact-head CI remains the merge gate.
+PR [#7](https://github.com/neophilism/Our-Jam/pull/7) merged at `51ec3c3e50dfabb903c2781434f3b26434bcc3ed` after CI run `38099031021`: 21 domain/API/media tests, eight browser scenarios and Docker build passed. It adds explicit playback handoff, takeover timing fixes, artist-scoped moderation and final author comment deletion.
+
+The next independent slice adds native guest API credentials and shared client types. Twenty-two local domain/API/media tests pass, including cross-client voting, guest scope, Origin enforcement and token revocation. No new server dependency is introduced. The Expo client is being prepared separately: its iOS/Android JavaScript bundles and native configuration generation succeed, but upstream dependency audit findings block merging/distribution.
 
 ## External resource state
 

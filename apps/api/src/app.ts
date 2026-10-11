@@ -51,6 +51,13 @@ export type AppConfig = {
   serveWeb?: boolean;
   mediaStore?: MediaStore;
 };
+// Native guest credentials are deliberately distinguishable from browser and
+// performer sessions. Native requests still supply the configured Origin.
+function mobileToken(req: any): string | undefined {
+  const header = req.headers.authorization;
+  if (typeof header !== "string") return undefined;
+  return /^Bearer (ojm_[a-f0-9]{64})$/.exec(header)?.[1];
+}
 export async function createApp(db: Database, config: AppConfig) {
   const app = Fastify({ logger: false, bodyLimit: 65536, trustProxy: false });
   await app.register(cookie);
@@ -77,8 +84,9 @@ export async function createApp(db: Database, config: AppConfig) {
     max: 180,
     timeWindow: "1 minute",
     keyGenerator: async (req) => {
-      const raw = req.cookies.oj_guest ?? req.cookies.oj_operator;
-      if (!raw || !/^[a-f0-9]{64}$/.test(raw)) return "ip:" + req.ip;
+      const raw =
+        mobileToken(req) ?? req.cookies.oj_guest ?? req.cookies.oj_operator;
+      if (!raw || !/^(ojm_)?[a-f0-9]{64}$/.test(raw)) return "ip:" + req.ip;
       const valid = (
         await db.query(
           "SELECT token_hash FROM sessions WHERE token_hash=$1 AND expires_at>now()",
@@ -149,7 +157,10 @@ export async function createApp(db: Database, config: AppConfig) {
     kind: "guest" | "operator",
     required = true,
   ) {
-    const raw = req.cookies[kind === "guest" ? "oj_guest" : "oj_operator"];
+    const raw =
+      kind === "guest" && req.headers.authorization !== undefined
+        ? mobileToken(req)
+        : req.cookies[kind === "guest" ? "oj_guest" : "oj_operator"];
     const s = raw
       ? (
           await db.query(
@@ -255,6 +266,47 @@ export async function createApp(db: Database, config: AppConfig) {
     });
     setSession(reply, "oj_guest", token, 30 * 86400);
     return { participantId };
+  });
+  app.post("/api/mobile/session", async (req) => {
+    const existing = mobileToken(req) ? await session(req, "guest") : null;
+    if (existing)
+      return {
+        token: mobileToken(req),
+        participantId: existing.participant_id,
+      };
+    requireThat(
+      !req.headers.authorization,
+      "invalid_credentials",
+      "The mobile session is not valid.",
+      401,
+    );
+    const participantId = randomUUID(),
+      token = "ojm_" + randomBytes(32).toString("hex");
+    await db.transaction(async (tx) => {
+      await tx.query("INSERT INTO participants(id,avatar_seed) VALUES($1,$2)", [
+        participantId,
+        randomBytes(8).toString("hex"),
+      ]);
+      await tx.query(
+        "INSERT INTO sessions(token_hash,participant_id,kind,expires_at) VALUES($1,$2,'guest',now()+interval '30 days')",
+        [digest(token), participantId],
+      );
+    });
+    return { token, participantId };
+  });
+  app.delete("/api/mobile/session", async (req) => {
+    requireThat(
+      mobileToken(req),
+      "sign_in_required",
+      "No mobile session is active.",
+      401,
+    );
+    const s = await session(req, "guest");
+    await db.query(
+      "DELETE FROM sessions WHERE token_hash=$1 AND kind='guest'",
+      [s.token_hash],
+    );
+    return { ok: true };
   });
   app.patch("/api/profile", async (req) => {
     const s = await session(req, "guest");
