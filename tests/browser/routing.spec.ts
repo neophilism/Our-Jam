@@ -145,6 +145,16 @@ test("separate outputs require audible tests and confirmation; lost output relea
   await page.route("https://media.example.test/show.wav", (route) =>
     route.fulfill({ status: 200, contentType: "audio/wav", body: wav() }),
   );
+  // Routing intercepts the first request in a redirect chain. Verify the real
+  // protected endpoint, then supply its deterministic audio without external DNS.
+  await page.route("**/api/operator/releases/*/audio", async (route) => {
+    const protectedResponse = await route.fetch({ maxRedirects: 0 });
+    expect(protectedResponse.status()).toBe(302);
+    expect(protectedResponse.headers().location).toBe(
+      "https://media.example.test/show.wav",
+    );
+    await route.fulfill({ status: 200, contentType: "audio/wav", body: wav() });
+  });
   await page.goto("/performer/" + slug);
   await page.getByText("Speaker & headphone outputs", { exact: true }).click();
   await page
