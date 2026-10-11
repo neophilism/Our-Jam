@@ -186,8 +186,10 @@
     },
     {
       "id": "OJ-028",
-      "title": "Production V1 \u2014 approved work package 28 of 42",
-      "origin": "original"
+      "title": "Visual quality and performance refinement",
+      "origin": "original",
+      "status": "in_progress",
+      "implementationNotes": "3D Sound Waves now separate their readable layout from the lazy renderer, remember motion preferences, stop hidden/offscreen loops and recover context loss with a 2D field. Hardware frame/thermal targets, advanced packing and cinematic refinement remain open."
     },
     {
       "id": "OJ-029",
