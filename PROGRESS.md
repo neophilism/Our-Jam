@@ -27,7 +27,7 @@ P002 remains blocked on real provider entitlement/rights and physical Soundcore 
 
 - GitHub initially empty; application and all planning documents now live in this repository.
 - Migrations 001–007 rehearsed on isolated Neon branch `br-blue-unit-b5rk1hit`. Production branch `br-aged-sea-b55fzq0v` is untouched. Workspace direct Neon DNS failed, so connector rehearsal and CI PostgreSQL tests are distinct evidence.
-- No Our Jam service deployed to Render. The service-creation connector cannot assign project/environment, the dashboard attempt timed out, and no project-specific API credential was available. Target remains `prj-db5btotckfvc739m1ck0`. Docker builds in CI; Blueprint validates against Render's official schema.
+- No Our Jam service deployed to Render. The October 11 free rehearsal-service creation was rejected: the Hobby workspace has reached its 25-service limit. Project assignment remains unavailable through the connector. Target remains `prj-db5btotckfvc739m1ck0`; see `docs/deployment.md`.
 - Engine Room discovery manifest is committed. Actual ingestion is unverified.
 - No real generation requests, email deliveries, paid resource creation or production database changes occurred.
 
@@ -84,3 +84,11 @@ PR [#17](https://github.com/neophilism/Our-Jam/pull/17) merged at `392efb6ae2c3a
 Visual controls now remember device/default, light-animation or still-wave preferences. Still mode and reduced-motion preferences avoid loading the Three.js scene; data-saving mode also chooses still waves by default where supported. Hidden or offscreen fields stop their render loops. WebGL context loss falls back to readable waves and preserves the independent voting UI. CI exercises actual browser context loss, continued voting and saved preferences. Frame-rate, thermal, screen-reader and outdoor QR acceptance still need real event hardware.
 
 The native dependency audit was rechecked on October 11 after PR17: upstream braces/node-forge findings still block the native draft; no incompatible forced SDK downgrade or audit bypass was applied. Render service discovery still showed no service tied to this repository, and project-assignment capability/credentials remain the deployment block.
+
+## Deployment and venue-traffic increment
+
+PR [#18](https://github.com/neophilism/Our-Jam/pull/18) merged at `5a67a1f5434e22ca01fc7363d75450cc407aeada` after CI run `38133238780`: 36 API/domain/media tests, 24 desktop/mobile browser scenarios, dependency audit and Docker build passed. Visual preferences and graphics recovery are on main.
+
+Deployment was attempted with a free dedicated rehearsal service, but Render rejected creation at the workspace's 25-service limit. Automatic approval review separately rejected production schema initialization, despite the branch being empty; explicit approval is needed for that migration set. The production branch remains unchanged. The rehearsed development branch now has a restricted SQL runtime role, with its privileges verified. No service or paid resource was created.
+
+The venue-traffic increment separates assets, public reads, session bootstrap and participation budgets; preserves performer login and admission limits; bounds and coalesces snapshot work without retaining completed results; and disconnects slow invalidation streams. Deterministic tests exercise 100 real database guest identities at one address. This is not a deployed capacity claim. See `docs/live-traffic.md`.

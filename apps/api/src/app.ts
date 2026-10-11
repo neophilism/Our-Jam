@@ -35,6 +35,7 @@ import {
 } from "./show-setup.js";
 import { leaderboard, releaseCredits } from "./recognition.js";
 import Fastify from "fastify";
+import { SnapshotReads, RoomStreams } from "./live-traffic.js";
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
@@ -115,22 +116,48 @@ export async function createApp(db: Database, config: AppConfig) {
     },
     crossOriginEmbedderPolicy: false,
   });
-  await app.register(rateLimit, {
-    max: 180,
-    timeWindow: "1 minute",
-    keyGenerator: async (req) => {
-      const raw =
-        mobileToken(req) ?? req.cookies.oj_guest ?? req.cookies.oj_operator;
-      if (!raw || !/^(ojm_)?[a-f0-9]{64}$/.test(raw)) return "ip:" + req.ip;
-      const valid = (
-        await db.query(
-          "SELECT token_hash FROM sessions WHERE token_hash=$1 AND expires_at>now()",
+  // Request-local reuse only: revocation is checked again on every request.
+  const validatedSessions = new WeakMap<
+    object,
+    Map<string, Promise<Record<string, any> | null>>
+  >();
+  function lookupSession(req: object, raw: string | undefined) {
+    if (!raw || !/^(ojm_)?[a-f0-9]{64}$/.test(raw))
+      return Promise.resolve(null);
+    let entries = validatedSessions.get(req);
+    if (!entries) validatedSessions.set(req, (entries = new Map()));
+    let result = entries.get(raw);
+    if (!result) {
+      result = db
+        .query(
+          "SELECT * FROM sessions WHERE token_hash=$1 AND expires_at>now()",
           [digest(raw)],
         )
-      ).rows[0];
-      return valid ? "session:" + valid.token_hash : "ip:" + req.ip;
+        .then(({ rows }) => rows[0] ?? null);
+      entries.set(raw, result);
+    }
+    return result;
+  }
+  await app.register(rateLimit, {
+    // 100 anonymous listeners at one update/second, plus initial page reads.
+    max: (_req, key) => (key.startsWith("read:ip:") ? 7200 : 180),
+    timeWindow: "1 minute",
+    allowList: (req) => !req.url.startsWith("/api/"),
+    keyGenerator: async (req) => {
+      if (!req.url.startsWith("/api/")) return "static";
+      const operator = req.routeOptions.url?.startsWith("/api/operator/");
+      const raw = operator
+        ? req.cookies.oj_operator
+        : req.headers.authorization !== undefined
+          ? mobileToken(req)
+          : req.cookies.oj_guest;
+      const valid = await lookupSession(req, raw);
+      const family = ["GET", "HEAD"].includes(req.method) ? "read:" : "write:";
+      return family + (valid ? "session:" + valid.token_hash : "ip:" + req.ip);
     },
   });
+  const snapshotReads = new SnapshotReads();
+  const roomStreams = new RoomStreams();
   app.addHook("onRequest", async (req, reply) => {
     if (req.url.startsWith("/api/")) reply.header("Cache-Control", "no-store");
     if (
@@ -199,14 +226,8 @@ export async function createApp(db: Database, config: AppConfig) {
       kind === "guest" && req.headers.authorization !== undefined
         ? mobileToken(req)
         : req.cookies[kind === "guest" ? "oj_guest" : "oj_operator"];
-    const s = raw
-      ? (
-          await db.query(
-            "SELECT * FROM sessions WHERE token_hash=$1 AND kind=$2 AND expires_at>now()",
-            [digest(raw), kind],
-          )
-        ).rows[0]
-      : null;
+    const candidate = await lookupSession(req, raw);
+    const s = candidate?.kind === kind ? candidate : null;
     if (required)
       requireThat(
         s,
@@ -227,7 +248,7 @@ export async function createApp(db: Database, config: AppConfig) {
       maxAge,
     });
   }
-  app.get("/api/health", async () => ({
+  app.get("/api/health", { config: { rateLimit: false } }, async () => ({
     status: "ok",
     application: "Our Jam",
     version: "0.1.0",
@@ -397,7 +418,16 @@ export async function createApp(db: Database, config: AppConfig) {
       : null;
     return { profile: p, operator: Boolean(op) };
   });
-  app.post("/api/session", async (req, reply) => {
+  const bootstrapLimit = {
+    config: {
+      rateLimit: {
+        max: 120,
+        timeWindow: "1 minute",
+        keyGenerator: (req: any) => "bootstrap:" + req.ip,
+      },
+    },
+  };
+  app.post("/api/session", bootstrapLimit, async (req, reply) => {
     const existing = await session(req, "guest", false);
     if (existing) return { participantId: existing.participant_id };
     const participantId = randomUUID(),
@@ -415,7 +445,7 @@ export async function createApp(db: Database, config: AppConfig) {
     setSession(reply, "oj_guest", token, 30 * 86400);
     return { participantId };
   });
-  app.post("/api/mobile/session", async (req) => {
+  app.post("/api/mobile/session", bootstrapLimit, async (req) => {
     const existing = mobileToken(req) ? await session(req, "guest") : null;
     if (existing)
       return {
@@ -535,10 +565,14 @@ export async function createApp(db: Database, config: AppConfig) {
   app.get("/api/events/:slug", async (req) => {
     const { slug } = req.params as { slug: string };
     const guest = await session(req, "guest", false);
-    return db.transaction(async (tx) => {
-      await tx.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
-      return snapshot(tx, slug, guest?.participant_id);
-    });
+    return snapshotReads.run(
+      JSON.stringify([slug, guest?.participant_id ?? null]),
+      () =>
+        db.transaction(async (tx) => {
+          await tx.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
+          return snapshot(tx, slug, guest?.participant_id);
+        }),
+    );
   });
   app.get("/api/operator/events/:slug", async (req) => {
     const { slug } = req.params as { slug: string };
@@ -1082,11 +1116,14 @@ export async function createApp(db: Database, config: AppConfig) {
       };
     });
   });
-  const listeners = new Map<string, Set<any>>();
+  app.get("/api/operator/traffic", async (req) => {
+    await session(req, "operator");
+    return { snapshots: snapshotReads.stats, streams: roomStreams.stats };
+  });
   let lastSequence = 0;
   let polling = false;
   const poll = setInterval(async () => {
-    if (polling || !listeners.size) return;
+    if (polling || !roomStreams.stats.connections) return;
     polling = true;
     try {
       const entries = (
@@ -1097,13 +1134,9 @@ export async function createApp(db: Database, config: AppConfig) {
       ).rows;
       const affected = new Set(entries.map((e) => e.event_id));
       for (const entry of entries) lastSequence = Number(entry.sequence);
-      for (const eventId of affected)
-        for (const stream of listeners.get(eventId) ?? [])
-          stream.write("event: update\ndata: {}\n\n");
+      for (const eventId of affected) roomStreams.update(eventId);
     } catch {
-      for (const streams of listeners.values())
-        for (const stream of streams)
-          stream.write("event: reconnect\ndata: {}\n\n");
+      roomStreams.reconnect();
     } finally {
       polling = false;
     }
@@ -1114,17 +1147,7 @@ export async function createApp(db: Database, config: AppConfig) {
     const e = (await db.query("SELECT id FROM events WHERE slug=$1", [slug]))
       .rows[0];
     requireThat(e, "not_found", "Event not found.", 404);
-    let streams = listeners.get(e.id);
-    if (!streams) {
-      streams = new Set();
-      listeners.set(e.id, streams);
-    }
-    requireThat(
-      streams.size < 1000,
-      "stream_limit",
-      "Event connection limit reached.",
-      503,
-    );
+    const removeStream = roomStreams.add(e.id, reply.raw);
     reply.hijack();
     reply.raw.writeHead(200, {
       "Content-Type": "text/event-stream",
@@ -1133,22 +1156,20 @@ export async function createApp(db: Database, config: AppConfig) {
       "X-Accel-Buffering": "no",
       "X-Content-Type-Options": "nosniff",
     });
-    reply.raw.write("event: update\ndata: {}\n\n");
-    streams.add(reply.raw);
+    roomStreams.send(e.id, reply.raw, "event: update\ndata: {}\n\n");
     const heartbeat = setInterval(
-      () => reply.raw.write(": heartbeat\n\n"),
+      () => roomStreams.send(e.id, reply.raw, ": heartbeat\n\n"),
       15000,
     );
-    req.raw.on("close", () => {
+    heartbeat.unref();
+    reply.raw.on("close", () => {
       clearInterval(heartbeat);
-      streams?.delete(reply.raw);
-      if (!streams?.size) listeners.delete(e.id);
+      removeStream();
     });
   });
   app.addHook("onClose", async () => {
     clearInterval(poll);
-    for (const streams of listeners.values())
-      for (const stream of streams) stream.end();
+    roomStreams.close();
   });
   if (config.serveWeb && existsSync(path.resolve("dist/web/index.html"))) {
     await app.register(fastifyStatic, {

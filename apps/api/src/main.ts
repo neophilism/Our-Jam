@@ -1,3 +1,4 @@
+import { publicOrigin } from "./runtime-config.js";
 import { postgres, migrate } from "./db.js";
 import {
   configuredStorage,
@@ -14,12 +15,7 @@ if (!url)
   throw new Error(
     "DATABASE_URL is required. Use the project-specific database.",
   );
-const origin =
-  process.env.PUBLIC_ORIGIN ?? (production ? "" : "http://localhost:5173");
-if (!origin || new URL(origin).origin !== origin)
-  throw new Error("PUBLIC_ORIGIN must be an exact origin.");
-if (production && !origin.startsWith("https://"))
-  throw new Error("Production requires HTTPS.");
+const origin = publicOrigin(process.env);
 const db = postgres(url);
 if (process.env.RUN_MIGRATIONS === "1") {
   const direct = process.env.DATABASE_URL_UNPOOLED;

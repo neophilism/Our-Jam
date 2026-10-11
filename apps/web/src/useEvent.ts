@@ -44,9 +44,13 @@ export function useEvent(slug: string, operator = false) {
         }, 180);
     };
     stream.addEventListener("update", sync);
+    stream.addEventListener("reconnect", () => {
+      setFresh(false);
+      void refresh();
+    });
     stream.onopen = () => {
       setStreamReady(true);
-      void refresh();
+      // The stream's initial update schedules the snapshot; avoid a duplicate.
     };
     stream.onerror = () => setStreamReady(false);
     const suspend = () => setFresh(false);
