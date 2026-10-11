@@ -1,3 +1,4 @@
+import { leaderboard, releaseCredits } from "./recognition.js";
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
@@ -200,6 +201,22 @@ export async function createApp(db: Database, config: AppConfig) {
       operator: config.operatorToken ? "configured" : "not_configured",
     };
   });
+  app.get("/api/artists/:id/leaderboard", async (req) => {
+    const params = z
+      .object({ id: z.string().min(1).max(100) })
+      .parse(req.params);
+    const q = z
+      .object({
+        period: z.enum(["all", "week", "month"]).default("all"),
+        metric: z.enum(["included", "support"]).default("included"),
+        event: z.string().max(60).optional(),
+      })
+      .parse(req.query);
+    return leaderboard(db, params.id, q.period, q.metric, q.event);
+  });
+  app.get("/api/releases/:id/credits", async (req) =>
+    releaseCredits(db, id.parse((req.params as any).id)),
+  );
   app.get("/api/events", async () => ({
     events: (
       await db.query(

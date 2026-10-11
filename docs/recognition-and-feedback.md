@@ -1,0 +1,9 @@
+# Recognition, feedback and live visuals
+
+Contributor credits derive from the immutable selected-wave snapshot for a published, unhidden release. The artist leaderboard provides all-time, calendar-week and calendar-month windows plus an event filter. The current deployment uses UTC, Monday-start weeks; configurable artist timezones remain open. Included-wave counts and final points from others are separate metrics. Own points do not inflate support-from-others. Retried requests and repeated voting do not create extra credit. Failed, pending or hidden releases earn no public leaderboard entries.
+
+Public names and music avatars come from current profiles, so switching to Anonymous updates historical public credits as well. Raw participant IDs and private core prompts are not included. Timing awards, photo avatars and recoverable cross-device accounts remain future work.
+
+The listener accumulates unique played intervals. When the server reports more than half heard, the browser remembers a pending feedback prompt. Leaving the listener through an in-app tab change shows a nonblocking reminder; rating or dismissing resolves it. A pending reminder can return after a reload. The saved data contains only release metadata and prompt state, not session credentials. Storage eviction and OS termination can prevent a final unsent listening update. Client listening remains an estimate, not proof of attention.
+
+The public display has an explicit room-audio toggle. It analyses microphone bass-band energy locally and blends the pulse into independently moving 3D wave surfaces. It does not record or upload that input, and its beat response is not a broadcast clock for phones. Hardware permission and room pickup need venue testing. Labels and objects move between ranked positions, and layout follows screen aspect ratio and the configured visible-wave limit. A split visualization bundle lets the participation controls load before the heavier graphics code.

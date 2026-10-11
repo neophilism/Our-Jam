@@ -8,8 +8,16 @@ import {
   type Release,
   type Wave,
 } from "./api";
-import { WaveField } from "./WaveField";
+import { WaveField } from "./Visual";
 import "./style.css";
+import { Leaderboard } from "./Leaderboard";
+import { useAudioPulse } from "./AudioPulse";
+import {
+  FeedbackNudge,
+  rememberFeedback,
+  resolveFeedback,
+  listenerPresence,
+} from "./FeedbackNudge";
 import { ShowPlayer } from "./ShowPlayer";
 import { Recorder } from "./Recorder";
 
@@ -364,7 +372,9 @@ function Countdown({ data }: { data: EventState }) {
 }
 function Audience({ slug }: { slug: string }) {
   const { data, error, setError, refresh, connected } = useEvent(slug);
-  const [tab, setTab] = useState("waves"),
+  const [tab, setTab] = useState(
+      new URLSearchParams(location.search).has("track") ? "tracks" : "waves",
+    ),
     [text, setText] = useState(""),
     [busy, setBusy] = useState(false),
     [profile, setProfile] = useState(false),
@@ -644,8 +654,8 @@ function Audience({ slug }: { slug: string }) {
           <section className="people">
             <h2>The people behind the sound.</h2>
             <p>
-              Live support in this round. Released-track leaderboards will
-              recognize the ideas that made it into the music.
+              Live support in this round, followed by the contributions that
+              made it into released music.
             </p>
             {waves.slice(0, 10).map((w, i) => (
               <div className="person" key={w.id}>
@@ -663,6 +673,7 @@ function Audience({ slug }: { slug: string }) {
                 Your crowd's first contributions will appear here.
               </div>
             )}
+            <Leaderboard artistId={data.event.artistId} slug={slug} />
           </section>
         )}
         <div className="support-artist">
@@ -702,7 +713,12 @@ function Tracks({
   data: EventState;
   refresh: () => Promise<void>;
 }) {
-  const [selected, setSelected] = useState<Release | null>(null);
+  const [selected, setSelected] = useState<Release | null>(
+    () =>
+      data.releases.find(
+        (r) => r.id === new URLSearchParams(location.search).get("track"),
+      ) ?? null,
+  );
   return (
     <section className="tracks">
       <div className="section-heading">
@@ -765,7 +781,7 @@ function Tracks({
                     ? j.reason === "provider_not_configured"
                       ? "Waiting for the artist’s generator setup"
                       : "Round saved · generation not eligible"
-                    : j.state === "failed"
+                    : ["failed", "unknown"].includes(j.state)
                       ? "Generation needs attention"
                       : "Creating the next sound…"}
                 </span>
@@ -799,6 +815,7 @@ function Listener({
   const [error, setError] = useState(""),
     [eligible, setEligible] = useState(false),
     [comments, setComments] = useState<any[]>([]),
+    [credits, setCredits] = useState<any[]>([]),
     [comment, setComment] = useState("");
   const send = useCallback(async () => {
     if (!intervals.current.length) return;
@@ -808,15 +825,21 @@ function Listener({
         intervals: intervals.current.slice(-120),
       });
       setEligible(result.feedbackEligible);
+      if (result.feedbackEligible) rememberFeedback(release);
     } catch {}
   }, [release.id]);
   useEffect(() => {
-    void api(`/releases/${release.id}/comments`).then((r) =>
-      setComments(r.comments),
-    );
+    listenerPresence(release.id);
+    void api(`/releases/${release.id}/credits`)
+      .then((r) => setCredits(r.credits))
+      .catch((e) => setError(e.message));
+    void api(`/releases/${release.id}/comments`)
+      .then((r) => setComments(r.comments))
+      .catch((e) => setError(e.message));
     const timer = setInterval(() => void send(), 10000);
     return () => {
       clearInterval(timer);
+      listenerPresence(null);
       void send();
     };
   }, [release.id, send]);
@@ -825,6 +848,7 @@ function Listener({
       await ensureGuest();
       await api(`/releases/${release.id}/reaction`, "PUT", { value });
       setEligible(false);
+      resolveFeedback(release.id);
       await refresh();
     } catch (e) {
       setError((e as Error).message);
@@ -857,7 +881,6 @@ function Listener({
           void send();
         }}
         onEnded={() => {
-          setEligible(true);
           void send();
         }}
         onTimeUpdate={() => {
@@ -929,6 +952,16 @@ function Listener({
           <button disabled={!comment.trim()}>Send</button>
         </div>
       </form>
+      {credits.length > 0 && (
+        <details className="credits">
+          <summary>Made together · {credits.length} Sound Waves</summary>
+          {credits.map((c, i) => (
+            <p key={i}>
+              <strong>{c.text}</strong> · {c.name} · {c.points} points
+            </p>
+          ))}
+        </details>
+      )}
       <div className="comments">
         {comments.map((c) => (
           <div key={c.id}>
@@ -955,11 +988,12 @@ function Listener({
 }
 function Screen({ slug }: { slug: string }) {
   const { data, error, connected } = useEvent(slug);
+  const pulse = useAudioPulse();
   if (!data)
     return (
       <main className="loading">
         <Brand />
-        <Notice error={error} />
+        <Notice error={error || pulse.error} />
       </main>
     );
   return (
@@ -968,6 +1002,14 @@ function Screen({ slug }: { slug: string }) {
         <span className="eyebrow">
           {connected ? "● LIVE" : "RECONNECTING"} / {data.people} IN THE ROOM
         </span>
+        <button
+          className="ghost small"
+          aria-pressed={pulse.active}
+          title="Use this display’s microphone for local animation. Audio is not recorded or uploaded."
+          onClick={() => void pulse.toggle()}
+        >
+          {pulse.active ? "Stop room audio" : "React to room audio"}
+        </button>
       </Header>
       <div className="stage-heading">
         <div>
@@ -979,6 +1021,7 @@ function Screen({ slug }: { slug: string }) {
       </div>
       <WaveField
         stage
+        beat={pulse.beat}
         waves={data.round?.waves ?? []}
         limit={data.event.settings.screenLimit}
       />
@@ -999,7 +1042,7 @@ function Screen({ slug }: { slug: string }) {
           )}
         </div>
       </div>
-      <Notice error={error} />
+      <Notice error={error || pulse.error} />
     </div>
   );
 }
@@ -1529,4 +1572,9 @@ else if (segments[0] === "performer")
     />
   );
 else screen = <Home />;
-createRoot(document.getElementById("root")!).render(screen);
+createRoot(document.getElementById("root")!).render(
+  <>
+    {screen}
+    {segments[0] === "event" && <FeedbackNudge />}
+  </>,
+);

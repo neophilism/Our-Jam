@@ -45,6 +45,7 @@ export type EventState = {
     slug: string;
     title: string;
     artistName: string;
+    artistId: string;
     purchaseUrl?: string;
     state: string;
     settings: { screenLimit: number; maxWaves: number };
