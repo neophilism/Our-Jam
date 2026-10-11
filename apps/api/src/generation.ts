@@ -119,7 +119,9 @@ export async function generationTick(db: Database, config: GenerationConfig) {
           [job.round_id],
         )
       ).rows[0];
-      const published = event.state === "ended";
+      const published =
+        !live.release_held &&
+        (event.state === "ended" || live.release_mode === "immediate");
       await tx.query(
         "INSERT INTO releases(id,event_id,job_id,title,audio_url,download_url,duration_seconds,published_at,asset_key,asset_sha256,provenance) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
         [

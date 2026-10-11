@@ -84,9 +84,9 @@ export function ShowSetup({
       >
         <summary>Event, screen & participation settings</summary>
         <p className="muted">
-          Screen size and album links update immediately. Generation limits and
-          participation time apply to newly opened rounds; an active round keeps
-          its original rules.
+          Screen size and album links update immediately. Generation limits,
+          release timing and participation time apply to newly opened rounds; an
+          active round keeps its original rules.
         </p>
         <button
           className="ghost small"
@@ -111,6 +111,7 @@ export function ShowSetup({
                     title: form.get("title"),
                     artistName: form.get("artistName"),
                     purchaseUrl: form.get("purchaseUrl") || null,
+                    releaseMode: form.get("releaseMode"),
                     ...Object.fromEntries(
                       [
                         "screenLimit",
@@ -144,6 +145,22 @@ export function ShowSetup({
                   maxLength={100}
                 />
               </label>
+              <div>
+                <label htmlFor="release-mode">Crowd release timing</label>
+                <select
+                  id="release-mode"
+                  name="releaseMode"
+                  defaultValue={settings.settings.releaseMode ?? "boundary"}
+                >
+                  <option value="boundary">
+                    Together at the next track boundary
+                  </option>
+                  <option value="immediate">
+                    As soon as the audio is ready
+                  </option>
+                  <option value="review">Hold for my approval</option>
+                </select>
+              </div>
               <label>
                 Album purchase link
                 <input

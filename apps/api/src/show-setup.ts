@@ -104,6 +104,7 @@ export async function updateSettings(
       minimumRoundSeconds: input.minimumRoundSeconds,
       maxWaves: input.maxWaves,
       maxGenerations: input.maxGenerations,
+      releaseMode: input.releaseMode,
     };
     await tx.query(
       "UPDATE events SET title=$1,artist_name=$2,purchase_url=$3,settings=$4 WHERE id=$5",

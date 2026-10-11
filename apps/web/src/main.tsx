@@ -762,9 +762,11 @@ function Tracks({
                     ? j.reason === "provider_not_configured"
                       ? "Waiting for the artist’s generator setup"
                       : "Round saved · generation not eligible"
-                    : ["failed", "unknown"].includes(j.state)
-                      ? "Generation needs attention"
-                      : "Creating the next sound…"}
+                    : j.state === "cancelled"
+                      ? "The artist cancelled this generation"
+                      : ["failed", "unknown"].includes(j.state)
+                        ? "Generation needs attention"
+                        : "Creating the next sound…"}
                 </span>
               </div>
             ))}
@@ -1512,6 +1514,92 @@ function Console({ slug }: { slug: string }) {
                 Generation {j.id.slice(0, 8)} · {j.state.replaceAll("_", " ")}
                 {j.reason && ` · ${j.reason.replaceAll("_", " ")}`}
               </summary>
+              {!["published", "cancelled"].includes(j.state) && (
+                <div className="release-controls">
+                  <p className="muted">
+                    {j.release_held
+                      ? "On hold. This result will stay private until you approve it."
+                      : "Automatic release is enabled for this round."}
+                    {j.reserved_cents
+                      ? ` · ${j.reserved_cents} cents reserved`
+                      : ""}
+                  </p>
+                  <div className="player-actions">
+                    <button
+                      className="ghost small"
+                      disabled={busy}
+                      onClick={() =>
+                        void action(() =>
+                          api(`/operator/jobs/${j.id}/control`, "POST", {
+                            commandId: crypto.randomUUID(),
+                            action: j.release_held ? "allow" : "hold",
+                          }),
+                        )
+                      }
+                    >
+                      {j.release_held
+                        ? "Allow automatic release"
+                        : "Hold publication"}
+                    </button>
+                    {j.release_id &&
+                      !j.release_hidden &&
+                      j.state === "ready" && (
+                        <>
+                          <button
+                            className="ghost small"
+                            disabled={mainOutput || Boolean(backupSource)}
+                            onClick={() =>
+                              setPreview(
+                                `/api/operator/releases/${j.release_id}/audio`,
+                              )
+                            }
+                          >
+                            Preview unreleased track ▷
+                          </button>
+                          <button
+                            className="small"
+                            disabled={busy}
+                            onClick={() =>
+                              void action(() =>
+                                api(`/operator/jobs/${j.id}/control`, "POST", {
+                                  commandId: crypto.randomUUID(),
+                                  action: "publish",
+                                }),
+                              )
+                            }
+                          >
+                            Publish to everyone now
+                          </button>
+                        </>
+                      )}
+                    {["queued", "blocked"].includes(j.state) &&
+                      !j.attempts &&
+                      !j.reserved_cents &&
+                      !j.release_id && (
+                        <button
+                          className="ghost small"
+                          disabled={busy}
+                          onClick={() =>
+                            void action(() =>
+                              api(`/operator/jobs/${j.id}/control`, "POST", {
+                                commandId: crypto.randomUUID(),
+                                action: "cancel",
+                              }),
+                            )
+                          }
+                        >
+                          Cancel unsent generation
+                        </button>
+                      )}
+                  </div>
+                  {["submitting", "unknown"].includes(j.state) && (
+                    <p className="tiny muted">
+                      Provider work may already be underway. Holding publication
+                      does not cancel the request or refund its budget.
+                    </p>
+                  )}
+                </div>
+              )}
               <button
                 className="ghost small"
                 onClick={() =>

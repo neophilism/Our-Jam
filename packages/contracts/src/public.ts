@@ -35,6 +35,7 @@ export type EventState = {
       maxWaves: number;
       minimumRoundSeconds: number;
       maxGenerations: number;
+      releaseMode?: "boundary" | "immediate" | "review";
     };
     revision: number;
   };
@@ -56,7 +57,19 @@ export type EventState = {
     duration_seconds: number;
   };
   releases: Release[];
-  jobs: { id: string; round_id: string; state: string; reason: string }[];
+  jobs: {
+    id: string;
+    round_id: string;
+    state: string;
+    reason: string;
+    release_held?: boolean;
+    release_mode?: string;
+    attempts?: number;
+    reserved_cents?: number;
+    release_id?: string;
+    release_title?: string;
+    release_hidden?: boolean;
+  }[];
   people: number;
   joined: boolean;
   isOperator: boolean;
