@@ -294,9 +294,10 @@ export function Recorder({
         >
           Choose recording input
         </button>
-        <label>
-          Recording input
+        <div>
+          <label htmlFor="recording-input">Recording input</label>
           <select
+            id="recording-input"
             value={inputId}
             disabled={active || saving || choosing || starting}
             onChange={(e) => setInputId(e.target.value)}
@@ -310,7 +311,7 @@ export function Recorder({
                 </option>
               ))}
           </select>
-        </label>
+        </div>
       </div>
       <p className="muted">
         Choose the system input or USB interface carrying your microphones. A
