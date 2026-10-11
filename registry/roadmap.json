@@ -141,8 +141,10 @@
     },
     {
       "id": "OJ-021",
-      "title": "Production V1 \u2014 approved work package 21 of 42",
-      "origin": "original"
+      "title": "Private headphone cue and audio diagnostics",
+      "origin": "original",
+      "status": "in_progress",
+      "implementationNotes": "Capability-detected browser output selection, distinct-output tone/confirmation gates, selected-sink playback and output-loss recovery implemented. Default remains a separate headphone device; physical isolation, recording exclusion and native acceptance remain open."
     },
     {
       "id": "OJ-022",

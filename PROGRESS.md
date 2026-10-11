@@ -100,3 +100,9 @@ PR [#19](https://github.com/neophilism/Our-Jam/pull/19) merged at `fe6e9007ee269
 Fans can now save a private recovery key, restore their existing profile on another device, replace/disable the key and sign out. Recovery preserves participant identity and revokes prior guest sessions. Artist following and a personal feed of published, visible crowd releases are implemented; following never opts the fan into email. These are recoverable guest profiles, not verified accounts or performer authentication. See `docs/profile-recovery.md`.
 
 Migration 008 was rehearsed on the isolated development branch with restricted-role grants. Production schema changes and the Render capacity block remain unresolved. Native recovery endpoints are tested; the native UI and store/device acceptance remain open.
+
+## Headphone cueing increment
+
+PR [#20](https://github.com/neophilism/Our-Jam/pull/20) merged at `efe509935845ab5ba47bf6a1cd1b22d96a9ba8a3` after CI run `38149869407`: 44 API/domain/media tests, 28 desktop/mobile browser scenarios, dependency audit and Docker build passed. Recoverable profiles, follows and the personal feed are on main; the mobile profile screenshot was visually reviewed.
+
+The output-routing increment adds capability-gated speaker/headphone selection, test tones and explicit isolation confirmation before same-tab cueing. Selected sinks are applied before playback, failed selection never triggers a default-output retry, and device changes close previews. Losing the selected speaker stops show/backup audio and releases control. Device IDs and browser fixtures cannot establish physical isolation; exact hardware rehearsal remains a release gate. See `docs/audio-routing.md`.

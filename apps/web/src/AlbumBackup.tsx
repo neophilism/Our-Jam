@@ -1,3 +1,4 @@
+import { applyAudioOutput } from "./AudioRouting";
 import { useEffect, useRef, useState } from "react";
 import type { EventState } from "./api";
 import {
@@ -13,11 +14,15 @@ export function AlbumBackup({
   active,
   onBegin,
   onEnd,
+  output = "",
+  stopForOutput,
 }: {
   data: EventState;
   active: boolean;
   onBegin: (sourceId: string) => void;
   onEnd: () => void;
+  output?: string;
+  stopForOutput?: { current: (() => void) | null };
 }) {
   const [copies, setCopies] = useState<AlbumCopyInfo[]>([]),
     [error, setError] = useState(""),
@@ -71,8 +76,10 @@ export function AlbumBackup({
       const copy = await verifiedAlbumCopy(data.event.id, source.id);
       if (attempt !== operation.current) return;
       if (replaceSequence) sequence.current = sources;
-      onBegin(source.id);
       audio.current?.pause();
+      await applyAudioOutput(audio.current!, output);
+      if (attempt !== operation.current) return;
+      onBegin(source.id);
       if (url.current) URL.revokeObjectURL(url.current);
       url.current = URL.createObjectURL(copy.blob);
       setCurrent(source);
@@ -98,6 +105,12 @@ export function AlbumBackup({
     setCurrent(null);
     onEnd();
   }
+  useEffect(() => {
+    if (stopForOutput) stopForOutput.current = stop;
+    return () => {
+      if (stopForOutput) stopForOutput.current = null;
+    };
+  });
   return (
     <section className="card album-backup" aria-label="Local album backup">
       <span className="eyebrow">KEEP THE SHOW MOVING</span>

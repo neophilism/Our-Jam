@@ -1,3 +1,4 @@
+import { applyAudioOutput } from "./AudioRouting";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, type EventState } from "./api";
 
@@ -10,6 +11,7 @@ export function ShowPlayer({
   onRelease,
   disabled,
   stopForBackup,
+  output = "",
 }: {
   data: EventState;
   refresh: () => Promise<void>;
@@ -17,7 +19,8 @@ export function ShowPlayer({
   onClaim: () => void;
   onRelease: () => void;
   disabled: boolean;
-  stopForBackup: { current: (() => void) | null };
+  stopForBackup: { current: ((reason?: string) => void) | null };
+  output?: string;
 }) {
   const lease = useRef<Lease | null>(null),
     audio = useRef<HTMLAudioElement>(null),
@@ -127,7 +130,7 @@ export function ShowPlayer({
     ],
   );
   useEffect(() => {
-    stopForBackup.current = () => {
+    stopForBackup.current = (reason?: string) => {
       modeEpoch.current++;
       audio.current?.pause();
       const previous = lease.current;
@@ -149,7 +152,8 @@ export function ShowPlayer({
           .then(() => refresh())
           .catch(() =>
             onError(
-              "Backup audio is local. The audience round will pause when the previous playback lease expires; refresh live control after reconnecting.",
+              reason ??
+                "Backup audio is local. The audience round will pause when the previous playback lease expires; refresh live control after reconnecting.",
             ),
           );
     };
@@ -169,25 +173,54 @@ export function ShowPlayer({
       return;
     started.current = data.current.id;
     setPosition(0);
-    void audio.current
-      ?.play()
-      .then(() => control("pause", false))
-      .catch(() =>
+    const element = audio.current,
+      epoch = modeEpoch.current,
+      currentId = data.current.id,
+      holder = lease.current?.leaseToken;
+    if (!element) return;
+    void (async () => {
+      try {
+        await applyAudioOutput(element, output);
+        if (
+          epoch !== modeEpoch.current ||
+          started.current !== currentId ||
+          audio.current !== element ||
+          lease.current?.leaseToken !== holder
+        )
+          return;
+        await element.play();
+        await control("pause", false);
+      } catch {
+        if (started.current !== currentId || epoch !== modeEpoch.current)
+          return;
+        element.pause();
         onError(
-          "Tap Play show audio to allow playback. Voting is paused until audio starts.",
-        ),
-      );
-  }, [data.current?.id, disabled, owned, control, onError]);
+          "Show output could not start. Check the selected device, then tap Play show audio. Voting remains paused.",
+        );
+      }
+    })();
+  }, [data.current?.id, disabled, owned, control, onError, output]);
+
   async function toggle() {
     if (disabled || !owned || busy) return;
     const a = audio.current;
     if (!a) return;
     if (a.paused) {
       try {
+        const holder = lease.current?.leaseToken,
+          epoch = modeEpoch.current;
+        await applyAudioOutput(a, output);
+        if (
+          epoch !== modeEpoch.current ||
+          lease.current?.leaseToken !== holder ||
+          audio.current !== a
+        )
+          return;
         await a.play();
         await control("pause", false);
       } catch {
-        onError("The show audio could not start.");
+        a.pause();
+        onError("The show audio could not start on the selected output.");
       }
     } else {
       a.pause();

@@ -1853,3 +1853,23 @@ summary {
   gap: 8px;
   padding: 18px;
 }
+
+.audio-routing {
+  margin: 24px 0;
+}
+.audio-routing > summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+.output-choice {
+  margin: 20px 0;
+  display: grid;
+  gap: 10px;
+}
+.output-choice select {
+  width: 100%;
+  min-width: 0;
+}
+.audio-routing .check {
+  margin: 20px 0;
+}
