@@ -11,272 +11,281 @@
   "milestones": [
     {
       "id": "OJ-001",
-      "title": "Production V1 — approved work package 1 of 42",
+      "title": "Production V1 \u2014 approved work package 1 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-002",
-      "title": "Production V1 — approved work package 2 of 42",
+      "title": "Production V1 \u2014 approved work package 2 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-003",
-      "title": "Production V1 — approved work package 3 of 42",
+      "title": "Production V1 \u2014 approved work package 3 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-004",
-      "title": "Production V1 — approved work package 4 of 42",
+      "title": "Production V1 \u2014 approved work package 4 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-005",
-      "title": "Production V1 — approved work package 5 of 42",
+      "title": "Production V1 \u2014 approved work package 5 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-006",
-      "title": "Production V1 — approved work package 6 of 42",
-      "origin": "original"
+      "title": "Artist album and event preparation",
+      "origin": "original",
+      "status": "in_progress",
+      "implementationNotes": "Revision-fenced show settings, private unplayed-track editing and browser metadata checks implemented; durable ingest and real-show preparation remain open."
     },
     {
       "id": "OJ-007",
-      "title": "Production V1 — approved work package 7 of 42",
+      "title": "Production V1 \u2014 approved work package 7 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-008",
-      "title": "Production V1 — approved work package 8 of 42",
+      "title": "Production V1 \u2014 approved work package 8 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-009",
-      "title": "Production V1 — approved work package 9 of 42",
+      "title": "Production V1 \u2014 approved work package 9 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-010",
-      "title": "Production V1 — approved work package 10 of 42",
+      "title": "Production V1 \u2014 approved work package 10 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-011",
-      "title": "Production V1 — approved work package 11 of 42",
+      "title": "Production V1 \u2014 approved work package 11 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-012",
-      "title": "Production V1 — approved work package 12 of 42",
+      "title": "Production V1 \u2014 approved work package 12 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-013",
-      "title": "Production V1 — approved work package 13 of 42",
+      "title": "Production V1 \u2014 approved work package 13 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-014",
-      "title": "Production V1 — approved work package 14 of 42",
+      "title": "Production V1 \u2014 approved work package 14 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-015",
-      "title": "Production V1 — approved work package 15 of 42",
+      "title": "Production V1 \u2014 approved work package 15 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-016",
-      "title": "Production V1 — approved work package 16 of 42",
+      "title": "Production V1 \u2014 approved work package 16 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-017",
-      "title": "Production V1 — approved work package 17 of 42",
+      "title": "Production V1 \u2014 approved work package 17 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-018",
-      "title": "Production V1 — approved work package 18 of 42",
+      "title": "Production V1 \u2014 approved work package 18 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-019",
-      "title": "Production V1 — approved work package 19 of 42",
+      "title": "Production V1 \u2014 approved work package 19 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-020",
-      "title": "Production V1 — approved work package 20 of 42",
-      "origin": "original"
+      "title": "Performer feedback dashboard and Play next",
+      "origin": "original",
+      "status": "in_progress",
+      "implementationNotes": "Reorder queued tracks with one-click Next, Up and Down; commands preserve current playback and reject stale queue state. Physical private-cue rehearsal remains open."
     },
     {
       "id": "OJ-021",
-      "title": "Production V1 — approved work package 21 of 42",
+      "title": "Production V1 \u2014 approved work package 21 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-022",
-      "title": "Production V1 — approved work package 22 of 42",
+      "title": "Production V1 \u2014 approved work package 22 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-023",
-      "title": "Production V1 — approved work package 23 of 42",
+      "title": "Production V1 \u2014 approved work package 23 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-024",
-      "title": "Production V1 — approved work package 24 of 42",
+      "title": "Production V1 \u2014 approved work package 24 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-025",
-      "title": "Production V1 — approved work package 25 of 42",
+      "title": "Production V1 \u2014 approved work package 25 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-026",
-      "title": "Production V1 — approved work package 26 of 42",
+      "title": "Production V1 \u2014 approved work package 26 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-027",
-      "title": "Production V1 — approved work package 27 of 42",
+      "title": "Production V1 \u2014 approved work package 27 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-028",
-      "title": "Production V1 — approved work package 28 of 42",
+      "title": "Production V1 \u2014 approved work package 28 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-029",
-      "title": "Production V1 — approved work package 29 of 42",
+      "title": "Production V1 \u2014 approved work package 29 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-030",
-      "title": "Production V1 — approved work package 30 of 42",
+      "title": "Production V1 \u2014 approved work package 30 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-031",
-      "title": "Production V1 — approved work package 31 of 42",
+      "title": "Production V1 \u2014 approved work package 31 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-032",
-      "title": "Production V1 — approved work package 32 of 42",
-      "origin": "original"
+      "title": "Native iOS and Android foundation",
+      "origin": "original",
+      "status": "blocked",
+      "implementationNotes": "Draft PR #11 exports both platforms and generates native projects; high-severity upstream Expo dependency advisories fail its audit gate. No signed builds or real-device acceptance.",
+      "pullRequests": [
+        11
+      ]
     },
     {
       "id": "OJ-033",
-      "title": "Production V1 — approved work package 33 of 42",
+      "title": "Production V1 \u2014 approved work package 33 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-034",
-      "title": "Production V1 — approved work package 34 of 42",
+      "title": "Production V1 \u2014 approved work package 34 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-035",
-      "title": "Production V1 — approved work package 35 of 42",
+      "title": "Production V1 \u2014 approved work package 35 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-036",
-      "title": "Production V1 — approved work package 36 of 42",
+      "title": "Production V1 \u2014 approved work package 36 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-037",
-      "title": "Production V1 — approved work package 37 of 42",
+      "title": "Production V1 \u2014 approved work package 37 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-038",
-      "title": "Production V1 — approved work package 38 of 42",
+      "title": "Production V1 \u2014 approved work package 38 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-039",
-      "title": "Production V1 — approved work package 39 of 42",
+      "title": "Production V1 \u2014 approved work package 39 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-040",
-      "title": "Production V1 — approved work package 40 of 42",
+      "title": "Production V1 \u2014 approved work package 40 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-041",
-      "title": "Production V1 — approved work package 41 of 42",
+      "title": "Production V1 \u2014 approved work package 41 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-042",
-      "title": "Production V1 — approved work package 42 of 42",
+      "title": "Production V1 \u2014 approved work package 42 of 42",
       "origin": "original"
     },
     {
       "id": "OJ-043",
-      "title": "DJ V2 — approved work package 1 of 8",
+      "title": "DJ V2 \u2014 approved work package 1 of 8",
       "origin": "original"
     },
     {
       "id": "OJ-044",
-      "title": "DJ V2 — approved work package 2 of 8",
+      "title": "DJ V2 \u2014 approved work package 2 of 8",
       "origin": "original"
     },
     {
       "id": "OJ-045",
-      "title": "DJ V2 — approved work package 3 of 8",
+      "title": "DJ V2 \u2014 approved work package 3 of 8",
       "origin": "original"
     },
     {
       "id": "OJ-046",
-      "title": "DJ V2 — approved work package 4 of 8",
+      "title": "DJ V2 \u2014 approved work package 4 of 8",
       "origin": "original"
     },
     {
       "id": "OJ-047",
-      "title": "DJ V2 — approved work package 5 of 8",
+      "title": "DJ V2 \u2014 approved work package 5 of 8",
       "origin": "original"
     },
     {
       "id": "OJ-048",
-      "title": "DJ V2 — approved work package 6 of 8",
+      "title": "DJ V2 \u2014 approved work package 6 of 8",
       "origin": "original"
     },
     {
       "id": "OJ-049",
-      "title": "DJ V2 — approved work package 7 of 8",
+      "title": "DJ V2 \u2014 approved work package 7 of 8",
       "origin": "original"
     },
     {
       "id": "OJ-050",
-      "title": "DJ V2 — approved work package 8 of 8",
+      "title": "DJ V2 \u2014 approved work package 8 of 8",
       "origin": "original"
     },
     {
       "id": "OJ-051",
-      "title": "Secondary demonstration — approved work package 1 of 4",
+      "title": "Secondary demonstration \u2014 approved work package 1 of 4",
       "origin": "original"
     },
     {
       "id": "OJ-052",
-      "title": "Secondary demonstration — approved work package 2 of 4",
+      "title": "Secondary demonstration \u2014 approved work package 2 of 4",
       "origin": "original"
     },
     {
       "id": "OJ-053",
-      "title": "Secondary demonstration — approved work package 3 of 4",
+      "title": "Secondary demonstration \u2014 approved work package 3 of 4",
       "origin": "original"
     },
     {
       "id": "OJ-054",
-      "title": "Secondary demonstration — approved work package 4 of 4",
+      "title": "Secondary demonstration \u2014 approved work package 4 of 4",
       "origin": "original"
     }
   ]

@@ -25,7 +25,7 @@ export async function logEvent(
   type: string,
   payload: unknown = {},
 ) {
-  if (["playback.advanced", "queue.changed"].includes(type))
+  if (["playback.advanced", "queue.changed", "setup.changed"].includes(type))
     await tx.query("UPDATE events SET revision=revision+1 WHERE id=$1", [
       eventId,
     ]);

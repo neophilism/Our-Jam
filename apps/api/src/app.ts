@@ -1,4 +1,13 @@
 import { moderationQueue, moderate } from "./moderation.js";
+import {
+  reorderInput,
+  settingsInput,
+  sourceEditInput,
+  reorderQueue,
+  updateSettings,
+  sources,
+  updateSource,
+} from "./show-setup.js";
 import { leaderboard, releaseCredits } from "./recognition.js";
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
@@ -388,6 +397,37 @@ export async function createApp(db: Database, config: AppConfig) {
       await tx.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
       return snapshot(tx, slug, undefined, op.artist_id);
     });
+  });
+  app.put("/api/operator/events/:id/queue", async (req) => {
+    const op = await session(req, "operator");
+    return reorderQueue(
+      db,
+      op.artist_id,
+      id.parse((req.params as any).id),
+      reorderInput.parse(req.body),
+    );
+  });
+  app.patch("/api/operator/events/:id/settings", async (req) => {
+    const op = await session(req, "operator");
+    return updateSettings(
+      db,
+      op.artist_id,
+      id.parse((req.params as any).id),
+      settingsInput.parse(req.body),
+    );
+  });
+  app.get("/api/operator/events/:id/sources", async (req) => {
+    const op = await session(req, "operator");
+    return sources(db, op.artist_id, id.parse((req.params as any).id));
+  });
+  app.patch("/api/operator/sources/:id", async (req) => {
+    const op = await session(req, "operator");
+    return updateSource(
+      db,
+      op.artist_id,
+      id.parse((req.params as any).id),
+      sourceEditInput.parse(req.body),
+    );
   });
   app.post("/api/events/:slug/join", async (req) => {
     const s = await session(req, "guest");

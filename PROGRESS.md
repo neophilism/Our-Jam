@@ -1,6 +1,6 @@
 # Our Jam implementation progress
 
-The approved 54-slice roadmap is preserved in `backlog.json`. Implementation PRs combine coherent vertical slices; merging one does not imply that every touched acceptance criterion is complete.
+The approved 54-work-package roadmap is tracked in `registry/roadmap.json`; `backlog.json` preserves the historical dependency specification. Implementation PRs combine coherent vertical slices; merging one does not imply that every touched acceptance criterion is complete.
 
 ## Merged and verified
 
@@ -36,3 +36,9 @@ P002 remains blocked on real provider entitlement/rights and physical Soundcore 
 Deployment inside the supplied Render project; album files, durations and private core prompts; purchase URL; approved provider/storage credentials and budget; verified free-download rights; exact Soundcore Rave model and audio route; physical iPhone/Android, headphones and long recording rehearsal; venue connectivity/load/recovery checks. The current server-authorized architecture is not end-to-end encrypted and no independent security certification is claimed.
 
 Responsive mobile browsers are implemented. Native iOS/Android builds, email/push delivery, recoverable cross-device accounts, offline album playback, multitrack routing and store submissions remain open. Provider/storage adapters use contract fixtures in CI; browser recording uses a real synthetic Web Audio stream, not physical karaoke microphones. This repository is not yet a show-ready deployed service.
+
+## Show preparation increment
+
+Queue reordering now validates a complete permutation of the remaining queue, with revision checks and command replay. Event/display settings and private album fields can be edited from the performer console. A source becomes immutable when its first round opens, and active rounds retain their copied settings. Browser audio preflight checks file metadata and duration without starting playback; it does not prove complete decoding or physical output routing. See `docs/show-setup.md`.
+
+Native client draft [#11](https://github.com/neophilism/Our-Jam/pull/11) is preserved at `e17818c124b977f62beb660df22b1e0a39c0b563`. CI run `38128094671` passed the core job, native type checks, dependency alignment, iOS/Android JavaScript exports and both native prebuilds. The native audit gate failed on upstream advisories; the PR remains unmerged and is not distribution-ready.
