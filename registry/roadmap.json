@@ -66,8 +66,10 @@
     },
     {
       "id": "OJ-011",
-      "title": "Production V1 \u2014 approved work package 11 of 42",
-      "origin": "original"
+      "title": "Durable realtime subscriptions and recovery",
+      "origin": "original",
+      "status": "in_progress",
+      "implementationNotes": "Existing durable event-log streaming and snapshot fallback now reject older arriving responses and disable audience voting while offline, stale or awaiting foreground refresh. Multi-instance fanout and venue/load acceptance remain open."
     },
     {
       "id": "OJ-012",
@@ -109,7 +111,10 @@
       "title": "Release email push and preferences",
       "origin": "original",
       "status": "in_progress",
-      "implementationNotes": "Opt-in verified event email, encrypted contacts, bounded durable outbox, unsubscribe, signed suppression callbacks and foreground web release notices implemented behind disabled delivery configuration. Real sender delivery, web/native push, large-crowd throughput and production migration remain open."
+      "implementationNotes": "Opt-in verified event email, encrypted contacts, bounded durable outbox, unsubscribe, signed suppression callbacks and foreground web release notices implemented behind disabled delivery configuration. Real sender delivery, web/native push, large-crowd throughput and production migration remain open.",
+      "pullRequests": [
+        13
+      ]
     },
     {
       "id": "OJ-020",
@@ -138,8 +143,10 @@
     },
     {
       "id": "OJ-024",
-      "title": "Production V1 \u2014 approved work package 24 of 42",
-      "origin": "original"
+      "title": "Artist pages event archives and album commerce",
+      "origin": "original",
+      "status": "in_progress",
+      "implementationNotes": "Editable public artist profile, HTTPS music links, filtered session archive, listener-first event links and album storefront links implemented. Room-code/remote-admission controls and native commerce review remain open."
     },
     {
       "id": "OJ-025",
@@ -173,8 +180,10 @@
     },
     {
       "id": "OJ-031",
-      "title": "Production V1 \u2014 approved work package 31 of 42",
-      "origin": "original"
+      "title": "Fan collections following and return journeys",
+      "origin": "original",
+      "status": "in_progress",
+      "implementationNotes": "Positive reactions are available as a private cross-event liked-track collection for the current guest identity. Cross-device recovery, artist following and richer collections remain open."
     },
     {
       "id": "OJ-032",

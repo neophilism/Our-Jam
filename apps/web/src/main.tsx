@@ -21,6 +21,8 @@ import {
 } from "./FeedbackNudge";
 import { ShowPlayer } from "./ShowPlayer";
 import { ShowSetup } from "./ShowSetup";
+import { useEvent } from "./useEvent";
+import { ArtistPage, ArtistEditor, LikedLibrary } from "./ArtistPage";
 import { ReleaseEmail, EmailAction, EmailStatus } from "./ReleaseEmail";
 import { ReleaseNotice } from "./ReleaseNotice";
 import { Recorder } from "./Recorder";
@@ -49,7 +51,9 @@ function Header({ children }: { children?: React.ReactNode }) {
       <div className="header-right">
         {children ?? (
           <>
-            <span className="muted hide-mobile">Music made together.</span>
+            <a className="small text-button" href="/library">
+              Your likes
+            </a>
             <a className="button small ghost" href="/performer">
               Performer ↗
             </a>
@@ -95,50 +99,6 @@ function Avatar({ seed = "music" }: { seed?: string }) {
       ))}
     </span>
   );
-}
-function useEvent(slug: string, operator = false) {
-  const [data, setData] = useState<EventState | null>(null),
-    [error, setError] = useState(""),
-    [fetchError, setFetchError] = useState(""),
-    [connected, setConnected] = useState(false);
-  const refresh = useCallback(async () => {
-    try {
-      const next = await api<EventState>(
-        `${operator ? "/operator" : ""}/events/${encodeURIComponent(slug)}`,
-      );
-      setData(next);
-      setFetchError("");
-    } catch (e) {
-      setFetchError((e as Error).message);
-    }
-  }, [slug, operator]);
-  useEffect(() => {
-    void refresh();
-    const stream = new EventSource(
-      `/api/events/${encodeURIComponent(slug)}/stream`,
-    );
-    let pending: ReturnType<typeof setTimeout> | undefined;
-    const sync = () => {
-      setConnected(true);
-      if (!pending)
-        pending = setTimeout(() => {
-          pending = undefined;
-          void refresh();
-        }, 180);
-    };
-    stream.addEventListener("update", sync);
-    stream.onopen = () => setConnected(true);
-    stream.onerror = () => setConnected(false);
-    const interval = setInterval(() => {
-      if (document.visibilityState === "visible") void refresh();
-    }, 12000);
-    return () => {
-      stream.close();
-      clearInterval(interval);
-      clearTimeout(pending);
-    };
-  }, [slug, refresh]);
-  return { data, error: error || fetchError, setError, refresh, connected };
 }
 function Home() {
   const [events, setEvents] = useState<any[]>([]),
@@ -375,9 +335,12 @@ function Countdown({ data }: { data: EventState }) {
   );
 }
 function Audience({ slug }: { slug: string }) {
-  const { data, error, setError, refresh, connected } = useEvent(slug);
+  const { data, error, setError, refresh, connected, fresh } = useEvent(slug);
   const [tab, setTab] = useState(
-      new URLSearchParams(location.search).has("track") ? "tracks" : "waves",
+      new URLSearchParams(location.search).has("track") ||
+        new URLSearchParams(location.search).has("listen")
+        ? "tracks"
+        : "waves",
     ),
     [text, setText] = useState(""),
     [busy, setBusy] = useState(false),
@@ -410,7 +373,9 @@ function Audience({ slug }: { slug: string }) {
   const waves = round?.waves ?? [];
   const used = waves.reduce((n, w) => n + w.mine, 0);
   const open =
-    round?.state === "open" && new Date(round.deadlineAt).getTime() > now;
+    fresh &&
+    round?.state === "open" &&
+    new Date(round.deadlineAt).getTime() > now;
   const vote = (wave: Wave, delta: number) =>
     action(async () => {
       if (!round) return;
@@ -440,7 +405,10 @@ function Audience({ slug }: { slug: string }) {
         <div className="event-heading">
           <div>
             <div className="eyebrow">
-              {data.event.artistName} /{" "}
+              <a href={`/artist/${encodeURIComponent(data.event.artistId)}`}>
+                {data.event.artistName}
+              </a>{" "}
+              /{" "}
               {data.event.state === "live"
                 ? "LIVE CO-CREATION"
                 : "OUR JAM SESSION"}
@@ -475,6 +443,12 @@ function Audience({ slug }: { slug: string }) {
           <span>{data.people} joined</span>
         </nav>
         <Notice error={error} />
+        {!fresh && (
+          <p className="notice" role="status">
+            The room is reconnecting. Voting resumes when its current state
+            arrives.
+          </p>
+        )}
         {tab === "waves" && (
           <div className="collaboration">
             <section className="crowd-scene">
@@ -1125,6 +1099,7 @@ function Performer({ slug }: { slug?: string }) {
                 </a>
               ))}
             </div>
+            <ArtistEditor />
             <CreateEvent />
           </>
         ) : (
@@ -1629,6 +1604,20 @@ else if (
   (segments[1] === "verify" || segments[1] === "unsubscribe")
 )
   screen = <EmailAction kind={segments[1]} />;
+else if (segments[0] === "artist" && segments[1])
+  screen = (
+    <>
+      <Header />
+      <ArtistPage id={decodeURIComponent(segments[1])} />
+    </>
+  );
+else if (segments[0] === "library")
+  screen = (
+    <>
+      <Header />
+      <LikedLibrary />
+    </>
+  );
 else screen = <Home />;
 createRoot(document.getElementById("root")!).render(
   <>

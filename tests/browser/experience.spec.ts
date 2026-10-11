@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { operatorSession } from "./helpers";
 test("a phone can join, contribute, reallocate and receive another participant’s live votes", async ({
   page,
   browser,
@@ -198,9 +199,7 @@ test("released credits and feedback follow real listening across an in-app navig
   const post = (url: string, data: any) =>
     page.request.post("/api" + url, { headers: { Origin: origin }, data });
   await page.goto("/");
-  await post("/operator/login", {
-    token: "browser-test-only-operator-token-123456",
-  });
+  await operatorSession(page);
   const slug = "feedback-" + Date.now();
   const created = await post("/operator/events", {
     title: "Released crowd rehearsal",
@@ -301,4 +300,17 @@ test("released credits and feedback follow real listening across an in-app navig
   await expect(page.locator(".leaderboard")).toContainText("1 waves included");
   await page.getByRole("button", { name: "Love it", exact: false }).click();
   await expect(page.getByLabel("Track feedback")).toHaveCount(0);
+  await page.goto("/library");
+  await expect(
+    page.getByRole("heading", { name: "Crowd recording fixture", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", {
+      name: "Remove Crowd recording fixture from likes",
+      exact: true,
+    })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Crowd recording fixture", exact: true }),
+  ).toHaveCount(0);
 });

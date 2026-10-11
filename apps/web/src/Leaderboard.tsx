@@ -5,7 +5,7 @@ export function Leaderboard({
   slug,
 }: {
   artistId: string;
-  slug: string;
+  slug?: string;
 }) {
   const [period, setPeriod] = useState("all"),
     [metric, setMetric] = useState("included"),
@@ -15,7 +15,7 @@ export function Leaderboard({
   useEffect(() => {
     let active = true;
     api(
-      `/artists/${encodeURIComponent(artistId)}/leaderboard?period=${period}&metric=${metric}${scope === "event" ? "&event=" + encodeURIComponent(slug) : ""}`,
+      `/artists/${encodeURIComponent(artistId)}/leaderboard?period=${period}&metric=${metric}${scope === "event" && slug ? "&event=" + encodeURIComponent(slug) : ""}`,
     )
       .then((r) => {
         if (active) {
@@ -58,7 +58,7 @@ export function Leaderboard({
           Collection
           <select value={scope} onChange={(e) => setScope(e.target.value)}>
             <option value="artist">All this artist's shows</option>
-            <option value="event">This show</option>
+            {slug && <option value="event">This show</option>}
           </select>
         </label>
       </div>

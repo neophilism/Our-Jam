@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { operatorSession } from "./helpers";
 
 test("performer prepares audio, reorders tracks and preserves unsaved settings across live updates", async ({
   page,
@@ -7,10 +8,7 @@ test("performer prepares audio, reorders tracks and preserves unsaved settings a
   const post = (path: string, data: unknown) =>
     page.request.post("/api" + path, { headers: { Origin: origin }, data });
   await page.goto("/");
-  const login = await post("/operator/login", {
-    token: "browser-test-only-operator-token-123456",
-  });
-  expect(login.ok(), await login.text()).toBeTruthy();
+  await operatorSession(page);
   const slug = "setup-" + Date.now(),
     media = "https://media.example.test/setup.wav";
   const created = await post("/operator/events", {
