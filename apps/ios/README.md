@@ -1,0 +1,11 @@
+# Our Jam native iOS client
+
+This is a genuine SwiftUI iOS application using Apple system frameworks only. It is not a WKWebView, Expo preview, web mockup or simulated-data client. It consumes the same scoped mobile guest API and event state as the web audience; the external monitor still uses the existing /screen/:slug web route. The prior Expo draft remains blocked by its own dependencies; this independent iOS implementation does not relax its audit or complete Android delivery.
+
+The client connects to an explicit HTTPS origin (HTTP allowed only for localhost/127.0.0.1 on the same simulator host), saves an origin-scoped Keychain device credential, joins open or room-code events, submits Sound Waves, reallocates five votes, pauses participation while stale/offline, shows generation errors, plays published tracks, and edits profile credit. It never receives operator, provider, database or storage credentials. JSON redirects are refused. No tags, votes, songs or events are seeded by the app.
+
+Generate the Xcode project with python3 apps/ios/make-project.py, then open apps/ios/OurJam.xcodeproj. Simulator builds require Xcode and an installed iOS runtime, not Apple Developer membership. The CI simulator artifact is an actual .app, separate from a signed iPhone .ipa. The same source can later be archived for a registered Apple team; signing, membership, app assets, privacy declarations and App Store Connect acceptance remain prerequisites for TestFlight/store distribution.
+
+Connect using the real server origin and event code displayed by the performer console. For a local server on your Mac use http://127.0.0.1:4173; a physical phone cannot access that loopback address. A missing or unfunded provider does not reject tags; generation jobs show their actual server reason. The app never substitutes a saved song for generation.
+
+This implementation has focused rehearsal scope. Native cross-device profile recovery UI, detailed listening analytics/feedback, native 3D visual refinement, background playback, push, complete VoiceOver/device testing, app icon/store artwork, and Android parity remain separate V1 work. Do not call the full 54-package roadmap complete from an iOS build or simulator smoke test. The native build workflow uses standard runners for the public repository and has no provider/signing credentials or billable generation.
