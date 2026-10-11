@@ -4,6 +4,7 @@ import { logEvent } from "./service.js";
 import { ProviderError, type MusicProvider } from "../../../packages/providers/src/stability.js";
 import type { MediaStore } from "../../../packages/providers/src/storage.js";
 import { validateAudio } from "./media.js";
+
 export type GenerationConfig = {
   provider: MusicProvider;
   providers?: Partial<Record<"stability" | "mureka", MusicProvider>>;
@@ -16,9 +17,9 @@ export type GenerationConfig = {
   priceVerifiedUntil?: string;
   validate?: typeof validateAudio;
 };
+
 export async function generationTick(db: Database, config: GenerationConfig) {
-  // An ambiguous acceptance never returns to queued automatically. Persisted Mureka
-  // task IDs remain available for a subsequent explicit reconciliation; no second POST.
+  // Never automatically resubmit an ambiguous acceptance.
   await db.query("UPDATE generation_jobs SET state='unknown',reason='worker_interrupted',updated_at=now() WHERE state='submitting' AND lease_until<clock_timestamp()");
   const job = await db.transaction(async (tx) => {
     await tx.query("SELECT id FROM artists WHERE id='our-jam' FOR UPDATE");
@@ -47,7 +48,6 @@ export async function generationTick(db: Database, config: GenerationConfig) {
       await logEvent(tx, row.event_id, "generation.blocked");
       return null;
     }
-    // Parameter failures must not reserve budget or contact a provider.
     if (provider!.name === "mureka" && row.prompt.length > 1024) {
       await tx.query("UPDATE generation_jobs SET state='blocked',reason='provider_prompt_too_long',updated_at=now() WHERE id=$1", [row.id]);
       await logEvent(tx, row.event_id, "generation.blocked");
@@ -78,7 +78,8 @@ export async function generationTick(db: Database, config: GenerationConfig) {
       const source = (await tx.query("SELECT s.title FROM source_tracks s JOIN rounds r ON r.source_id=s.id WHERE r.id=$1", [job.round_id])).rows[0];
       const published = !live.release_held && (event.state === "ended" || live.release_mode === "immediate");
       await tx.query("INSERT INTO releases(id,event_id,job_id,title,audio_url,download_url,duration_seconds,published_at,asset_key,asset_sha256,provenance) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)", [id, job.event_id, job.id, `${source.title} \u00b7 Our Jam`, `/api/releases/${id}/audio`, `/api/releases/${id}/download`, media.durationSeconds, published ? new Date() : null, key, sha, JSON.stringify({ provider: provider.name, model: provider.model, promptHash: job.prompt_hash, attemptId: job.attempt_id, providerRef: audio.providerRef, validation: media })]);
-      await tx.query("UPDATE generation_jobs SET state=$1,reason=NULL,asset_key=$2,asset_sha256=$3,provider_ref=COALESCE($4,provider_ref),duration_seconds=$5,lease_until=NULL,updated_at=now() WHERE id=$6", [published ? "published" : "ready", key, sha, audio.providerRef ?? null, media.durationSeconds, job.id]);
+      // This column is an integer summary. The release retains measured precision.
+      await tx.query("UPDATE generation_jobs SET state=$1,reason=NULL,asset_key=$2,asset_sha256=$3,provider_ref=COALESCE($4,provider_ref),duration_seconds=ceil($5::numeric)::integer,lease_until=NULL,updated_at=now() WHERE id=$6", [published ? "published" : "ready", key, sha, audio.providerRef ?? null, media.durationSeconds, job.id]);
       await logEvent(tx, job.event_id, published ? "releases.published" : "release.ready", { ids: [id] });
     });
   } catch (error) {
