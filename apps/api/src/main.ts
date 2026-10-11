@@ -6,6 +6,8 @@ import {
 import { generationTick } from "./generation.js";
 import { tickRounds } from "./playback.js";
 import { createApp } from "./app.js";
+import { configuredEmail } from "./email-config.js";
+import { emailTick } from "./email.js";
 const production = process.env.NODE_ENV === "production";
 const url = process.env.DATABASE_URL;
 if (!url)
@@ -32,6 +34,7 @@ if (process.env.RUN_MIGRATIONS === "1") {
 }
 const mediaStore = configuredStorage();
 const generation = configuredGeneration(mediaStore);
+const email = configuredEmail(origin);
 const app = await createApp(db, {
   origin,
   operatorToken: process.env.OPERATOR_TOKEN,
@@ -39,6 +42,7 @@ const app = await createApp(db, {
   serveWeb: true,
   providerReady: Boolean(generation),
   mediaStore,
+  email,
 });
 await app.listen({ port: Number(process.env.PORT ?? 3001), host: "0.0.0.0" });
 console.log(
@@ -77,10 +81,26 @@ const generationTimer =
       }, 2000)
     : undefined;
 generationTimer?.unref();
+let emailing = false;
+const emailTimer = email
+  ? setInterval(async () => {
+      if (emailing) return;
+      emailing = true;
+      try {
+        await emailTick(db, email);
+      } catch {
+        console.error(JSON.stringify({ event: "email_worker_failed" }));
+      } finally {
+        emailing = false;
+      }
+    }, 1000)
+  : undefined;
+emailTimer?.unref();
 for (const signal of ["SIGINT", "SIGTERM"])
   process.on(signal, async () => {
     clearInterval(roundTimer);
     clearInterval(generationTimer);
+    clearInterval(emailTimer);
     await app.close();
     await db.close();
     process.exit(0);

@@ -1,4 +1,15 @@
 import { moderationQueue, moderate } from "./moderation.js";
+import type { EmailConfig } from "./email-config.js";
+import {
+  subscriptionInput,
+  emailTokenInput,
+  subscribe,
+  subscriptionStatus,
+  verifyEmail,
+  unsubscribeEmail,
+  emailWebhook,
+  emailStats,
+} from "./email.js";
 import {
   reorderInput,
   settingsInput,
@@ -59,6 +70,7 @@ export type AppConfig = {
   providerReady?: boolean;
   serveWeb?: boolean;
   mediaStore?: MediaStore;
+  email?: EmailConfig;
 };
 // Native guest credentials are deliberately distinguishable from browser and
 // performer sessions. Native requests still supply the configured Origin.
@@ -107,7 +119,10 @@ export async function createApp(db: Database, config: AppConfig) {
   });
   app.addHook("onRequest", async (req, reply) => {
     if (req.url.startsWith("/api/")) reply.header("Cache-Control", "no-store");
-    if (!["GET", "HEAD", "OPTIONS"].includes(req.method))
+    if (
+      !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
+      !(req.method === "POST" && req.url === "/api/webhooks/email")
+    )
       requireThat(
         req.headers.origin === config.origin,
         "origin_required",
@@ -207,11 +222,11 @@ export async function createApp(db: Database, config: AppConfig) {
   app.get("/api/ready", async () => {
     const rows = (
       await db.query(
-        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql')",
+        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql')",
       )
     ).rows;
     requireThat(
-      rows.length === 3,
+      rows.length === 4,
       "schema_not_ready",
       "Required database migrations have not been applied.",
       503,
@@ -220,7 +235,92 @@ export async function createApp(db: Database, config: AppConfig) {
       database: "ready",
       generation: config.providerReady ? "configured" : "not_configured",
       operator: config.operatorToken ? "configured" : "not_configured",
+      email: config.email ? "configured" : "not_configured",
     };
+  });
+  app.get("/api/events/:id/subscription", async (req) => {
+    const s = await session(req, "guest", false);
+    return {
+      available: Boolean(config.email),
+      ...(s
+        ? await subscriptionStatus(
+            db,
+            id.parse((req.params as any).id),
+            s.participant_id,
+          )
+        : { state: "none" }),
+    };
+  });
+  app.post(
+    "/api/events/:id/subscription",
+    {
+      config: {
+        rateLimit: {
+          max: 6,
+          timeWindow: "1 hour",
+        },
+      },
+    },
+    async (req) => {
+      const s = await session(req, "guest");
+      requireThat(
+        config.email,
+        "email_unavailable",
+        "Release emails aren't available yet. You can still listen and download here.",
+        503,
+      );
+      return subscribe(
+        db,
+        config.email,
+        id.parse((req.params as any).id),
+        s.participant_id,
+        subscriptionInput.parse(req.body),
+      );
+    },
+  );
+  app.delete("/api/events/:id/subscription", async (req) => {
+    const s = await session(req, "guest");
+    return unsubscribeEmail(db, {
+      eventId: id.parse((req.params as any).id),
+      participantId: s.participant_id,
+    });
+  });
+  app.post("/api/email/verify", async (req) =>
+    verifyEmail(db, emailTokenInput.parse(req.body).token),
+  );
+  app.post("/api/email/unsubscribe", async (req) =>
+    unsubscribeEmail(db, emailTokenInput.parse(req.body)),
+  );
+  app.get("/api/operator/events/:id/email", async (req) => {
+    const s = await session(req, "operator");
+    return {
+      available: Boolean(config.email),
+      ...(await emailStats(db, s.artist_id, id.parse((req.params as any).id))),
+    };
+  });
+  await app.register(async (webhookApp) => {
+    webhookApp.removeContentTypeParser("application/json");
+    webhookApp.addContentTypeParser(
+      "application/json",
+      { parseAs: "string" },
+      (_req, body, done) => done(null, body),
+    );
+    webhookApp.post("/api/webhooks/email", async (req) => {
+      requireThat(config.email, "email_unavailable", "Email is disabled.", 503);
+      const headers = z
+        .object({
+          "svix-id": z.string().max(200),
+          "svix-timestamp": z.string().max(30),
+          "svix-signature": z.string().max(2000),
+        })
+        .parse(req.headers);
+      return emailWebhook(
+        db,
+        config.email,
+        z.string().parse(req.body),
+        headers,
+      );
+    });
   });
   app.get("/api/artists/:id/leaderboard", async (req) => {
     const params = z

@@ -26,7 +26,7 @@ P002 remains blocked on real provider entitlement/rights and physical Soundcore 
 ## External resource state
 
 - GitHub initially empty; application and all planning documents now live in this repository.
-- Migrations 001–003 rehearsed on isolated Neon branch `br-blue-unit-b5rk1hit`. Production branch `br-aged-sea-b55fzq0v` is untouched. Workspace direct Neon DNS failed, so connector rehearsal and CI PostgreSQL tests are distinct evidence.
+- Migrations 001–004 rehearsed on isolated Neon branch `br-blue-unit-b5rk1hit`. Production branch `br-aged-sea-b55fzq0v` is untouched. Workspace direct Neon DNS failed, so connector rehearsal and CI PostgreSQL tests are distinct evidence.
 - No Our Jam service deployed to Render. The service-creation connector cannot assign project/environment, the dashboard attempt timed out, and no project-specific API credential was available. Target remains `prj-db5btotckfvc739m1ck0`. Docker builds in CI; Blueprint validates against Render's official schema.
 - Engine Room discovery manifest is committed. Actual ingestion is unverified.
 - No real generation requests, email deliveries, paid resource creation or production database changes occurred.
@@ -42,3 +42,9 @@ Responsive mobile browsers are implemented. Native iOS/Android builds, email/pus
 Queue reordering now validates a complete permutation of the remaining queue, with revision checks and command replay. Event/display settings and private album fields can be edited from the performer console. A source becomes immutable when its first round opens, and active rounds retain their copied settings. Browser audio preflight checks file metadata and duration without starting playback; it does not prove complete decoding or physical output routing. See `docs/show-setup.md`.
 
 Native client draft [#11](https://github.com/neophilism/Our-Jam/pull/11) is preserved at `e17818c124b977f62beb660df22b1e0a39c0b563`. CI run `38128094671` passed the core job, native type checks, dependency alignment, iOS/Android JavaScript exports and both native prebuilds. The native audit gate failed on upstream advisories; the PR remains unmerged and is not distribution-ready.
+
+## Release notification increment
+
+PR [#12](https://github.com/neophilism/Our-Jam/pull/12) merged at `69163c03ac6c582aaf0a2710de3be4a0d34c8a37` after CI run `38128764587`: 25 domain/API/media tests, ten desktop/mobile browser scenarios, dependency audit and Docker build passed. It delivers the show preparation increment above.
+
+Optional verified event subscriptions, encrypted contact/message storage, durable deduplicated email dispatch, bounded retries and send caps, unsubscribe, signed bounce/complaint suppression and foreground web release notices are implemented in the release-notification increment. Delivery remains disabled; test providers capture fixtures only. Migration 004 was applied successfully as one versioned transaction on isolated Neon branch `br-blue-unit-b5rk1hit`; production remains untouched. See `docs/release-email.md` for exact semantics, enablement and limits. Native/web push and actual sender/inbox acceptance remain open.

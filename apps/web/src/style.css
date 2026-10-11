@@ -1632,3 +1632,25 @@ summary {
 .audio-checks span {
   color: var(--muted);
 }
+.release-email {
+  margin-top: 24px;
+}
+.release-email form {
+  max-width: 560px;
+}
+.release-notice {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, calc(100% - 32px));
+  z-index: 15;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 16px 60px #000a;
+}
+.release-notice p {
+  margin: 4px 0 0;
+}
