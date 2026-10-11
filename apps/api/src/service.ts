@@ -666,6 +666,7 @@ export async function snapshot(
       slug: event.slug,
       title: event.title,
       artistName: event.artist_name,
+      artistId: event.artist_id,
       purchaseUrl: event.purchase_url,
       state: event.state,
       settings: event.settings,

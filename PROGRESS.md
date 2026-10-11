@@ -37,3 +37,9 @@ This slice adds fenced playback ownership, sequenced and replayable commands, pa
 PR #4 merged at e3c057485f1d3b740668b42c281a788fcde9d1e0 after CI run 38097751070 passed. This includes 15 domain/API tests and six desktop/mobile browser scenarios. Browser screenshots now show the shader surfaces and correctly sized stage canvas. The recording recovery test uses a real synthetic Web Audio stream because CI microphone access returned NotSupportedError; real hardware remains unverified.
 
 Migrations 002 and 003 applied successfully on the isolated Neon development branch. Production remains untouched. The generation/deployment slice now passes 18 local tests and both builds. Its provider adapter is implemented against the documented Stable Audio 2.5 contract, but real provider and storage integration are disabled/unverified. Render project assignment is still blocked by connector capability and dashboard timeout. The Docker build and Blueprint are reviewable repository artifacts, not a deployed service.
+
+## Contributor recognition and feedback
+
+PR #5 merged at 7289a5b9efdb60afb1c92954fc21c9340bb04f61 after CI run 38098080304 passed 18 tests, six browser scenarios and the Docker build. The Blueprint validates against Render's official JSON Schema. No deployment or actual provider/storage integration is claimed.
+
+The next slice adds published-only contributor credits and UTC calendar artist/event leaderboards, deferred feedback after listening/navigation, local room-audio visualization input and separately loaded 3D graphics. Nineteen local tests cover the added scoring and anonymity rules. Browser acceptance adds a ten-second synthetic audio release and navigation-to-feedback flow.

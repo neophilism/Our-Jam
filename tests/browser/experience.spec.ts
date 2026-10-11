@@ -176,3 +176,115 @@ test("performer owns playback, pauses voting, and recovers saved recording chunk
   const download = await downloaded;
   expect(download.suggestedFilename()).toContain("-manifest.json");
 });
+
+test("released credits and feedback follow real listening across an in-app navigation", async ({
+  page,
+}) => {
+  const origin = "http://127.0.0.1:4173";
+  const post = (url: string, data: any) =>
+    page.request.post("/api" + url, { headers: { Origin: origin }, data });
+  await page.goto("/");
+  await post("/operator/login", {
+    token: "browser-test-only-operator-token-123456",
+  });
+  const slug = "feedback-" + Date.now();
+  const created = await post("/operator/events", {
+    title: "Released crowd rehearsal",
+    artistName: "Test Artist",
+    slug,
+    minimumRoundSeconds: 0,
+    sources: [
+      {
+        title: "Feedback source",
+        corePrompt: "Synthetic test prompt",
+        durationSeconds: 120,
+      },
+    ],
+  });
+  expect(created.ok()).toBeTruthy();
+  const event = await created.json();
+  const lease = await (
+    await post(`/operator/events/${event.id}/playback/claim`, {})
+  ).json();
+  const start = await (
+    await post(`/operator/events/${event.id}/advance`, {
+      commandId: crypto.randomUUID(),
+      expectedRevision: 0,
+      playback: { ...lease, sequence: 1 },
+    })
+  ).json();
+  await post("/session", {});
+  await post(`/events/${slug}/join`, {});
+  const name = "Listener " + Date.now();
+  await page.request.patch("/api/profile", {
+    headers: { Origin: origin },
+    data: { name, anonymous: false },
+  });
+  await post(`/rounds/${start.roundId}/waves`, {
+    commandId: crypto.randomUUID(),
+    expectedRevision: 0,
+    text: "Warm vibraphone",
+  });
+  await post(`/operator/events/${event.id}/advance`, {
+    commandId: crypto.randomUUID(),
+    expectedRevision: 1,
+    playback: { ...lease, sequence: 2 },
+  });
+  const state = await (
+    await page.request.get("/api/operator/events/" + slug)
+  ).json();
+  const media = "https://media.example.test/crowd.wav";
+  const asset = await post(`/operator/jobs/${state.jobs[0].id}/asset`, {
+    title: "Crowd recording fixture",
+    audioUrl: media,
+    downloadUrl: media,
+    durationSeconds: 10,
+    rightsConfirmed: true,
+  });
+  expect(asset.ok()).toBeTruthy();
+  // Known ten-second PCM fixture. It is served only inside this browser test.
+  const length = 8000 * 10,
+    bytes = Buffer.alloc(44 + length * 2);
+  bytes.write("RIFF", 0);
+  bytes.writeUInt32LE(bytes.length - 8, 4);
+  bytes.write("WAVEfmt ", 8);
+  bytes.writeUInt32LE(16, 16);
+  bytes.writeUInt16LE(1, 20);
+  bytes.writeUInt16LE(1, 22);
+  bytes.writeUInt32LE(8000, 24);
+  bytes.writeUInt32LE(16000, 28);
+  bytes.writeUInt16LE(2, 32);
+  bytes.writeUInt16LE(16, 34);
+  bytes.write("data", 36);
+  bytes.writeUInt32LE(length * 2, 40);
+  for (let i = 0; i < length; i++)
+    bytes.writeInt16LE(
+      Math.round(Math.sin((i / 8000) * 440 * Math.PI * 2) * 10000),
+      44 + i * 2,
+    );
+  await page.route(media, (route) =>
+    route.fulfill({ contentType: "audio/wav", body: bytes }),
+  );
+  await page.goto("/event/" + slug);
+  await page.getByRole("button", { name: /Our tracks/ }).click();
+  await page.getByRole("button", { name: "Listen ▷", exact: true }).click();
+  await page
+    .locator("audio")
+    .evaluate((audio: HTMLAudioElement) => audio.play());
+  await page.waitForFunction(
+    () => {
+      const a = document.querySelector("audio");
+      return a && a.currentTime > 6;
+    },
+    {},
+    { timeout: 15000 },
+  );
+  await page.getByRole("button", { name: "The room", exact: true }).click();
+  await expect(page.getByLabel("Track feedback")).toContainText(
+    "Crowd recording fixture",
+  );
+  await expect(page.locator(".leaderboard")).toContainText(name);
+  await expect(page.locator(".leaderboard")).toContainText("1 waves included");
+  await page.getByRole("button", { name: "Love it", exact: false }).click();
+  await expect(page.getByLabel("Track feedback")).toHaveCount(0);
+});

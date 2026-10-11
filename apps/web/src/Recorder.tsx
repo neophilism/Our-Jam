@@ -202,7 +202,9 @@ export function Recorder({
       setError("");
     } catch (e) {
       stream?.getTracks().forEach((t) => t.stop());
-      setError(`Could not start ${stage}: ${(e as Error).name} ${(e as Error).message}`);
+      setError(
+        `Could not start ${stage}: ${(e as Error).name} ${(e as Error).message}`,
+      );
     }
   }
   return (
@@ -300,9 +302,7 @@ export function Recorder({
                     `our-jam-${t.id}-manifest.json`,
                   );
                 } catch (e) {
-                  setError(
-                    (e as Error).message,
-                  );
+                  setError((e as Error).message);
                 }
               }}
             >
