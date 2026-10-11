@@ -54,6 +54,7 @@ function toneBlob() {
 export function useAudioRouting(onChange: () => void, onMainLost: () => void) {
   const [main, setMain] = useState<Output>(),
     [preview, setPreview] = useState<Output>();
+  const [mainUnavailable, setMainUnavailable] = useState(false);
   const [devices, setDevices] = useState<Output[]>([]),
     [confirmed, setConfirmed] = useState(false);
   const [tested, setTested] = useState({ main: false, preview: false }),
@@ -99,6 +100,7 @@ export function useAudioRouting(onChange: () => void, onMainLost: () => void) {
           explicit(mainRef.current) &&
           !outputs.some((d) => d.deviceId === mainRef.current?.deviceId)
         ) {
+          setMainUnavailable(true);
           callbacks.current.onMainLost();
           setError(
             "The selected show output disappeared. Playback control was released. Reconnect the output and choose it again before resuming.",
@@ -106,7 +108,10 @@ export function useAudioRouting(onChange: () => void, onMainLost: () => void) {
         }
       } catch {
         if (active) {
-          if (explicit(mainRef.current)) callbacks.current.onMainLost();
+          if (explicit(mainRef.current)) {
+            setMainUnavailable(true);
+            callbacks.current.onMainLost();
+          }
           setError(
             "Audio outputs could not be checked. Reselect your devices before previewing.",
           );
@@ -134,6 +139,7 @@ export function useAudioRouting(onChange: () => void, onMainLost: () => void) {
       }
       if (operation !== epoch.current) return;
       (role === "main" ? setMain : setPreview)(output);
+      if (role === "main") setMainUnavailable(false);
     } catch {
       setError(
         "That audio output could not be selected. Check permission and connection; no fallback output was chosen.",
@@ -221,6 +227,7 @@ export function useAudioRouting(onChange: () => void, onMainLost: () => void) {
   }
   return {
     main,
+    mainUnavailable,
     preview,
     devices,
     confirmed,

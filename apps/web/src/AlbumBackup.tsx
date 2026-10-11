@@ -15,6 +15,7 @@ export function AlbumBackup({
   onBegin,
   onEnd,
   output = "",
+  outputAvailable = true,
   stopForOutput,
 }: {
   data: EventState;
@@ -22,6 +23,7 @@ export function AlbumBackup({
   onBegin: (sourceId: string) => void;
   onEnd: () => void;
   output?: string;
+  outputAvailable?: boolean;
   stopForOutput?: { current: (() => void) | null };
 }) {
   const [copies, setCopies] = useState<AlbumCopyInfo[]>([]),
@@ -69,6 +71,12 @@ export function AlbumBackup({
     return () => window.removeEventListener("beforeunload", warn);
   }, [active]);
   async function play(source: Source, replaceSequence = true) {
+    if (!outputAvailable) {
+      setError(
+        "Reconnect and reselect the show output before playing backup audio.",
+      );
+      return;
+    }
     const attempt = ++operation.current;
     setBusy(true);
     setError("");
@@ -230,7 +238,7 @@ export function AlbumBackup({
               <div className="player-actions">
                 <button
                   className="ghost small"
-                  disabled={busy || !copy}
+                  disabled={busy || !copy || !outputAvailable}
                   onClick={() => void play(source)}
                 >
                   Play backup: {source.title}

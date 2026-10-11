@@ -243,6 +243,12 @@ test("separate outputs require audible tests and confirmation; lost output relea
     }),
   ).toBeVisible();
   await expect(page.getByText("VOTING PAUSED", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "Use this device for show playback",
+      exact: true,
+    }),
+  ).toBeDisabled();
   await page.screenshot({
     path: `test-results/${test.info().project.name}-audio-routing.png`,
     fullPage: false,

@@ -1449,7 +1449,7 @@ function Console({ slug }: { slug: string }) {
             <span className="eyebrow">TO THE SPEAKER</span>
             <ShowPlayer
               output={routes.main?.deviceId ?? ""}
-              disabled={Boolean(backupSource)}
+              disabled={Boolean(backupSource) || routes.mainUnavailable}
               stopForBackup={stopForBackup}
               data={data}
               refresh={refresh}
@@ -1773,6 +1773,7 @@ function Console({ slug }: { slug: string }) {
         <AdmissionSettings data={data} refresh={refresh} />
         <ShowSetup data={data} refresh={refresh} />
         <AlbumBackup
+          outputAvailable={!routes.mainUnavailable}
           stopForOutput={stopBackupForOutput}
           output={routes.main?.deviceId ?? ""}
           data={data}
