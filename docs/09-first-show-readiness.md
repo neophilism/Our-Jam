@@ -4,7 +4,7 @@
 
 The requested dates are Wednesday October 14 for a testable build, Thursday October 15 for rehearsal, and Friday October 16 or Saturday October 17, 2026 for the weather-dependent show. Use America/New_York for this schedule. The venue and weather decision remain with the artist.
 
-The complete described product, both native store releases, rich cinematic polish and every hardware integration cannot be responsibly promised in this window. A production web event version is a stretch target if implementation starts promptly, credentials and media are ready, a permitted provider works, and the audio setup passes. The user has not yet supplied project links or authorized implementation in this task. Starting later compresses or removes this opportunity.
+The complete described product, both native store releases, rich cinematic polish and every hardware integration cannot be responsibly promised in this window. A production web event version is a stretch target if implementation starts promptly, credentials and media are ready, a permitted provider works, and the audio setup passes. Implementation is authorized and the supplied GitHub, Render and Neon resources are recorded in `README.md`. See `PROGRESS.md` for current merged work and remaining deployment, provider and physical rehearsal gates.
 
 Do not replace the real audience experience with a demo to meet the date. If readiness is red, keep the first show traditional and target the second or third show for the application. Continue authorized development after the event gate; the date is not an excuse to stop the broader V1 plan.
 
