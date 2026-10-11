@@ -14,10 +14,20 @@ jobs:
   simulator:
     runs-on: macos-15
     timeout-minutes: 20
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Initialize the selected Simulator service
+        run: |
+          mkdir -p ios-evidence
+          test -d "$DEVELOPER_DIR"
+          sudo xcode-select --switch "$DEVELOPER_DIR"
+          xcodebuild -version | tee ios-evidence/xcode-version.txt
+          open -a "$DEVELOPER_DIR/Applications/Simulator.app"
+          python3 -c 'import subprocess; subprocess.run(["xcrun","simctl","list","devices","available","-j"],check=True,timeout=180)' > ios-evidence/initial-devices.json
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -27,10 +37,8 @@ jobs:
         run: python3 apps/ios/make-project.py
       - name: Build actual simulator application
         run: |
-          mkdir -p ios-evidence
           set -o pipefail
           xcodebuild -project apps/ios/OurJam.xcodeproj -scheme OurJam -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-build CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO build 2>&1 | tee ios-evidence/build.log
-          xcodebuild -version > ios-evidence/xcode-version.txt
       - name: Start isolated native integration backend
         run: |
           node --import tsx scripts/native-test-server.ts > ios-evidence/server.log 2>&1 &
