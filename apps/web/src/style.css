@@ -1654,3 +1654,83 @@ summary {
 .release-notice p {
   margin: 4px 0 0;
 }
+.artist-page {
+  width: min(1180px, calc(100% - 40px));
+  margin: 40px auto 80px;
+}
+.artist-hero {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  align-items: center;
+  gap: 32px;
+  padding: 48px 0;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 40px;
+}
+.artist-hero h1 {
+  font-size: clamp(48px, 8vw, 100px);
+  letter-spacing: -0.06em;
+  margin: 16px 0;
+  line-height: 1;
+}
+.artist-hero p {
+  color: var(--muted);
+  max-width: 600px;
+  line-height: 1.7;
+}
+.artist-links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+  align-items: center;
+}
+.artist-wave {
+  display: flex;
+  height: 220px;
+  align-items: center;
+  gap: 3%;
+  justify-content: center;
+  transform: rotate(-12deg);
+}
+.artist-wave i {
+  width: 6%;
+  border-radius: 50px;
+  background: linear-gradient(120deg, #d5ff61, #6d934d);
+  box-shadow: 0 20px 80px #adff4025;
+}
+.archive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr));
+  gap: 20px;
+  margin: 24px 0;
+}
+.archive-event h3 {
+  font-size: 30px;
+  margin: 20px 0 12px;
+}
+.archive-event .button,
+.archive-event .text-button {
+  display: table;
+  margin-top: 20px;
+}
+.artist-editor {
+  margin: 24px 0;
+}
+.artist-editor form {
+  display: grid;
+  gap: 16px;
+}
+@media (max-width: 650px) {
+  .artist-hero {
+    grid-template-columns: 1fr;
+    padding-top: 16px;
+  }
+  .artist-wave {
+    height: 130px;
+  }
+  .artist-page .track {
+    display: flex;
+    flex-wrap: wrap;
+  }
+}

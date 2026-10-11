@@ -1,4 +1,11 @@
 import { moderationQueue, moderate } from "./moderation.js";
+import {
+  artistProfileInput,
+  catalogInput,
+  publicArtist,
+  editArtist,
+  likedTracks,
+} from "./catalog.js";
 import type { EmailConfig } from "./email-config.js";
 import {
   subscriptionInput,
@@ -222,11 +229,11 @@ export async function createApp(db: Database, config: AppConfig) {
   app.get("/api/ready", async () => {
     const rows = (
       await db.query(
-        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql')",
+        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql','005_artist_profiles.sql')",
       )
     ).rows;
     requireThat(
-      rows.length === 4,
+      rows.length === 5,
       "schema_not_ready",
       "Required database migrations have not been applied.",
       503,
@@ -334,6 +341,31 @@ export async function createApp(db: Database, config: AppConfig) {
       })
       .parse(req.query);
     return leaderboard(db, params.id, q.period, q.metric, q.event);
+  });
+  app.get("/api/artists/:id", async (req) =>
+    publicArtist(
+      db,
+      z
+        .string()
+        .min(1)
+        .max(100)
+        .parse((req.params as any).id),
+      catalogInput.parse(req.query),
+    ),
+  );
+  app.get("/api/operator/artist", async (req) => {
+    const s = await session(req, "operator");
+    return (
+      await publicArtist(db, s.artist_id, catalogInput.parse({ limit: 1 }))
+    ).artist;
+  });
+  app.patch("/api/operator/artist", async (req) => {
+    const s = await session(req, "operator");
+    return editArtist(db, s.artist_id, artistProfileInput.parse(req.body));
+  });
+  app.get("/api/library", async (req) => {
+    const s = await session(req, "guest");
+    return likedTracks(db, s.participant_id, catalogInput.parse(req.query));
   });
   app.get("/api/releases/:id/credits", async (req) =>
     releaseCredits(db, id.parse((req.params as any).id)),

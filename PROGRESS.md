@@ -26,7 +26,7 @@ P002 remains blocked on real provider entitlement/rights and physical Soundcore 
 ## External resource state
 
 - GitHub initially empty; application and all planning documents now live in this repository.
-- Migrations 001–004 rehearsed on isolated Neon branch `br-blue-unit-b5rk1hit`. Production branch `br-aged-sea-b55fzq0v` is untouched. Workspace direct Neon DNS failed, so connector rehearsal and CI PostgreSQL tests are distinct evidence.
+- Migrations 001–005 rehearsed on isolated Neon branch `br-blue-unit-b5rk1hit`. Production branch `br-aged-sea-b55fzq0v` is untouched. Workspace direct Neon DNS failed, so connector rehearsal and CI PostgreSQL tests are distinct evidence.
 - No Our Jam service deployed to Render. The service-creation connector cannot assign project/environment, the dashboard attempt timed out, and no project-specific API credential was available. Target remains `prj-db5btotckfvc739m1ck0`. Docker builds in CI; Blueprint validates against Render's official schema.
 - Engine Room discovery manifest is committed. Actual ingestion is unverified.
 - No real generation requests, email deliveries, paid resource creation or production database changes occurred.
@@ -48,3 +48,11 @@ Native client draft [#11](https://github.com/neophilism/Our-Jam/pull/11) is pres
 PR [#12](https://github.com/neophilism/Our-Jam/pull/12) merged at `69163c03ac6c582aaf0a2710de3be4a0d34c8a37` after CI run `38128764587`: 25 domain/API/media tests, ten desktop/mobile browser scenarios, dependency audit and Docker build passed. It delivers the show preparation increment above.
 
 Optional verified event subscriptions, encrypted contact/message storage, durable deduplicated email dispatch, bounded retries and send caps, unsubscribe, signed bounce/complaint suppression and foreground web release notices are implemented in the release-notification increment. Delivery remains disabled; test providers capture fixtures only. Migration 004 was applied successfully as one versioned transaction on isolated Neon branch `br-blue-unit-b5rk1hit`; production remains untouched. See `docs/release-email.md` for exact semantics, enablement and limits. Native/web push and actual sender/inbox acceptance remain open.
+
+## Artist archive increment
+
+PR [#13](https://github.com/neophilism/Our-Jam/pull/13) merged at `507a959b94446de4365a976560e728242c90ea81` after CI run `38129841845`: 30 domain/API/media tests, twelve desktop/mobile browser scenarios, dependency audit and Docker build passed. Release email remains disabled awaiting approved sender credentials and live delivery rehearsal.
+
+Public artist profiles, music links, filtered event archives, listener-first navigation and guest-scoped liked-track collections are implemented in the archive increment. Reconnect guards disable voting while state is unavailable/stale and prevent old responses from replacing newer snapshots. See `docs/artist-archives.md`; event admission remains open to anyone with the link, and cross-device guest recovery is not yet implemented.
+
+Migration 005 was applied transactionally to isolated Neon branch `br-blue-unit-b5rk1hit`; production is unchanged.
