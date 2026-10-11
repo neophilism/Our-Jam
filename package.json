@@ -13,7 +13,7 @@
     "test": "node --import tsx --test --test-concurrency=1 tests/*.test.ts",
     "build:server": "tsc -p tsconfig.server.json",
     "start": "node dist/server/apps/api/src/main.js",
-    "dev:api": "tsx watch --env-file=.env.local apps/api/src/main.ts",
+    "dev:api": "node --watch --env-file=.env.local --import tsx apps/api/src/main.ts",
     "db:migrate": "node --env-file=.env.local --import tsx apps/api/src/migrate.ts",
     "dev:web": "vite",
     "build:web": "vite build",
@@ -44,6 +44,7 @@
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "prettier": "^3.9.10",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.4"

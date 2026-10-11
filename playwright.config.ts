@@ -1,2 +1,23 @@
-import { defineConfig,devices } from '@playwright/test';
-export default defineConfig({testDir:'tests/browser',fullyParallel:false,workers:1,retries:process.env.CI?1:0,use:{baseURL:'http://127.0.0.1:4173',trace:'retain-on-failure',screenshot:'only-on-failure'},webServer:{command:'node --import tsx scripts/test-server.ts',url:'http://127.0.0.1:4173/api/health',timeout:60000,reuseExistingServer:!process.env.CI},projects:[{name:'desktop',use:{...devices['Desktop Chrome']}},{name:'mobile',use:{...devices['Pixel 7']}}]});
+import { defineConfig, devices } from "@playwright/test";
+export default defineConfig({
+  testDir: "tests/browser",
+  fullyParallel: false,
+  workers: 1,
+  retries: process.env.CI ? 1 : 0,
+  use: {
+    launchOptions: { args: ["--use-fake-device-for-media-stream"] },
+    baseURL: "http://127.0.0.1:4173",
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+  },
+  webServer: {
+    command: "node --import tsx scripts/test-server.ts",
+    url: "http://127.0.0.1:4173/api/health",
+    timeout: 60000,
+    reuseExistingServer: !process.env.CI,
+  },
+  projects: [
+    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
+    { name: "mobile", use: { ...devices["Pixel 7"] } },
+  ],
+});

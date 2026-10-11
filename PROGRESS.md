@@ -25,3 +25,9 @@ Persistent events, guest/operator sessions, five-point voting, immutable round c
 ## Web client slice
 
 PR #2 merged after PostgreSQL 18 CI passed at 84b8e970a6c91f6c0eb0cb7ac30e7433c7ee51ce. The initial schema applied on the isolated Neon branch through the connector. The responsive audience, public display and performer UI now build. GitHub browser checks are required before merging this slice; local browser installation returned invalid archives. The Render dashboard inspection timed out. No deployment is claimed.
+
+## Playback and recording safety slice
+
+PR #3 merged at b4340aa52633df79b6f8b993dff98d912360bc1d after CI run 38096503809 passed all PostgreSQL/API and four desktop/mobile browser scenarios. Screenshots reviewed: audience controls and QR display are legible; cinematic graphics remain an active refinement.
+
+This slice adds fenced playback ownership, sequenced and replayable commands, pause-aware voting, durable deadline closure, paused startup until linked audio starts, monotonic client countdown, and IndexedDB recording chunks/checksums/recovery exports. Random unvalidated cookies no longer create independent rate-limit buckets. API source is formatted for review. New browser coverage exercises recording persistence using Chromium's synthetic microphone; this is not a Rave or real-device recording test.
