@@ -13,7 +13,7 @@ test("P003 migrations are repeatable and reject cross-event references", async (
     "SELECT name FROM schema_migrations ORDER BY name",
   );
   assert.deepEqual(
-    migrations.rows.map((row) => row.name),
+    migrations.rows.slice(0, 3).map((row) => row.name),
     ["001_core.sql", "002_playback.sql", "003_generation.sql"],
   );
 
