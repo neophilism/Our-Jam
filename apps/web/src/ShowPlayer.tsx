@@ -7,11 +7,13 @@ export function ShowPlayer({
   refresh,
   onError,
   onClaim,
+  onRelease,
 }: {
   data: EventState;
   refresh: () => Promise<void>;
   onError: (message: string) => void;
   onClaim: () => void;
+  onRelease: () => void;
 }) {
   const lease = useRef<Lease | null>(null),
     audio = useRef<HTMLAudioElement>(null),
@@ -51,16 +53,17 @@ export function ShowPlayer({
     if (!owned) return;
     const timer = setInterval(async () => {
       if (!lease.current) return;
+      const renewal = lease.current;
       try {
-        await api(root + "/playback/heartbeat", "POST", lease.current);
+        await api(root + "/playback/heartbeat", "POST", renewal);
       } catch (e) {
-        fail(e);
+        if (lease.current?.leaseToken === renewal.leaseToken) fail(e);
       }
     }, 8000);
     return () => clearInterval(timer);
   }, [owned, root, fail]);
   const control = useCallback(
-    async (action: "advance" | "pause", pause?: boolean) => {
+    async (action: "advance" | "pause" | "release", pause?: boolean) => {
       if (pending.current || !lease.current || !owned) return false;
       pending.current = true;
       setBusy(true);
@@ -70,7 +73,12 @@ export function ShowPlayer({
       };
       try {
         const result = await api(
-          root + (action === "advance" ? "/advance" : "/playback/pause"),
+          root +
+            (action === "advance"
+              ? "/advance"
+              : action === "release"
+                ? "/playback/release"
+                : "/playback/pause"),
           "POST",
           action === "advance"
             ? {
@@ -80,7 +88,11 @@ export function ShowPlayer({
               }
             : { ...command, commandId: crypto.randomUUID(), pause },
         );
-        lease.current = { ...command, sequence: result.sequence };
+        if (action === "release") {
+          lease.current = null;
+          setOwned(false);
+          onRelease();
+        } else lease.current = { ...command, sequence: result.sequence };
         onError("");
         await refresh();
         return true;
@@ -92,7 +104,7 @@ export function ShowPlayer({
         setBusy(false);
       }
     },
-    [owned, root, data.event.revision, refresh, onError, fail],
+    [owned, root, data.event.revision, refresh, onError, onRelease, fail],
   );
   // A new browser-played source starts with voting paused until audio actually starts.
   const started = useRef<string | null>(null);
@@ -144,6 +156,18 @@ export function ShowPlayer({
           </button>
         </div>
       )}
+      {owned && (
+        <button
+          className="text-button"
+          disabled={busy}
+          onClick={() => {
+            audio.current?.pause();
+            void control("release", true);
+          }}
+        >
+          Release playback control
+        </button>
+      )}
       {data.current?.audio_url ? (
         <>
           <audio
@@ -155,11 +179,13 @@ export function ShowPlayer({
             onEnded={() => {
               if (auto && owned) void control("advance");
             }}
-            onError={() =>
-              onError(
-                "Show audio could not load. Voting stays paused; use your local album backup.",
-              )
-            }
+            onError={() => {
+              void control("pause", true).finally(() =>
+                onError(
+                  "Show audio could not load. Use your local album backup; check that the round is paused.",
+                ),
+              );
+            }}
           />
           <div className="player-actions">
             <button

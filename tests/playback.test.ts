@@ -140,3 +140,81 @@ test("playback fencing, pause recovery and durable cutoff", async (t) => {
   assert.equal(jobs[0].state, "blocked");
   assert.ok(jobs[0].prompt.includes("Bright horns"));
 });
+
+test("taking over an expired controller pauses before the next vote, and release permits immediate handoff", async (t) => {
+  const db = await testDatabase();
+  t.after(() => db.close());
+  const e = await createEvent(
+    db,
+    "our-jam",
+    eventInput.parse({
+      title: "Handoff test",
+      artistName: "Test Artist",
+      slug: "handoff-" + randomUUID(),
+      minimumRoundSeconds: 60,
+      sources: [
+        { title: "Short source", corePrompt: "Core", durationSeconds: 30 },
+      ],
+    }),
+  );
+  const first = await claimPlayback(db, "our-jam", e.id);
+  const started = await advance(db, "our-jam", e.id, randomUUID(), 0, {
+    ...first,
+    sequence: 1,
+  });
+  await db.query(
+    "UPDATE playback_leases SET expires_at=clock_timestamp()-interval '1 second' WHERE event_id=$1",
+    [e.id],
+  );
+  const next = await claimPlayback(db, "our-jam", e.id);
+  assert.ok(next.epoch > first.epoch);
+  assert.equal(
+    (await db.query("SELECT state FROM rounds WHERE id=$1", [started.roundId]))
+      .rows[0].state,
+    "paused",
+  );
+  await pausePlayback(
+    db,
+    "our-jam",
+    e.id,
+    { ...next, sequence: 1 },
+    true,
+    randomUUID(),
+    true,
+  );
+  const third = await claimPlayback(db, "our-jam", e.id);
+  assert.ok(third.epoch > next.epoch);
+  await assert.rejects(heartbeat(db, "our-jam", e.id, next), {
+    code: "playback_lease_lost",
+  });
+  await pausePlayback(
+    db,
+    "our-jam",
+    e.id,
+    { ...third, sequence: 1 },
+    false,
+    randomUUID(),
+  );
+  await db.query(
+    "UPDATE rounds SET opened_at=clock_timestamp()-interval '2 minutes',deadline_at=clock_timestamp()-interval '90 seconds',paused_ms=0 WHERE id=$1",
+    [started.roundId],
+  );
+  await pausePlayback(
+    db,
+    "our-jam",
+    e.id,
+    { ...third, sequence: 2 },
+    true,
+    randomUUID(),
+  );
+  await advance(db, "our-jam", e.id, randomUUID(), 1, {
+    ...third,
+    sequence: 3,
+  });
+  const job = (
+    await db.query("SELECT reason FROM generation_jobs WHERE round_id=$1", [
+      started.roundId,
+    ])
+  ).rows[0];
+  assert.equal(job.reason, "participation_window_too_short");
+});

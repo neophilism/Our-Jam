@@ -137,6 +137,17 @@ test("performer owns playback, pauses voting, and recovers saved recording chunk
     .getByRole("button", { name: "Resume the round", exact: true })
     .click();
   await expect(page.getByText("UNTIL THE NEXT WAVE")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Release playback control", exact: true })
+    .click();
+  await expect(page.getByText("VOTING PAUSED")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Use this device for show playback" })
+    .click();
+  await page
+    .getByRole("button", { name: "Resume the round", exact: true })
+    .click();
+  await expect(page.getByText("UNTIL THE NEXT WAVE")).toBeVisible();
   // CI Chromium exposes no usable microphone backend (getUserMedia rejects
   // NotSupportedError). Supply a real synthetic MediaStream while exercising
   // the real MediaRecorder, IndexedDB writes, checksums and recovery unchanged.

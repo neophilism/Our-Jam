@@ -1,3 +1,4 @@
+import { moderationQueue, moderate } from "./moderation.js";
 import { leaderboard, releaseCredits } from "./recognition.js";
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
@@ -414,6 +415,19 @@ export async function createApp(db: Database, config: AppConfig) {
       playbackInput.parse(req.body),
     );
   });
+  app.post("/api/operator/events/:id/playback/release", async (req) => {
+    const op = await session(req, "operator");
+    const body = playbackInput.extend({ commandId: id }).parse(req.body);
+    return pausePlayback(
+      db,
+      op.artist_id,
+      id.parse((req.params as any).id),
+      body,
+      true,
+      body.commandId,
+      true,
+    );
+  });
   app.post("/api/operator/events/:id/playback/pause", async (req) => {
     const op = await session(req, "operator");
     const body = playbackInput
@@ -550,6 +564,22 @@ export async function createApp(db: Database, config: AppConfig) {
       return { ok: true };
     });
   });
+  app.get("/api/operator/events/:id/moderation", async (req) => {
+    const op = await session(req, "operator");
+    return moderationQueue(db, op.artist_id, id.parse((req.params as any).id));
+  });
+  for (const kind of ["comment", "release"] as const)
+    app.post(`/api/operator/${kind}s/:id/moderate`, async (req) => {
+      const op = await session(req, "operator");
+      const body = z.object({ hidden: z.boolean() }).parse(req.body);
+      return moderate(
+        db,
+        op.artist_id,
+        kind,
+        id.parse((req.params as any).id),
+        body.hidden,
+      );
+    });
   app.get("/api/operator/jobs/:id", async (req) => {
     const op = await session(req, "operator");
     const job = (
@@ -709,10 +739,17 @@ export async function createApp(db: Database, config: AppConfig) {
   );
   app.delete("/api/comments/:id", async (req) => {
     const s = await session(req, "guest");
-    await db.query(
-      "UPDATE comments SET hidden=true WHERE id=$1 AND participant_id=$2",
-      [id.parse((req.params as any).id), s.participant_id],
-    );
+    const commentId = id.parse((req.params as any).id);
+    await db.transaction(async (tx) => {
+      const own = await tx.query(
+        "SELECT id FROM comments WHERE id=$1 AND participant_id=$2 FOR UPDATE",
+        [commentId, s.participant_id],
+      );
+      if (!own.rows.length) return;
+      // Author removal is final; a moderator must not be able to restore it.
+      await tx.query("DELETE FROM reports WHERE comment_id=$1", [commentId]);
+      await tx.query("DELETE FROM comments WHERE id=$1", [commentId]);
+    });
     return { ok: true };
   });
   app.post("/api/comments/:id/report", async (req) => {

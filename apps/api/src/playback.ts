@@ -31,6 +31,32 @@ export async function claimPlayback(
       "Another device is controlling this show. Release it there or wait for its lease to expire.",
       409,
     );
+    if (!same) {
+      const active = (
+        await tx.query(
+          "SELECT *,clock_timestamp() server_time FROM rounds WHERE event_id=$1 AND state='open' FOR UPDATE",
+          [eventId],
+        )
+      ).rows[0];
+      if (active) {
+        const cutoff = Math.max(
+          new Date(active.opened_at).getTime(),
+          Math.min(
+            new Date(lease?.expires_at ?? active.server_time).getTime(),
+            new Date(active.deadline_at).getTime(),
+          ),
+        );
+        await tx.query(
+          "UPDATE rounds SET state='paused',paused_at=$1,remaining_ms=$2,pause_reason='controller_changed' WHERE id=$3",
+          [
+            new Date(cutoff),
+            Math.max(0, new Date(active.deadline_at).getTime() - cutoff),
+            active.id,
+          ],
+        );
+        await logEvent(tx, eventId, "playback.disconnected");
+      }
+    }
     const token = same ? existingToken! : randomBytes(32).toString("hex");
     const epoch = same ? lease.epoch : (lease?.epoch ?? 0) + 1;
     const sequence = same ? lease.last_sequence : 0;
@@ -64,11 +90,13 @@ export async function pausePlayback(
   command: PlaybackCommand,
   pause: boolean,
   commandId: string,
+  release = false,
 ) {
   return db.transaction(async (tx) => {
     await ownedEvent(tx, eventId, artistId, true);
     const cache = await replay(tx, "operator:" + artistId, commandId, {
       type: "pause",
+      release,
       eventId,
       command,
       pause,
@@ -89,8 +117,17 @@ export async function pausePlayback(
             new Date(round.server_time).getTime(),
         );
         await tx.query(
-          "UPDATE rounds SET state='paused',paused_at=now(),remaining_ms=$1,pause_reason='performer' WHERE id=$2",
-          [remaining, round.id],
+          "UPDATE rounds SET state='paused',paused_at=$1,remaining_ms=$2,pause_reason='performer' WHERE id=$3",
+          [
+            new Date(
+              Math.min(
+                new Date(round.server_time).getTime(),
+                new Date(round.deadline_at).getTime(),
+              ),
+            ),
+            remaining,
+            round.id,
+          ],
         );
       } else if (!pause && round.state === "paused") {
         const delta = Math.max(
@@ -114,6 +151,13 @@ export async function pausePlayback(
         eventId,
         pause ? "playback.paused" : "playback.resumed",
       );
+    }
+    if (release) {
+      await tx.query(
+        "UPDATE playback_leases SET expires_at=clock_timestamp() WHERE event_id=$1",
+        [eventId],
+      );
+      await logEvent(tx, eventId, "playback.released");
     }
     const result = { ok: true, sequence: command.sequence };
     await remember(tx, "operator:" + artistId, commandId, cache.hash, result);

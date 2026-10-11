@@ -1,0 +1,63 @@
+import type { Database } from "./db.js";
+import { requireThat } from "../../../packages/domain/src/index.js";
+import { ownedEvent, logEvent } from "./service.js";
+export async function moderationQueue(
+  db: Database,
+  artistId: string,
+  eventId: string,
+) {
+  await ownedEvent(db, eventId, artistId);
+  return {
+    comments: (
+      await db.query(
+        `SELECT c.id,c.body,c.hidden,c.created_at,r.title,
+ (SELECT jsonb_agg(x.reason ORDER BY x.created_at) FROM reports x WHERE x.comment_id=c.id) reports
+ FROM comments c JOIN releases r ON r.id=c.release_id WHERE r.event_id=$1 AND (c.hidden OR EXISTS(SELECT 1 FROM reports x WHERE x.comment_id=c.id)) ORDER BY c.created_at DESC LIMIT 100`,
+        [eventId],
+      )
+    ).rows,
+    releases: (
+      await db.query(
+        "SELECT id,title,hidden,published_at FROM releases WHERE event_id=$1 ORDER BY published_at DESC NULLS FIRST,id LIMIT 100",
+        [eventId],
+      )
+    ).rows,
+  };
+}
+export async function moderate(
+  db: Database,
+  artistId: string,
+  kind: "comment" | "release",
+  subjectId: string,
+  hidden: boolean,
+) {
+  return db.transaction(async (tx) => {
+    const record = (
+      await tx.query(
+        kind === "comment"
+          ? "SELECT r.event_id FROM comments c JOIN releases r ON r.id=c.release_id WHERE c.id=$1"
+          : "SELECT event_id FROM releases WHERE id=$1",
+        [subjectId],
+      )
+    ).rows[0];
+    requireThat(record, "not_found", "Entry not found.", 404);
+    await ownedEvent(tx, record.event_id, artistId, true);
+    await tx.query(
+      kind === "comment"
+        ? "UPDATE comments SET hidden=$1 WHERE id=$2"
+        : "UPDATE releases SET hidden=$1 WHERE id=$2",
+      [hidden, subjectId],
+    );
+    await tx.query(
+      "INSERT INTO audit_log(artist_id,event_id,action,subject_id) VALUES($1,$2,$3,$4)",
+      [
+        artistId,
+        record.event_id,
+        `${kind}.${hidden ? "hidden" : "restored"}`,
+        subjectId,
+      ],
+    );
+    await logEvent(tx, record.event_id, "moderation.changed");
+    return { ok: true };
+  });
+}
