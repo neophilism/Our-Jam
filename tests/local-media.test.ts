@@ -1,0 +1,38 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { mkdtemp, rm, readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
+import Fastify from "fastify";
+import { localMediaStore } from "../apps/api/src/local-media-store.js";
+import { DomainError } from "../packages/domain/src/index.js";
+
+test("local private storage persists audio and enforces signed expiring delivery and ranges", async (t) => {
+  const root = await mkdtemp(path.join(tmpdir(), "our-jam-local-test-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const secret = randomBytes(32).toString("hex"), origin = "http://127.0.0.1:4173";
+  const media = await localMediaStore(root, origin, secret);
+  const app = Fastify();
+  app.setErrorHandler((error, _req, reply) => reply.code(error instanceof DomainError ? error.status : 500).send({ error: "media_error" }));
+  media.register(app); t.after(() => app.close());
+  const bytes = Buffer.from("private audio bytes"), sha = createHash("sha256").update(bytes).digest("hex");
+  const key = `albums/${randomUUID()}/${randomUUID()}/${sha}.mp3`;
+  await media.store.put(key, bytes, sha);
+  assert.deepEqual(await readFile(path.join(root, key)), bytes);
+  const address = new URL(await media.store.url(key, false));
+  const response = await app.inject(address.pathname + address.search);
+  assert.equal(response.statusCode, 200); assert.deepEqual(response.rawPayload, bytes);
+  const range = await app.inject({ method: "GET", url: address.pathname + address.search, headers: { range: "bytes=0-6" } });
+  assert.equal(range.statusCode, 206); assert.equal(range.body, "private");
+  assert.equal(range.headers["content-range"], `bytes 0-6/${bytes.length}`);
+  const tampered = new URL(address); tampered.searchParams.set("sig", "0".repeat(64));
+  assert.equal((await app.inject(tampered.pathname + tampered.search)).statusCode, 403);
+  assert.equal((await app.inject({ method: "GET", url: address.pathname + address.search, headers: { range: "bytes=1000-2000" } })).statusCode, 416);
+  await assert.rejects(media.store.put("../outside.mp3", bytes, sha));
+  await assert.rejects(media.store.put(key, bytes, "0".repeat(64)));
+  await assert.rejects(localMediaStore(root, "https://public.example.test", secret));
+  const restored = await localMediaStore(root, origin, secret);
+  const restoredAddress = new URL(await restored.store.url(key, false));
+  assert.equal((await app.inject(restoredAddress.pathname + restoredAddress.search)).statusCode, 200);
+});

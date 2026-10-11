@@ -1,43 +1,34 @@
 #!/usr/bin/env python3
-"""Generate the dependency-free Xcode app and UI-test project deterministically."""
+"""Generate a deterministic, dependency-free Xcode app and UI-test project."""
 import hashlib
 import json
 from pathlib import Path
-
 root = Path(__file__).resolve().parent
 objects = {}
-def ident(name):
-    return hashlib.sha256(name.encode()).hexdigest()[:24].upper()
-def add(name, isa, **values):
-    key = ident(name)
+def ident(label):
+    return hashlib.sha256(label.encode()).hexdigest()[:24].upper()
+def add(label, isa, **values):
+    key = ident(label)
     objects[key] = dict(isa=isa, **values)
     return key
 def render(value):
     if isinstance(value, dict):
         return '{\n' + '\n'.join(f'{json.dumps(str(k))} = {render(v)};' for k, v in value.items()) + '\n}'
-    if isinstance(value, list):
-        return '(' + ','.join(render(v) for v in value) + ')'
+    if isinstance(value, list): return '(' + ','.join(render(v) for v in value) + ')'
     return json.dumps(str(value))
-
 project = ident('project')
 products = add('products', 'PBXGroup', children=[], name='Products', sourceTree='<group>')
 groups = []
-base_settings = {
-    'CLANG_ENABLE_MODULES': 'YES', 'SDKROOT': 'iphoneos',
-    'IPHONEOS_DEPLOYMENT_TARGET': '17.0', 'SWIFT_VERSION': '5.0',
-    'TARGETED_DEVICE_FAMILY': '1,2', 'CODE_SIGN_STYLE': 'Automatic',
-    'ENABLE_USER_SCRIPT_SANDBOXING': 'YES', 'SWIFT_STRICT_CONCURRENCY': 'targeted',
-}
-def configs(name, settings):
+base_settings = {'CLANG_ENABLE_MODULES': 'YES', 'SDKROOT': 'iphoneos', 'IPHONEOS_DEPLOYMENT_TARGET': '17.0', 'SWIFT_VERSION': '5.0', 'TARGETED_DEVICE_FAMILY': '1,2', 'CODE_SIGN_STYLE': 'Automatic', 'ENABLE_USER_SCRIPT_SANDBOXING': 'YES', 'SWIFT_STRICT_CONCURRENCY': 'targeted'}
+def configs(label, settings):
     refs = []
     for variant in ['Debug', 'Release']:
         s = dict(settings)
         s['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone' if variant == 'Debug' else '-O'
         if variant == 'Debug': s['SWIFT_ACTIVE_COMPILATION_CONDITIONS'] = 'DEBUG'
-        refs.append(add(name+variant, 'XCBuildConfiguration', name=variant, buildSettings=s))
-    return add(name+'configs', 'XCConfigurationList', buildConfigurations=refs, defaultConfigurationIsVisible='0', defaultConfigurationName='Release')
+        refs.append(add(label+variant, 'XCBuildConfiguration', name=variant, buildSettings=s))
+    return add(label+'configs', 'XCConfigurationList', buildConfigurations=refs, defaultConfigurationIsVisible='0', defaultConfigurationName='Release')
 project_configs = configs('project', base_settings)
-
 def target(name, files, product, product_type, settings, dependencies=None):
     source_refs, builds = [], []
     for file in files:
@@ -50,22 +41,11 @@ def target(name, files, product, product_type, settings, dependencies=None):
     sources = add(name+'sources', 'PBXSourcesBuildPhase', buildActionMask='2147483647', files=builds, runOnlyForDeploymentPostprocessing='0')
     frameworks = add(name+'frameworks', 'PBXFrameworksBuildPhase', buildActionMask='2147483647', files=[], runOnlyForDeploymentPostprocessing='0')
     resources = add(name+'resources', 'PBXResourcesBuildPhase', buildActionMask='2147483647', files=[], runOnlyForDeploymentPostprocessing='0')
-    s = dict(base_settings, **settings)
-    return add(name+'target', 'PBXNativeTarget', buildConfigurationList=configs(name, s), buildPhases=[sources, frameworks, resources], buildRules=[], dependencies=dependencies or [], name=name, productName=name, productReference=product_ref, productType=product_type)
-
-app = target('OurJam', ['Models.swift', 'API.swift', 'SessionModel.swift', 'OurJamApp.swift'], 'OurJam.app', 'com.apple.product-type.application', {
-    'PRODUCT_NAME': '$(TARGET_NAME)', 'PRODUCT_BUNDLE_IDENTIFIER': 'com.neophilism.ourjam',
-    'INFOPLIST_FILE': 'OurJam/Info.plist', 'GENERATE_INFOPLIST_FILE': 'NO',
-    'LD_RUNPATH_SEARCH_PATHS': ['$(inherited)', '@executable_path/Frameworks'],
-    'SUPPORTED_PLATFORMS': 'iphoneos iphonesimulator',
-})
+    return add(name+'target', 'PBXNativeTarget', buildConfigurationList=configs(name, dict(base_settings, **settings)), buildPhases=[sources, frameworks, resources], buildRules=[], dependencies=dependencies or [], name=name, productName=name, productReference=product_ref, productType=product_type)
+app = target('OurJam', ['Models.swift', 'API.swift', 'SessionModel.swift', 'OurJamApp.swift'], 'OurJam.app', 'com.apple.product-type.application', {'PRODUCT_NAME': '$(TARGET_NAME)', 'PRODUCT_BUNDLE_IDENTIFIER': 'com.neophilism.ourjam', 'INFOPLIST_FILE': 'OurJam/Info.plist', 'GENERATE_INFOPLIST_FILE': 'NO', 'LD_RUNPATH_SEARCH_PATHS': ['$(inherited)', '@executable_path/Frameworks'], 'SUPPORTED_PLATFORMS': 'iphoneos iphonesimulator'})
 proxy = add('appproxy', 'PBXContainerItemProxy', containerPortal=project, proxyType='1', remoteGlobalIDString=app, remoteInfo='OurJam')
 dep = add('testdepends', 'PBXTargetDependency', target=app, targetProxy=proxy)
-tests = target('OurJamUITests', ['OurJamUITests.swift'], 'OurJamUITests.xctest', 'com.apple.product-type.bundle.ui-testing', {
-    'PRODUCT_NAME': '$(TARGET_NAME)', 'PRODUCT_BUNDLE_IDENTIFIER': 'com.neophilism.ourjam.uitests',
-    'GENERATE_INFOPLIST_FILE': 'YES', 'TEST_TARGET_NAME': 'OurJam',
-    'LD_RUNPATH_SEARCH_PATHS': ['$(inherited)', '@executable_path/Frameworks', '@loader_path/Frameworks'],
-}, [dep])
+tests = target('OurJamUITests', ['OurJamUITests.swift'], 'OurJamUITests.xctest', 'com.apple.product-type.bundle.ui-testing', {'PRODUCT_NAME': '$(TARGET_NAME)', 'PRODUCT_BUNDLE_IDENTIFIER': 'com.neophilism.ourjam.uitests', 'GENERATE_INFOPLIST_FILE': 'YES', 'TEST_TARGET_NAME': 'OurJam', 'LD_RUNPATH_SEARCH_PATHS': ['$(inherited)', '@executable_path/Frameworks', '@loader_path/Frameworks']}, [dep])
 main_group = add('maingroup', 'PBXGroup', children=groups+[products], sourceTree='<group>')
 objects[project] = dict(isa='PBXProject', attributes={'LastUpgradeCheck': '1600', 'BuildIndependentTargetsInParallel': 'YES', 'TargetAttributes': {app: {'CreatedOnToolsVersion': '16.0'}, tests: {'CreatedOnToolsVersion': '16.0', 'TestTargetID': app}}}, buildConfigurationList=project_configs, compatibilityVersion='Xcode 14.0', developmentRegion='en', hasScannedForEncodings='0', knownRegions=['en', 'Base'], mainGroup=main_group, productRefGroup=products, projectDirPath='', projectRoot='', targets=[app, tests])
 project_dir = root / 'OurJam.xcodeproj'

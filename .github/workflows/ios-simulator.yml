@@ -1,10 +1,10 @@
 name: Native iOS simulator
 on:
   pull_request:
-    paths: ['apps/ios/**', 'scripts/native-test-server.ts', '.github/workflows/ios-simulator.yml']
+    paths: ['apps/ios/**', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', '.github/workflows/ios-simulator.yml']
   push:
     branches: [main]
-    paths: ['apps/ios/**', 'scripts/native-test-server.ts', '.github/workflows/ios-simulator.yml']
+    paths: ['apps/ios/**', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', '.github/workflows/ios-simulator.yml']
 permissions:
   contents: read
 jobs:
@@ -45,13 +45,16 @@ jobs:
           xcrun simctl bootstatus "$DEVICE" -b
           xcodebuild -project apps/ios/OurJam.xcodeproj -scheme OurJam -configuration Debug -destination "platform=iOS Simulator,id=$DEVICE" -derivedDataPath ios-test-build -resultBundlePath ios-evidence/NativeTests.xcresult CODE_SIGNING_ALLOWED=NO test 2>&1 | tee ios-evidence/tests.log
           curl -fsS http://127.0.0.1:4173/__test__/native-evidence > ios-evidence/participation.json
-      - name: Package installable simulator application
+      - name: Package actual app and complete local source
         run: |
           mkdir -p ios-artifact
           ditto -c -k --sequesterRsrc --keepParent ios-build/Build/Products/Release-iphonesimulator/OurJam.app ios-artifact/OurJam-Simulator.zip
+          cp 'apps/ios/Open Simulator.command' ios-artifact/
           cp apps/ios/README.md ios-artifact/README.md
+          git archive --format=zip --prefix=OurJam-Local/ HEAD > ios-artifact/OurJam-Local-Source.zip
+          cp docs/local-real-rehearsal.md ios-artifact/LOCAL-SETUP.md
           git rev-parse HEAD > ios-artifact/COMMIT.txt
-          shasum -a 256 ios-artifact/OurJam-Simulator.zip > ios-artifact/SHA256SUMS.txt
+          shasum -a 256 ios-artifact/*.zip > ios-artifact/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
           name: OurJam-iOS-Simulator
