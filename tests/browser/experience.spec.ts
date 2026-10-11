@@ -191,14 +191,16 @@ test("performer owns playback, pauses voting, and recovers saved recording chunk
     .getByLabel("Recording input", { exact: true })
     .selectOption("fixture-input");
   await page.getByRole("button", { name: "Record browser microphone" }).click();
+  // Input permission/storage setup is asynchronous; inspect its constraints only
+  // once the real encoder has started, not immediately after the click resolves.
+  await expect(
+    page.getByRole("button", { name: "Stop recording" }),
+  ).toBeVisible();
   expect(
     await page.evaluate(
       () => (window as any).__lastAudioConstraints.audio.deviceId,
     ),
   ).toEqual({ exact: "fixture-input" });
-  await expect(
-    page.getByRole("button", { name: "Stop recording" }),
-  ).toBeVisible();
   await expect(page.getByText(/1 chunks saved/)).toBeVisible({
     timeout: 12000,
   });

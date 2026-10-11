@@ -1,22 +1,7 @@
-import {
-  Component,
-  useMemo,
-  useRef,
-  useState,
-  useEffect,
-  type ReactNode,
-} from "react";
+import { useMemo, useRef, useEffect, type RefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import type { Wave } from "./api";
-const palette = [
-  "#d5fc50",
-  "#c7b8ff",
-  "#ff805d",
-  "#7bd5e7",
-  "#ffa1cd",
-  "#89dab4",
-];
+import type { VisualOrb } from "./Visual";
 const vertex = `uniform float uTime; uniform float uPulse; varying vec3 vNormal; varying vec3 vPosition;
 void main(){vec3 n=normalize(position);float wobble=sin(n.x*5.+uTime*.8)*cos(n.y*4.-uTime*.6)*sin(n.z*4.+uTime*.4);vec3 p=position*(1.+wobble*.13+uPulse*.055);vNormal=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(p,1.);vPosition=mv.xyz;gl_Position=projectionMatrix*mv;}`;
 const fragment = `uniform vec3 uColor;uniform float uTime;varying vec3 vNormal;varying vec3 vPosition;
@@ -27,16 +12,28 @@ function Orb({
   size,
   color,
   beat,
+  economy,
 }: {
   x: number;
   y: number;
   size: number;
   color: string;
-  beat?: React.RefObject<number>;
+  beat?: RefObject<number>;
+  economy: boolean;
 }) {
   const mesh = useRef<THREE.Mesh>(null);
   const group = useRef<THREE.Group>(null);
   const { viewport } = useThree();
+  const target = useMemo(
+    () =>
+      new THREE.Vector3(
+        (x - 0.5) * viewport.width,
+        (0.5 - y) * viewport.height,
+        0,
+      ),
+    [x, y, viewport.width, viewport.height],
+  );
+  const initialized = useRef(false);
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
@@ -55,13 +52,18 @@ function Orb({
     }
     if (group.current) {
       group.current.rotation.z = Math.sin(t * 0.15 + x) * 0.18;
-      group.current.position.lerp(
-        new THREE.Vector3(
-          (x - 0.5) * viewport.width,
-          (0.5 - y) * viewport.height,
-          0,
+      if (!initialized.current) {
+        group.current.position.copy(target);
+        group.current.scale.setScalar(radius);
+        initialized.current = true;
+      }
+      group.current.position.lerp(target, 1 - Math.exp(-delta * 5));
+      group.current.scale.setScalar(
+        THREE.MathUtils.lerp(
+          group.current.scale.x,
+          radius,
+          1 - Math.exp(-delta * 4),
         ),
-        1 - Math.exp(-delta * 5),
       );
     }
   });
@@ -75,7 +77,7 @@ function Orb({
             renderer.domElement.dataset.rendered = "true";
         }}
       >
-        <sphereGeometry args={[radius, 48, 40]} />
+        <sphereGeometry args={economy ? [1, 24, 20] : [1, 48, 40]} />
         <shaderMaterial
           vertexShader={vertex}
           fragmentShader={fragment}
@@ -83,10 +85,10 @@ function Orb({
           transparent
         />
       </mesh>
-      {[0, 1, 2].map((i) => (
+      {(economy ? [0] : [0, 1, 2]).map((i) => (
         <mesh key={i} rotation={[0.8 + i * 0.7, i * 0.6, 0.4]}>
           <torusGeometry
-            args={[radius * (1.1 + i * 0.055), radius * 0.009, 6, 96]}
+            args={[1.1 + i * 0.055, 0.009, 6, economy ? 48 : 96]}
           />
           <meshBasicMaterial
             color={color}
@@ -98,148 +100,56 @@ function Orb({
     </group>
   );
 }
-class GraphicsBoundary extends Component<
-  { children: ReactNode; fallback: ReactNode },
-  { failed: boolean }
-> {
-  state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  render() {
-    return this.state.failed ? this.props.fallback : this.props.children;
-  }
+
+function SceneClock({
+  visible,
+  economy,
+  onFailure,
+}: {
+  visible: boolean;
+  economy: boolean;
+  onFailure: () => void;
+}) {
+  const { invalidate, gl } = useThree();
+  useEffect(() => {
+    const canvas = gl.domElement;
+    const failed = () => onFailure();
+    canvas.addEventListener("webglcontextlost", failed);
+    return () => canvas.removeEventListener("webglcontextlost", failed);
+  }, [gl, onFailure]);
+  useEffect(() => {
+    if (!visible || !economy) return;
+    const timer = setInterval(invalidate, 1000 / 30);
+    return () => clearInterval(timer);
+  }, [visible, economy, invalidate]);
+  return null;
 }
 export function WaveField({
-  waves,
-  limit = 12,
-  stage = false,
+  orbs,
   beat,
+  visible,
+  economy,
+  onFailure,
 }: {
-  waves: Wave[];
-  limit?: number;
-  stage?: boolean;
-  beat?: React.RefObject<number>;
+  orbs: VisualOrb[];
+  beat?: RefObject<number>;
+  visible: boolean;
+  economy: boolean;
+  onFailure: () => void;
 }) {
-  const [reduced, setReduced] = useState(false);
-  const field = useRef<HTMLDivElement>(null);
-  const [aspect, setAspect] = useState(1.4);
-  useEffect(() => {
-    if (!field.current) return;
-    const o = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      if (height > 0) setAspect(width / height);
-    });
-    o.observe(field.current);
-    return () => o.disconnect();
-  }, []);
-  useEffect(() => {
-    const media = matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => setReduced(media.matches);
-    sync();
-    media.addEventListener("change", sync);
-    return () => media.removeEventListener("change", sync);
-  }, []);
-  const shown = waves.slice(0, limit);
-  const n = shown.length || 1;
-  const columns =
-    n === 1 ? 1 : Math.min(n, Math.max(1, Math.round(Math.sqrt(n * aspect))));
-  const rows = Math.ceil(n / columns);
-  const orbs = (shown.length ? shown : [null]).map((wave, i) => ({
-    wave,
-    x: ((i % columns) + 0.5) / columns,
-    y: (Math.floor(i / columns) + 0.5) / rows,
-    size:
-      ((Math.min(aspect / columns, 1 / rows) * 0.38) / Math.min(aspect, 1)) *
-      (wave?.votes && shown[0]?.votes?.valueOf()
-        ? 0.77 + 0.23 * Math.sqrt(wave.votes / shown[0].votes)
-        : 1),
-    color:
-      palette[
-        wave
-          ? parseInt(wave.id.slice(0, 2), 16) % palette.length
-          : i % palette.length
-      ],
-  }));
-  const fallback = (
-    <div className="orb-fallback">
-      {orbs.map((o, i) => (
-        <i
-          key={i}
-          style={{
-            left: o.x * 100 + "%",
-            top: o.y * 100 + "%",
-            width: `${Math.max(12, o.size * 130)}%`,
-            background: `radial-gradient(circle at 35% 20%,${o.color},${o.color}55 45%,#111 80%)`,
-            boxShadow: `0 0 55px ${o.color}25`,
-          }}
-        />
-      ))}
-    </div>
-  );
   return (
-    <div
-      ref={field}
-      className={"wave-field " + (stage ? "stage-field" : "")}
-      aria-label={
-        shown.length
-          ? "Live Sound Waves visualization"
-          : "Waiting for the first Sound Wave"
-      }
+    <Canvas
+      style={{ position: "absolute", inset: 0 }}
+      dpr={economy ? 1 : [1, 1.5]}
+      frameloop={!visible ? "never" : economy ? "demand" : "always"}
+      camera={{ position: [0, 0, 10], fov: 45 }}
+      gl={{ alpha: true, antialias: !economy, powerPreference: "low-power" }}
+      aria-hidden="true"
     >
-      <div className="field-grid" />
-      {reduced ? (
-        fallback
-      ) : (
-        <GraphicsBoundary fallback={fallback}>
-          <Canvas
-            style={{ position: "absolute", inset: 0 }}
-            dpr={[1, 1.5]}
-            camera={{ position: [0, 0, 10], fov: 45 }}
-            gl={{ alpha: true, antialias: true, powerPreference: "low-power" }}
-            aria-hidden="true"
-          >
-            {orbs.map((o, i) => (
-              <Orb key={o.wave?.id ?? i} {...o} beat={beat} />
-            ))}
-          </Canvas>
-        </GraphicsBoundary>
-      )}
-      <div className="wave-labels">
-        {orbs.map((o, i) => (
-          <div
-            className="wave-label"
-            key={o.wave?.id ?? i}
-            style={{
-              left: o.x * 100 + "%",
-              top: o.y * 100 + "%",
-              width: `${85 / columns}%`,
-              minWidth: 0,
-            }}
-          >
-            {o.wave ? (
-              <>
-                <span className="wave-rank">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <strong>{o.wave.text}</strong>
-                <small>
-                  {o.wave.votes} {o.wave.votes === 1 ? "point" : "points"} ·{" "}
-                  {o.wave.name}
-                </small>
-              </>
-            ) : (
-              <>
-                <span className="wave-rank">MAKE THE FIRST MOVE</span>
-                <strong>
-                  A little idea.
-                  <br />A whole new sound.
-                </strong>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
+      <SceneClock visible={visible} economy={economy} onFailure={onFailure} />
+      {orbs.map((orb, i) => (
+        <Orb key={orb.wave?.id ?? i} {...orb} beat={beat} economy={economy} />
+      ))}
+    </Canvas>
   );
 }

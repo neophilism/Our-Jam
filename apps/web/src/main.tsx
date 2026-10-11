@@ -1,3 +1,4 @@
+import { VisualPreferences } from "./VisualPreferences";
 import { AdmissionSettings } from "./AdmissionSettings";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { createRoot } from "react-dom/client";
@@ -61,6 +62,7 @@ function Header({ children }: { children?: React.ReactNode }) {
             </a>
           </>
         )}
+        <VisualPreferences />
       </div>
     </header>
   );

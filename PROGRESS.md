@@ -76,3 +76,11 @@ PR [#15](https://github.com/neophilism/Our-Jam/pull/15) merged after CI run `381
 PR [#16](https://github.com/neophilism/Our-Jam/pull/16) merged at `672ffe7e1ce8ec7a1e4f6299c86e4365cd4ed6d5` after CI run `38131941543`: 34 domain/API/media tests, twenty desktop/mobile browser scenarios, dependency audit and Docker build passed. Private artist review, held publication, explicit approval and never-dispatched cancellation are on main.
 
 Room-code admission, explicit remote voting and transactional contributor capacity are implemented in the admission increment. New performer-created rooms default to code-based voting; existing/API-default rooms preserve open voting. Listeners retain free music and feedback. The test suite exercises simultaneous admission, listener isolation, code rotation and a 100-slot invariant; this is not venue-load certification. Migration 007 was rehearsed on isolated Neon development branch `br-blue-unit-b5rk1hit`. See `docs/audience-admission.md` for deployment and rollback restrictions. The native draft still needs the new admission flow before distribution.
+
+## Visual resilience increment
+
+PR [#17](https://github.com/neophilism/Our-Jam/pull/17) merged at `392efb6ae2c3a6eca90d572c5a9b744c8d9cdc9d` after CI run `38132472499`: 36 domain/API/media tests, twenty-two desktop/mobile browser scenarios, dependency audit and Docker build passed. Admission and remote-listener controls are on main.
+
+Visual controls now remember device/default, light-animation or still-wave preferences. Still mode and reduced-motion preferences avoid loading the Three.js scene; data-saving mode also chooses still waves by default where supported. Hidden or offscreen fields stop their render loops. WebGL context loss falls back to readable waves and preserves the independent voting UI. CI exercises actual browser context loss, continued voting and saved preferences. Frame-rate, thermal, screen-reader and outdoor QR acceptance still need real event hardware.
+
+The native dependency audit was rechecked on October 11 after PR17: upstream braces/node-forge findings still block the native draft; no incompatible forced SDK downgrade or audit bypass was applied. Render service discovery still showed no service tied to this repository, and project-assignment capability/credentials remain the deployment block.
