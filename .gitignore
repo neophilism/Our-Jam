@@ -10,3 +10,6 @@ playwright-report/
 test-results/
 *.log
 .DS_Store
+.expo/
+apps/mobile/android/
+apps/mobile/ios/

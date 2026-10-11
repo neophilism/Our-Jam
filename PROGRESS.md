@@ -36,3 +36,7 @@ P002 remains blocked on real provider entitlement/rights and physical Soundcore 
 Deployment inside the supplied Render project; album files, durations and private core prompts; purchase URL; approved provider/storage credentials and budget; verified free-download rights; exact Soundcore Rave model and audio route; physical iPhone/Android, headphones and long recording rehearsal; venue connectivity/load/recovery checks. The current server-authorized architecture is not end-to-end encrypted and no independent security certification is claimed.
 
 Responsive mobile browsers are implemented. Native iOS/Android builds, email/push delivery, recoverable cross-device accounts, offline album playback, multitrack routing and store submissions remain open. Provider/storage adapters use contract fixtures in CI; browser recording uses a real synthetic Web Audio stream, not physical karaoke microphones. This repository is not yet a show-ready deployed service.
+
+## Native audience client prepared
+
+The isolated native client branch adds an Expo audience app: secure guest storage, event links, voting, ranked/searchable Sound Waves, foreground playback, listening feedback, comments/reporting, profile anonymity and leaderboards. TypeScript, iOS/Android bundle export and native configuration generation pass locally. No signed package or physical device is verified. A blocking dependency audit prevents merge/distribution; see `apps/mobile/README.md` and `docs/native-implementation.md`. The canonical OJ-032 record remains blocked, not complete.
