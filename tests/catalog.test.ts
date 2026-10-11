@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { digest } from "../packages/domain/src/index.js";
 import { testDatabase } from "./database.js";
 import { createApp } from "../apps/api/src/app.js";
 import { createEvent, advance } from "../apps/api/src/service.js";
@@ -100,6 +101,26 @@ test("artist pages safely edit owned profiles and paginate only that artist's pu
     payload: profile,
   });
   assert.equal(response.statusCode, 401);
+  const operatorToken = randomUUID().replaceAll("-", "").repeat(2);
+  await db.query(
+    "INSERT INTO sessions(token_hash,artist_id,kind,expires_at) VALUES($1,$2,'operator',now()+interval '1 hour')",
+    [digest(operatorToken), artist],
+  );
+  const owned = await app.inject({
+    method: "GET",
+    url: "/api/operator/events",
+    headers: { cookie: "oj_operator=" + operatorToken },
+  });
+  assert.equal(owned.statusCode, 200);
+  assert.deepEqual(
+    new Set(owned.json().events.map((e: any) => e.id)),
+    new Set(events.map((e) => e.id)),
+  );
+  assert.equal(
+    (await app.inject({ method: "GET", url: "/api/operator/events" }))
+      .statusCode,
+    401,
+  );
   assert.equal(
     (
       await app.inject({

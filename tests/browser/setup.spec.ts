@@ -117,7 +117,13 @@ test("performer prepares audio, reorders tracks and preserves unsaved settings a
   await expect(
     page.locator(".audio-checks li").filter({ hasText: "Second song" }),
   ).toContainText("Duration mismatch");
-  await expect(page.locator("audio")).toHaveCount(0);
+  expect(
+    await page
+      .locator("audio")
+      .evaluateAll((nodes) =>
+        nodes.every((node) => (node as HTMLAudioElement).paused),
+      ),
+  ).toBe(true);
   await page
     .getByText("Album files & private signature prompts", { exact: true })
     .click();

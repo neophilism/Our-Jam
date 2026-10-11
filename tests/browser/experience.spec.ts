@@ -156,7 +156,18 @@ test("performer owns playback, pauses voting, and recovers saved recording chunk
   // NotSupportedError). Supply a real synthetic MediaStream while exercising
   // the real MediaRecorder, IndexedDB writes, checksums and recovery unchanged.
   await page.evaluate(() => {
-    navigator.mediaDevices.getUserMedia = async () => {
+    navigator.mediaDevices.enumerateDevices = async () =>
+      [
+        {
+          kind: "audioinput",
+          deviceId: "fixture-input",
+          groupId: "fixture",
+          label: "Synthetic interface",
+          toJSON: () => ({}),
+        },
+      ] as MediaDeviceInfo[];
+    navigator.mediaDevices.getUserMedia = async (constraints) => {
+      (window as any).__lastAudioConstraints = constraints;
       const context = new AudioContext();
       const oscillator = context.createOscillator();
       const destination = context.createMediaStreamDestination();
@@ -173,7 +184,18 @@ test("performer owns playback, pauses voting, and recovers saved recording chunk
       return destination.stream;
     };
   });
+  await page
+    .getByRole("button", { name: "Choose recording input", exact: true })
+    .click();
+  await page
+    .getByLabel("Recording input", { exact: true })
+    .selectOption("fixture-input");
   await page.getByRole("button", { name: "Record browser microphone" }).click();
+  expect(
+    await page.evaluate(
+      () => (window as any).__lastAudioConstraints.audio.deviceId,
+    ),
+  ).toEqual({ exact: "fixture-input" });
   await expect(
     page.getByRole("button", { name: "Stop recording" }),
   ).toBeVisible();

@@ -46,8 +46,10 @@
     },
     {
       "id": "OJ-007",
-      "title": "Production V1 \u2014 approved work package 7 of 42",
-      "origin": "original"
+      "title": "Local album playback and show audio foundation",
+      "origin": "original",
+      "status": "in_progress",
+      "implementationNotes": "Prepared device files persist in IndexedDB with SHA-256 verification; local album-order continuation releases live control and keeps generation paused. Offline console reload, hardware routing and rehearsal remain open."
     },
     {
       "id": "OJ-008",
@@ -133,8 +135,10 @@
     },
     {
       "id": "OJ-022",
-      "title": "Production V1 \u2014 approved work package 22 of 42",
-      "origin": "original"
+      "title": "Recording capture and recovery",
+      "origin": "original",
+      "status": "in_progress",
+      "implementationNotes": "Chunked checksummed local recording now selects an exact browser input and stops on input disconnection. Synthetic browser coverage does not verify physical Rave/USB routing, long sessions or multitrack capture."
     },
     {
       "id": "OJ-023",

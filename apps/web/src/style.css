@@ -1734,3 +1734,20 @@ summary {
     flex-wrap: wrap;
   }
 }
+.album-backup audio {
+  width: 100%;
+  margin: 16px 0;
+}
+.backup-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+.backup-track {
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+.backup-track input[type="file"] {
+  width: 100%;
+  padding: 12px;
+}
