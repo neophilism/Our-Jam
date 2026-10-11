@@ -17,7 +17,11 @@ The approved 54-slice roadmap is preserved in `backlog.json`. Implementation PRs
 
 PR [#7](https://github.com/neophilism/Our-Jam/pull/7) merged at `51ec3c3e50dfabb903c2781434f3b26434bcc3ed` after CI run `38099031021`: 21 domain/API/media tests, eight browser scenarios and Docker build passed. It adds explicit playback handoff, takeover timing fixes, artist-scoped moderation and final author comment deletion.
 
-The next independent slice adds native guest API credentials and shared client types. Twenty-two local domain/API/media tests pass, including cross-client voting, guest scope, Origin enforcement and token revocation. No new server dependency is introduced. The Expo client is being prepared separately: its iOS/Android JavaScript bundles and native configuration generation succeed, but upstream dependency audit findings block merging/distribution.
+PR [#8](https://github.com/neophilism/Our-Jam/pull/8) merged at `800de1cabe256d15a05335b7d09f3735c3877765` after CI run `38099594499`. It adds scoped native guest API credentials, hash-only server persistence, revocation and shared web/mobile client contracts. This is a bounded identity/API increment; Expo distribution and real-device P032 acceptance remain open.
+
+PR [#9](https://github.com/neophilism/Our-Jam/pull/9) merged at `1a8e965dc68b5d3952c72720f6c0b98c901b8a78` after CI run `38111907167`. It verifies ordered migration replay and cross-event source, round, job, release and queue isolation. P003 remains in progress for production migration rehearsal, artist membership authorization, storage isolation and deployment evidence.
+
+P002 remains blocked on real provider entitlement/rights and physical Soundcore Rave routing evidence. The Expo client remains separate: its prior iOS/Android JavaScript bundles and native configuration generation succeeded, but upstream dependency audit findings block merging or distribution without a patched dependency path.
 
 ## External resource state
 

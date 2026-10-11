@@ -44,8 +44,8 @@
       "verification": "Migration integration, schema compatibility and cross-tenant foreign-key negative tests.",
       "rollout": "Use additive migrations; rollback app code without dropping collected data.",
       "status": "in_progress",
-      "pr_url": null,
-      "verified_sha": null
+      "pr_url": "https://github.com/neophilism/Our-Jam/pull/9",
+      "verified_sha": "e703ba8cbd324cbfd93dee674ef730bc02f20449"
     },
     {
       "id": "P004",
@@ -446,7 +446,7 @@
         "P024"
       ],
       "scope": "Promote the tested commit, verify project-specific production resources, run smoke tests and package operator runbook and evidence.",
-      "acceptance": "G0\u2013G4 pass; release notes name the supported hardware and enabled features; no first-show promise if gates are red.",
+      "acceptance": "G0–G4 pass; release notes name the supported hardware and enabled features; no first-show promise if gates are red.",
       "verification": "Production QR-to-vote-to-generation-to-download-to-cue smoke test with bounded credits.",
       "rollout": "Rollback app to last known good commit; no destructive schema downgrade; traditional-show fallback.",
       "status": "planned",
