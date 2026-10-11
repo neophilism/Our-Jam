@@ -26,7 +26,7 @@ P002 remains blocked on real provider entitlement/rights and physical Soundcore 
 ## External resource state
 
 - GitHub initially empty; application and all planning documents now live in this repository.
-- Migrations 001–005 rehearsed on isolated Neon branch `br-blue-unit-b5rk1hit`. Production branch `br-aged-sea-b55fzq0v` is untouched. Workspace direct Neon DNS failed, so connector rehearsal and CI PostgreSQL tests are distinct evidence.
+- Migrations 001–006 rehearsed on isolated Neon branch `br-blue-unit-b5rk1hit`. Production branch `br-aged-sea-b55fzq0v` is untouched. Workspace direct Neon DNS failed, so connector rehearsal and CI PostgreSQL tests are distinct evidence.
 - No Our Jam service deployed to Render. The service-creation connector cannot assign project/environment, the dashboard attempt timed out, and no project-specific API credential was available. Target remains `prj-db5btotckfvc739m1ck0`. Docker builds in CI; Blueprint validates against Render's official schema.
 - Engine Room discovery manifest is committed. Actual ingestion is unverified.
 - No real generation requests, email deliveries, paid resource creation or production database changes occurred.
@@ -62,3 +62,11 @@ Migration 005 was applied transactionally to isolated Neon branch `br-blue-unit-
 PR [#14](https://github.com/neophilism/Our-Jam/pull/14) merged at `ba43b5d62c26fe8eae26849682dd21925d8b2d41` after CI run `38130841019`: 32 domain/API/media tests, sixteen desktop/mobile browser scenarios, dependency audit and Docker build passed. Artist archives, liked-track collections and voting reconnect guards are on main.
 
 The local backup increment adds device-selected album copies with metadata checks, SHA-256 verification and offline album-order continuation in an already open performer console. Entering backup mode stops local show audio and releases server control; the online queue and generation do not advance. Recording gains explicit input selection and disconnect handling. The performer home now lists only its authenticated artist's events. Physical audio, long-session storage/recovery and offline page reload acceptance remain open. See `docs/local-album-backup.md`.
+
+## Artist release review increment
+
+Artist controls now freeze each round's boundary, immediate or review policy; hold publication before or during generation; preview unpublished music through a private operator route; approve publication explicitly; and cancel only work that has never dispatched. Holds survive the final show boundary and provider completion. Cancelled and uncertain jobs retain snapshots and budget semantics. See `docs/release-controls.md` for the migration and rollback barrier: old workers/advance handlers cannot enforce new holds.
+
+Migration 006 was rehearsed transactionally on isolated Neon branch `br-blue-unit-b5rk1hit`. Production remains untouched. The release-control increment passed 34 local domain/API/media tests and the production build; CI and browser approval evidence are tracked in its implementation PR.
+
+PR [#15](https://github.com/neophilism/Our-Jam/pull/15) merged after CI run `38131676715`: 32 domain/API/media tests, eighteen desktop/mobile browser scenarios, dependency audit and Docker build passed. This includes real synthetic local-audio playback with networking disabled and recording-input selection; physical hardware remains unverified.

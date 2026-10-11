@@ -95,8 +95,10 @@
     },
     {
       "id": "OJ-016",
-      "title": "Production V1 \u2014 approved work package 16 of 42",
-      "origin": "original"
+      "title": "Validated releases and artist review",
+      "origin": "original",
+      "status": "in_progress",
+      "implementationNotes": "Boundary, immediate and artist-review policies are frozen per round; private previews and explicit publish obey tenant access, holds and moderation. Atomic cancellation is limited to never-dispatched work. Real provider/storage delivery, exports and production rollout remain open."
     },
     {
       "id": "OJ-017",

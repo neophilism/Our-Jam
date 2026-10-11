@@ -1,3 +1,4 @@
+import { controlRelease, releaseControlInput } from "./release-controls.js";
 import { moderationQueue, moderate } from "./moderation.js";
 import {
   artistProfileInput,
@@ -229,11 +230,11 @@ export async function createApp(db: Database, config: AppConfig) {
   app.get("/api/ready", async () => {
     const rows = (
       await db.query(
-        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql','005_artist_profiles.sql')",
+        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql','005_artist_profiles.sql','006_release_controls.sql')",
       )
     ).rows;
     requireThat(
-      rows.length === 5,
+      rows.length === 6,
       "schema_not_ready",
       "Required database migrations have not been applied.",
       503,
@@ -837,6 +838,37 @@ export async function createApp(db: Database, config: AppConfig) {
       reservedCents: job.reserved_cents,
     };
   });
+  app.post("/api/operator/jobs/:id/control", async (req) => {
+    const op = await session(req, "operator");
+    return controlRelease(
+      db,
+      op.artist_id,
+      id.parse((req.params as any).id),
+      releaseControlInput.parse(req.body),
+    );
+  });
+  app.get("/api/operator/releases/:id/audio", async (req, reply) => {
+    const op = await session(req, "operator");
+    const release = (
+      await db.query(
+        "SELECT r.* FROM releases r JOIN events e ON e.id=r.event_id WHERE r.id=$1 AND e.artist_id=$2 AND NOT r.hidden",
+        [id.parse((req.params as any).id), op.artist_id],
+      )
+    ).rows[0];
+    requireThat(release, "not_found", "Track not found.", 404);
+    if (release.asset_key) {
+      requireThat(
+        config.mediaStore,
+        "media_unavailable",
+        "This media file is not available.",
+        503,
+      );
+      return reply.redirect(
+        await config.mediaStore.url(release.asset_key, false),
+      );
+    }
+    return reply.redirect(release.audio_url);
+  });
   app.post("/api/operator/jobs/:id/asset", async (req) => {
     const op = await session(req, "operator");
     const jobId = id.parse((req.params as any).id);
@@ -867,6 +899,9 @@ export async function createApp(db: Database, config: AppConfig) {
         409,
       );
       const releaseId = randomUUID();
+      const publish =
+        !job.release_held &&
+        (event.state === "ended" || job.release_mode === "immediate");
       await tx.query(
         "INSERT INTO releases(id,event_id,job_id,title,audio_url,download_url,duration_seconds,published_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)",
         [
@@ -877,18 +912,23 @@ export async function createApp(db: Database, config: AppConfig) {
           input.audioUrl,
           input.downloadUrl,
           input.durationSeconds,
-          event.state === "ended" ? new Date() : null,
+          publish ? new Date() : null,
         ],
       );
       await tx.query(
         "UPDATE generation_jobs SET state=$1,reason='artist_supplied_asset',updated_at=now() WHERE id=$2",
-        [event.state === "ended" ? "published" : "ready", job.id],
+        [publish ? "published" : "ready", job.id],
       );
       await tx.query(
         "INSERT INTO audit_log(artist_id,event_id,action,subject_id) VALUES($1,$2,$3,$4)",
         [op.artist_id, j.event_id, "release.asset_verified", releaseId],
       );
-      await logEvent(tx, j.event_id, "release.ready");
+      await logEvent(
+        tx,
+        j.event_id,
+        publish ? "releases.published" : "release.ready",
+        { ids: [releaseId] },
+      );
       return { id: releaseId };
     });
   });

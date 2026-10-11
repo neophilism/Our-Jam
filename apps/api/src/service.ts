@@ -358,6 +358,7 @@ export async function createEvent(
       maxWaves: input.maxWaves,
       maxGenerations: input.maxGenerations,
       promptLimit: 3500,
+      releaseMode: input.releaseMode,
     };
     await tx.query(
       "INSERT INTO events(id,artist_id,slug,title,artist_name,purchase_url,settings) VALUES($1,$2,$3,$4,$5,$6,$7)",
@@ -435,7 +436,7 @@ export async function closeRound(
   );
   // Even blocked work retains the exact final snapshot; no paid request occurs here.
   await tx.query(
-    "INSERT INTO generation_jobs(id,event_id,round_id,state,reason,snapshot,prompt,prompt_hash) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(round_id) DO NOTHING",
+    "INSERT INTO generation_jobs(id,event_id,round_id,state,reason,snapshot,prompt,prompt_hash,release_mode,release_held) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(round_id) DO NOTHING",
     [
       randomUUID(),
       r.event_id,
@@ -450,6 +451,8 @@ export async function closeRound(
       }),
       compiled.prompt,
       compiled.hash,
+      r.settings.releaseMode ?? "boundary",
+      r.settings.releaseMode === "review",
     ],
   );
   await logEvent(tx, r.event_id, "round.closed");
@@ -489,7 +492,7 @@ export async function advance(
     // Ready outputs from earlier rounds publish at the same boundary.
     const ready = (
       await tx.query(
-        "UPDATE releases SET published_at=now() WHERE event_id=$1 AND published_at IS NULL AND NOT hidden RETURNING id,job_id",
+        "UPDATE releases SET published_at=now() WHERE event_id=$1 AND published_at IS NULL AND NOT hidden AND job_id IN (SELECT id FROM generation_jobs WHERE NOT release_held AND state='ready') RETURNING id,job_id",
         [eventId],
       )
     ).rows;
@@ -612,7 +615,9 @@ export async function snapshot(
   ).rows;
   const jobs = (
     await db.query(
-      "SELECT id,round_id,state,reason,created_at FROM generation_jobs WHERE event_id=$1 ORDER BY created_at DESC",
+      isOperator
+        ? "SELECT j.id,j.round_id,j.state,j.reason,j.created_at,j.release_held,j.release_mode,j.attempts,j.reserved_cents,r.id release_id,r.title release_title,r.hidden release_hidden FROM generation_jobs j LEFT JOIN releases r ON r.job_id=j.id WHERE j.event_id=$1 ORDER BY j.created_at DESC"
+        : "SELECT id,round_id,state,reason,created_at FROM generation_jobs WHERE event_id=$1 ORDER BY created_at DESC",
       [event.id],
     )
   ).rows;

@@ -37,6 +37,7 @@ export const eventInput = z.object({
   minimumRoundSeconds: z.number().int().min(0).max(300).default(60),
   maxWaves: z.number().int().min(1).max(12).default(8),
   maxGenerations: z.number().int().min(0).max(100).default(12),
+  releaseMode: z.enum(["boundary", "immediate", "review"]).default("boundary"),
   sources: z.array(sourceInput).min(1).max(60),
 });
 export const releaseInput = z.object({
