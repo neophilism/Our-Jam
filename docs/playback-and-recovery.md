@@ -1,0 +1,13 @@
+# Playback ownership and recoverable capture
+
+One browser claims a 25-second playback lease, renewed every eight seconds. Commands include a lease epoch, increasing sequence and unique command ID. Every command locks the event before checking ownership. Retries with the original identity return the committed response; stale controllers and reordered commands cannot advance. Tokens stay in memory. A page reload requires reacquisition after the former lease expires.
+
+Queue edits and private previews can occur from another authenticated phone. The speaker browser disables private preview after it claims playback. Use a separate device with headphones until output-device routing is verified. A lease error does not stop the locally playing audio. Voting pauses at lease expiry; reconnection requires claiming playback and resuming intentionally. Offline queue continuation and validated album preloading are still outstanding.
+
+Linked audio starts its round paused. Successful browser playback resumes the timer. Manual audio pause preserves remaining voting time, and resume extends the deadline. An external album player has explicit Pause/Resume round controls. Automatic closure runs server-side and survives process restarts. No closed round reopens. The original duration must match the actual file; track-end advances the queue. Crossfades and DJ-defined boundaries remain V2.
+
+Migration 002 expands round states and adds the controller table. Rehearse it on a development branch. Since production has not yet been deployed, there is no running old reader; future rollback must drain active rounds before deploying code that does not understand paused state. Do not delete votes or generation snapshots to roll back.
+
+Microphone capture writes approximately two-second MediaRecorder chunks into IndexedDB. Each committed chunk has a sequence, wall-clock anchor and SHA-256 checksum; the manifest tracks the input, MIME type, channels/sample rate when available, and queue changes. Completed chunks can be exported after reload. Export verifies hashes, streams to a file when the browser supports a file-save writer, and bounds the in-memory fallback to 256 MiB. Raw chunks and a manifest remain downloadable for recovery. Interrupted containers may require repair; the final uncommitted chunk is not recoverable. Browser eviction, full storage, tab suspension and unsupported hardware remain rehearsal risks.
+
+No recording is uploaded or published. Same-origin browser code and the device owner can access local recordings; this is not a claim of end-to-end encrypted cloud storage. Long-session recovery, clean Rave mic routing, sample-accurate timelines, input selection, encrypted uploads and multitrack capture remain open acceptance criteria.
