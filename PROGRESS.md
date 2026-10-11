@@ -1,108 +1,36 @@
 # Our Jam implementation progress
 
-The approved 54-work-package roadmap is tracked in `registry/roadmap.json`; `backlog.json` preserves the historical dependency specification. Implementation PRs combine coherent vertical slices; merging one does not imply that every touched acceptance criterion is complete.
+The approved scope remains 54 work packages in registry/roadmap.json. Implementation PR counts are not completion percentages. Earlier detailed evidence is preserved verbatim in [the historical progress record](docs/history/progress-before-dual-provider.md).
 
-## Merged and verified
+## October 11 real-rehearsal delivery
 
-| PR | Delivered | CI evidence |
+The user requested the actual native app, actual public-screen window, real album files and real audience contributions, with Mureka and Stable Audio selectable and a current spending limit of **$0**. No demonstration data belongs in user startup. Thursday is not automatic permission to spend. The user confirmed Phillip's workspace and reports GitHub secrets MUREKA_API_KEY and STABLE_AUDIO_KEY. GitHub secrets are not automatically runtime environment variables.
+
+| PR | State and evidence | Delivered increment |
 | --- | --- | --- |
-| [#1](https://github.com/neophilism/Our-Jam/pull/1) | Repository foundation, complete development plan, separate DJ V2 and demonstration plans, CI and Engine Room manifest | Plan validation; head `416ec4ecf0f4881f6718efe692d1fbcc9432663e` |
-| [#2](https://github.com/neophilism/Our-Jam/pull/2) | Persistent API, five-point ballots, immutable prompt snapshots, queue, releases and feedback | PostgreSQL 18 CI; head `84b8e970a6c91f6c0eb0cb7ac30e7433c7ee51ce` |
-| [#3](https://github.com/neophilism/Our-Jam/pull/3) | Responsive audience, public display and performer console | 14 domain/API tests + 4 desktop/mobile Chromium scenarios; run `38096503809` |
-| [#4](https://github.com/neophilism/Our-Jam/pull/4) | Fenced playback, pause-aware deadlines, recoverable local recording, corrected 3D shader/canvas | 15 domain/API tests + 6 browser scenarios; run `38097751070` |
-| [#5](https://github.com/neophilism/Our-Jam/pull/5) | Guarded generation worker, Stable Audio adapter, private S3 adapter, media validation, Docker and Render Blueprint | 18 domain/API/media tests + 6 browser scenarios + Docker build; run `38098080304` |
-| [#6](https://github.com/neophilism/Our-Jam/pull/6) | Contributor credits, artist/event leaderboards, deferred feedback, opt-in room-audio animation | 19 domain/API/media tests + 8 browser scenarios + Docker build; run `38098501258` |
+| [23](https://github.com/neophilism/Our-Jam/pull/23) | Merged as fde8f593dbb669fc545155f423bac6dd3426857a; exact head 6c6b419808e450abe691a8cb2d469722bbc9cd8e passed run 38184252855 | Mureka / Stable Audio selector, frozen per-round provider, asynchronous Mureka task persistence, exact STABLE_AUDIO_KEY support, real $0 budget rejection before calls/reservations, explicit failure explanations and independent audience-to-stage browser checks |
+| [24](https://github.com/neophilism/Our-Jam/pull/24) | Merged as 273d47b4220b0a127ae4c4228a69ed3a836dec65; exact head 212d8f8a9adf96cd4852a335bb09a727cbb84547 passed run 38184500511 | Real MP3/WAV album ingestion, full decoding, measured duration, private content-addressed storage, stable authenticated playback, source immutability and ownership/replay tests |
+| [25](https://github.com/neophilism/Our-Jam/pull/25) | Implementation and acceptance in progress; inspect exact-head CI and the evidence addendum before claiming release | Genuine dependency-free SwiftUI audience client, simulator build/test pipeline, persistent single-Mac API/database/audio runtime and actual multi-window local rehearsal |
 
-## Latest verified work
+PR23 and PR24 passed application/database/media checks, browser checks, dependency audit and Docker builds before merging. Native Release simulator compilation has succeeded. A successful compile is not yet a native interaction test, delivered artifact or TestFlight build; the simulator test and local end-to-end startup/restart checks remain required for PR25 acceptance.
 
-PR [#7](https://github.com/neophilism/Our-Jam/pull/7) merged at `51ec3c3e50dfabb903c2781434f3b26434bcc3ed` after CI run `38099031021`: 21 domain/API/media tests, eight browser scenarios and Docker build passed. It adds explicit playback handoff, takeover timing fixes, artist-scoped moderation and final author comment deletion.
+## Running surfaces and data boundaries
 
-PR [#8](https://github.com/neophilism/Our-Jam/pull/8) merged at `800de1cabe256d15a05335b7d09f3735c3877765` after CI run `38099594499`. It adds scoped native guest API credentials, hash-only server persistence, revocation and shared web/mobile client contracts. This is a bounded identity/API increment; Expo distribution and real-device P032 acceptance remain open.
+The performer console remains /performer and /performer/:slug. Audience participation is /event/:slug, and the exact external-monitor surface is /screen/:slug. The iOS client uses the same mobile guest API and event state, not a phone-shaped web page. Its current focused rehearsal scope does not complete Android, native background/push, detailed native feedback/recognition, or full V1 acceptance.
 
-PR [#9](https://github.com/neophilism/Our-Jam/pull/9) merged at `1a8e965dc68b5d3952c72720f6c0b98c901b8a78` after CI run `38111907167`. It verifies ordered migration replay and cross-event source, round, job, release and queue isolation. P003 remains in progress for production migration rehearsal, artist membership authorization, storage isolation and deployment evidence.
+The local entry point is scripts/local-rehearsal.ts, launched by Start Our Jam.command. It binds only 127.0.0.1, creates no events/votes/songs, uses disk-persistent PGlite and private files in ~/.our-jam-local, and runs the actual $0 generation worker. No provider or cloud credentials are used. It is a separately requested single-Mac deployment, not a retry of a denied Render operation. See docs/local-real-rehearsal.md and apps/ios/README.md.
 
-P002 remains blocked on real provider entitlement/rights and physical Soundcore Rave routing evidence. The Expo client remains separate: its prior iOS/Android JavaScript bundles and native configuration generation succeeded, but upstream dependency audit findings block merging or distribution without a patched dependency path.
+Uploads create a validated 192 kbps MP3 playback derivative from a 15-second to ten-minute MP3/WAV, with a 128 MiB input limit. The original master is not retained; the artist must keep it. The local private audio store has a 1 GiB cap. No storage encryption, physical audio routing or venue load qualification is implied.
 
-## External resource state
+## External state verified in this session
 
-- GitHub initially empty; application and all planning documents now live in this repository.
-- Migrations 001–008 rehearsed on isolated Neon branch `br-blue-unit-b5rk1hit`. Production branch `br-aged-sea-b55fzq0v` is untouched. Workspace direct Neon DNS failed, so connector rehearsal and CI PostgreSQL tests are distinct evidence.
-- No Our Jam service deployed to Render. The October 11 free rehearsal-service creation was rejected: the Hobby workspace has reached its 25-service limit. Project assignment remains unavailable through the connector. Target remains `prj-db5btotckfvc739m1ck0`; see `docs/deployment.md`.
-- Engine Room discovery manifest is committed. Actual ingestion is unverified.
-- No real generation requests, email deliveries, paid resource creation or production database changes occurred.
+- Neon project crimson-hat-87508124 is on the free plan. Its isolated rehearsal branch br-blue-unit-b5rk1hit has migrations 001-008, zero events at inspection and a verified restricted our_jam_app runtime role.
+- Neon Object Storage is enabled. A private **our-jam-media** bucket was created on that isolated branch on October 11 at 23:40:54 UTC. Endpoint: https://br-blue-unit-b5rk1hit.storage.c-7.us-east-2.aws.neon.tech. Real S3 upload/download and runtime credential wiring remain unverified.
+- The user confirmed workspace tea-db23jkks728c73av263g. Render discovery now showed fewer services than the previous 25-service limit, but the dedicated free Our Jam service creation was blocked by this session's safety review. **No service was created. Do not retry that denied operation through another route.** The historical capacity error is not the current definitive blocker.
+- Earlier user authorization for the scoped production migration set and freeing a Render slot must not be requested again as though absent. No production SQL mutation or unrelated service deletion occurred in this session.
+- No real music-provider request, email, paid resource or Apple membership purchase occurred. TestFlight remains unavailable until membership/signing/submission access is established.
+- Engine Room's older registry/prs.json remains an as-of snapshot; registry/roadmap.json and this progress record contain the current implementation evidence. Actual Engine Room ingestion has not been verified.
 
-## Remaining event gates
+## Remaining acceptance
 
-Deployment inside the supplied Render project; album files, durations and private core prompts; purchase URL; approved provider/storage credentials and budget; verified free-download rights; exact Soundcore Rave model and audio route; physical iPhone/Android, headphones and long recording rehearsal; venue connectivity/load/recovery checks. The current server-authorized architecture is not end-to-end encrypted and no independent security certification is claimed.
-
-Responsive mobile browsers are implemented. Native iOS/Android builds, email/push delivery, verified cross-device accounts, offline console reload, multitrack routing and store submissions remain open. Provider/storage adapters use contract fixtures in CI; browser recording uses a real synthetic Web Audio stream, not physical karaoke microphones. This repository is not yet a show-ready deployed service.
-
-## Show preparation increment
-
-Queue reordering now validates a complete permutation of the remaining queue, with revision checks and command replay. Event/display settings and private album fields can be edited from the performer console. A source becomes immutable when its first round opens, and active rounds retain their copied settings. Browser audio preflight checks file metadata and duration without starting playback; it does not prove complete decoding or physical output routing. See `docs/show-setup.md`.
-
-Native client draft [#11](https://github.com/neophilism/Our-Jam/pull/11) is preserved at `e17818c124b977f62beb660df22b1e0a39c0b563`. CI run `38128094671` passed the core job, native type checks, dependency alignment, iOS/Android JavaScript exports and both native prebuilds. The native audit gate failed on upstream advisories; the PR remains unmerged and is not distribution-ready.
-
-## Release notification increment
-
-PR [#12](https://github.com/neophilism/Our-Jam/pull/12) merged at `69163c03ac6c582aaf0a2710de3be4a0d34c8a37` after CI run `38128764587`: 25 domain/API/media tests, ten desktop/mobile browser scenarios, dependency audit and Docker build passed. It delivers the show preparation increment above.
-
-Optional verified event subscriptions, encrypted contact/message storage, durable deduplicated email dispatch, bounded retries and send caps, unsubscribe, signed bounce/complaint suppression and foreground web release notices are implemented in the release-notification increment. Delivery remains disabled; test providers capture fixtures only. Migration 004 was applied successfully as one versioned transaction on isolated Neon branch `br-blue-unit-b5rk1hit`; production remains untouched. See `docs/release-email.md` for exact semantics, enablement and limits. Native/web push and actual sender/inbox acceptance remain open.
-
-## Artist archive increment
-
-PR [#13](https://github.com/neophilism/Our-Jam/pull/13) merged at `507a959b94446de4365a976560e728242c90ea81` after CI run `38129841845`: 30 domain/API/media tests, twelve desktop/mobile browser scenarios, dependency audit and Docker build passed. Release email remains disabled awaiting approved sender credentials and live delivery rehearsal.
-
-Public artist profiles, music links, filtered event archives, listener-first navigation and guest-scoped liked-track collections are implemented in the archive increment. Reconnect guards disable voting while state is unavailable/stale and prevent old responses from replacing newer snapshots. See `docs/artist-archives.md`; event admission remains open to anyone with the link, and cross-device guest recovery is not yet implemented.
-
-Migration 005 was applied transactionally to isolated Neon branch `br-blue-unit-b5rk1hit`; production is unchanged.
-
-## Local audio resilience increment
-
-PR [#14](https://github.com/neophilism/Our-Jam/pull/14) merged at `ba43b5d62c26fe8eae26849682dd21925d8b2d41` after CI run `38130841019`: 32 domain/API/media tests, sixteen desktop/mobile browser scenarios, dependency audit and Docker build passed. Artist archives, liked-track collections and voting reconnect guards are on main.
-
-The local backup increment adds device-selected album copies with metadata checks, SHA-256 verification and offline album-order continuation in an already open performer console. Entering backup mode stops local show audio and releases server control; the online queue and generation do not advance. Recording gains explicit input selection and disconnect handling. The performer home now lists only its authenticated artist's events. Physical audio, long-session storage/recovery and offline page reload acceptance remain open. See `docs/local-album-backup.md`.
-
-## Artist release review increment
-
-Artist controls now freeze each round's boundary, immediate or review policy; hold publication before or during generation; preview unpublished music through a private operator route; approve publication explicitly; and cancel only work that has never dispatched. Holds survive the final show boundary and provider completion. Cancelled and uncertain jobs retain snapshots and budget semantics. See `docs/release-controls.md` for the migration and rollback barrier: old workers/advance handlers cannot enforce new holds.
-
-Migration 006 was rehearsed transactionally on isolated Neon branch `br-blue-unit-b5rk1hit`. Production remains untouched. The release-control increment passed 34 local domain/API/media tests and the production build; CI and browser approval evidence are tracked in its implementation PR.
-
-PR [#15](https://github.com/neophilism/Our-Jam/pull/15) merged after CI run `38131676715`: 32 domain/API/media tests, eighteen desktop/mobile browser scenarios, dependency audit and Docker build passed. This includes real synthetic local-audio playback with networking disabled and recording-input selection; physical hardware remains unverified.
-
-## Audience admission increment
-
-PR [#16](https://github.com/neophilism/Our-Jam/pull/16) merged at `672ffe7e1ce8ec7a1e4f6299c86e4365cd4ed6d5` after CI run `38131941543`: 34 domain/API/media tests, twenty desktop/mobile browser scenarios, dependency audit and Docker build passed. Private artist review, held publication, explicit approval and never-dispatched cancellation are on main.
-
-Room-code admission, explicit remote voting and transactional contributor capacity are implemented in the admission increment. New performer-created rooms default to code-based voting; existing/API-default rooms preserve open voting. Listeners retain free music and feedback. The test suite exercises simultaneous admission, listener isolation, code rotation and a 100-slot invariant; this is not venue-load certification. Migration 007 was rehearsed on isolated Neon development branch `br-blue-unit-b5rk1hit`. See `docs/audience-admission.md` for deployment and rollback restrictions. The native draft still needs the new admission flow before distribution.
-
-## Visual resilience increment
-
-PR [#17](https://github.com/neophilism/Our-Jam/pull/17) merged at `392efb6ae2c3a6eca90d572c5a9b744c8d9cdc9d` after CI run `38132472499`: 36 domain/API/media tests, twenty-two desktop/mobile browser scenarios, dependency audit and Docker build passed. Admission and remote-listener controls are on main.
-
-Visual controls now remember device/default, light-animation or still-wave preferences. Still mode and reduced-motion preferences avoid loading the Three.js scene; data-saving mode also chooses still waves by default where supported. Hidden or offscreen fields stop their render loops. WebGL context loss falls back to readable waves and preserves the independent voting UI. CI exercises actual browser context loss, continued voting and saved preferences. Frame-rate, thermal, screen-reader and outdoor QR acceptance still need real event hardware.
-
-The native dependency audit was rechecked on October 11 after PR17: upstream braces/node-forge findings still block the native draft; no incompatible forced SDK downgrade or audit bypass was applied. Render service discovery still showed no service tied to this repository, and project-assignment capability/credentials remain the deployment block.
-
-## Deployment and venue-traffic increment
-
-PR [#18](https://github.com/neophilism/Our-Jam/pull/18) merged at `5a67a1f5434e22ca01fc7363d75450cc407aeada` after CI run `38133238780`: 36 API/domain/media tests, 24 desktop/mobile browser scenarios, dependency audit and Docker build passed. Visual preferences and graphics recovery are on main.
-
-Deployment was attempted with a free dedicated rehearsal service, but Render rejected creation at the workspace's 25-service limit. Automatic approval review separately rejected production schema initialization, despite the branch being empty; explicit approval is needed for that migration set. The production branch remains unchanged. The rehearsed development branch now has a restricted SQL runtime role, with its privileges verified. No service or paid resource was created.
-
-The venue-traffic increment separates assets, public reads, session bootstrap and participation budgets; preserves performer login and admission limits; bounds and coalesces snapshot work without retaining completed results; and disconnects slow invalidation streams. Deterministic tests exercise 100 real database guest identities at one address. This is not a deployed capacity claim. See `docs/live-traffic.md`.
-
-## Recoverable profile and fan-following increment
-
-PR [#19](https://github.com/neophilism/Our-Jam/pull/19) merged at `fe6e9007ee269516e00a31970129bc9384d5421d` after CI run `38149192907`: 41 API/domain/media tests, 24 desktop/mobile browser scenarios, dependency audit and Docker build passed. Crowd traffic bounds and deployment diagnostics are on main.
-
-Fans can now save a private recovery key, restore their existing profile on another device, replace/disable the key and sign out. Recovery preserves participant identity and revokes prior guest sessions. Artist following and a personal feed of published, visible crowd releases are implemented; following never opts the fan into email. These are recoverable guest profiles, not verified accounts or performer authentication. See `docs/profile-recovery.md`.
-
-Migration 008 was rehearsed on the isolated development branch with restricted-role grants. Production schema changes and the Render capacity block remain unresolved. Native recovery endpoints are tested; the native UI and store/device acceptance remain open.
-
-## Headphone cueing increment
-
-PR [#20](https://github.com/neophilism/Our-Jam/pull/20) merged at `efe509935845ab5ba47bf6a1cd1b22d96a9ba8a3` after CI run `38149869407`: 44 API/domain/media tests, 28 desktop/mobile browser scenarios, dependency audit and Docker build passed. Recoverable profiles, follows and the personal feed are on main; the mobile profile screenshot was visually reviewed.
-
-The output-routing increment adds capability-gated speaker/headphone selection, test tones and explicit isolation confirmation before same-tab cueing. Selected sinks are applied before playback, failed selection never triggers a default-output retry, and device changes close previews. Losing the selected speaker stops show/backup audio and releases control. Device IDs and browser fixtures cannot establish physical isolation; exact hardware rehearsal remains a release gate. See `docs/audio-routing.md`.
+Complete and verify the native simulator artifact and local empty-start/upload/participation/display/$0/restart loop; connect and verify a hosted runtime when the denied deployment operation is legitimately resolved; test real private Neon storage; configure provider secrets through an authorized runtime path; perform real Mureka/Stable Audio generation only after an explicit nonzero allowance and provider price/rights checks; verify physical devices, original audio hardware and complete native/store scope. The current architecture is server-authorized, not end-to-end encrypted, and no independent security certification is claimed.
