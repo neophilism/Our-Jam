@@ -16,7 +16,12 @@ export const reorderInput = z.object({
   queueIds: z.array(id).max(500),
 });
 export const settingsInput = eventInput
-  .omit({ slug: true, sources: true })
+  .omit({
+    slug: true,
+    sources: true,
+    admissionMode: true,
+    participantLimit: true,
+  })
   .extend({
     commandId: id,
     expectedRevision: revision,

@@ -1,3 +1,4 @@
+import { AdmissionSettings } from "./AdmissionSettings";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import QRCode from "qrcode";
@@ -346,7 +347,8 @@ function Audience({ slug }: { slug: string }) {
     [text, setText] = useState(""),
     [busy, setBusy] = useState(false),
     [profile, setProfile] = useState(false),
-    [moveFrom, setMoveFrom] = useState("");
+    [moveFrom, setMoveFrom] = useState(""),
+    [roomCode, setRoomCode] = useState("");
   const now = useServerNow(data?.serverTime);
   async function action(fn: () => Promise<unknown>) {
     setBusy(true);
@@ -444,6 +446,12 @@ function Audience({ slug }: { slug: string }) {
           <span>{data.people} joined</span>
         </nav>
         <Notice error={error} />
+        <p className="muted admission-rule" role="status">
+          {data.admission.mode === "open"
+            ? "Remote voting is open: anyone with this event link can contribute."
+            : "Room-code voting: ask the artist for the code. Everyone can listen, download and give feedback."}
+          {` ${data.admission.contributors} / ${data.admission.limit} contributor places filled.`}
+        </p>
         {!fresh && (
           <p className="notice" role="status">
             The room is reconnecting. Voting resumes when its current state
@@ -489,7 +497,7 @@ function Audience({ slug }: { slug: string }) {
                   <i key={i} className={i < 5 - used ? "available" : ""} />
                 ))}
               </div>
-              {!data.joined ? (
+              {!data.canContribute ? (
                 <div className="join-panel">
                   <h3>
                     Don't just listen.
@@ -497,20 +505,65 @@ function Audience({ slug }: { slug: string }) {
                     Leave your sound.
                   </h3>
                   <p>
-                    Join the room to contribute a Sound Wave and support the
-                    ideas you want to hear.
+                    {data.admission.mode === "room_code"
+                      ? "Enter the code announced at the show to unlock your five votes. A shared code does not verify physical attendance."
+                      : "Join the room to contribute a Sound Wave and support the ideas you want to hear."}
                   </p>
+                  {data.admission.mode === "room_code" && (
+                    <label htmlFor="room-code">
+                      Room code
+                      <input
+                        id="room-code"
+                        value={roomCode}
+                        autoComplete="off"
+                        maxLength={40}
+                        onChange={(e) => setRoomCode(e.target.value)}
+                      />
+                    </label>
+                  )}
                   <button
                     className="full"
-                    disabled={busy}
+                    disabled={
+                      busy ||
+                      !fresh ||
+                      (data.admission.mode === "room_code" && !roomCode.trim())
+                    }
                     onClick={() =>
                       action(async () => {
                         await ensureGuest();
-                        await api(`/events/${slug}/join`, "POST", {});
+                        await api(
+                          `/events/${slug}/join`,
+                          "POST",
+                          roomCode.trim() ? { roomCode } : {},
+                        );
+                        setRoomCode("");
                       })
                     }
                   >
-                    I'm in. Let's make music ↗
+                    {data.admission.mode === "room_code"
+                      ? "Unlock my five votes ↗"
+                      : "I'm in. Let's make music ↗"}
+                  </button>
+                  {!data.joined && data.admission.mode === "room_code" && (
+                    <button
+                      className="ghost full"
+                      disabled={busy}
+                      onClick={() =>
+                        action(async () => {
+                          await ensureGuest();
+                          await api(`/events/${slug}/join`, "POST", {});
+                          setTab("tracks");
+                        })
+                      }
+                    >
+                      Join as a listener
+                    </button>
+                  )}
+                  <button
+                    className="text-button"
+                    onClick={() => setTab("tracks")}
+                  >
+                    Listen to the free tracks
                   </button>
                 </div>
               ) : (
@@ -1137,6 +1190,7 @@ function CreateEvent() {
               ? { purchaseUrl: form.get("purchaseUrl") }
               : {}),
             screenLimit: Number(form.get("screenLimit")),
+            admissionMode: form.get("admissionMode"),
             sources: sources.map((s) => ({
               ...s,
               audioUrl: s.audioUrl || undefined,
@@ -1181,6 +1235,21 @@ function CreateEvent() {
           Album purchase link
           <input name="purchaseUrl" type="url" placeholder="https://…" />
         </label>
+        <div>
+          <label htmlFor="new-admission-mode">Who can contribute?</label>
+          <select
+            id="new-admission-mode"
+            name="admissionMode"
+            defaultValue="room_code"
+          >
+            <option value="room_code">People with the show’s room code</option>
+            <option value="open">Everyone, including remote fans</option>
+          </select>
+          <p className="tiny muted">
+            Set the room code in the console before inviting contributors.
+            Listening and downloads stay open.
+          </p>
+        </div>
         <label>
           Waves visible on the big screen
           <select name="screenLimit" defaultValue="16">
@@ -1667,6 +1736,7 @@ function Console({ slug }: { slug: string }) {
             </details>
           ))}
         </section>
+        <AdmissionSettings data={data} refresh={refresh} />
         <ShowSetup data={data} refresh={refresh} />
         <AlbumBackup
           data={data}

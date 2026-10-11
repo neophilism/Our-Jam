@@ -1,3 +1,9 @@
+import {
+  configureAdmission,
+  joinEvent,
+  admissionInput,
+  joinInput,
+} from "./admission.js";
 import { controlRelease, releaseControlInput } from "./release-controls.js";
 import { moderationQueue, moderate } from "./moderation.js";
 import {
@@ -230,11 +236,11 @@ export async function createApp(db: Database, config: AppConfig) {
   app.get("/api/ready", async () => {
     const rows = (
       await db.query(
-        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql','005_artist_profiles.sql','006_release_controls.sql')",
+        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql','005_artist_profiles.sql','006_release_controls.sql','007_audience_admission.sql')",
       )
     ).rows;
     requireThat(
-      rows.length === 6,
+      rows.length === 7,
       "schema_not_ready",
       "Required database migrations have not been applied.",
       503,
@@ -573,40 +579,28 @@ export async function createApp(db: Database, config: AppConfig) {
       sourceEditInput.parse(req.body),
     );
   });
-  app.post("/api/events/:slug/join", async (req) => {
-    const s = await session(req, "guest");
-    const { slug } = req.params as { slug: string };
-    await db.transaction(async (tx) => {
-      const e = (
-        await tx.query("SELECT id FROM events WHERE slug=$1 FOR UPDATE", [slug])
-      ).rows[0];
-      requireThat(e, "not_found", "Event not found.", 404);
-      const count = (
-        await tx.query(
-          "SELECT count(*)::integer n FROM event_members WHERE event_id=$1",
-          [e.id],
-        )
-      ).rows[0].n;
-      const exists = (
-        await tx.query(
-          "SELECT 1 FROM event_members WHERE event_id=$1 AND participant_id=$2",
-          [e.id, s.participant_id],
-        )
-      ).rows[0];
-      requireThat(
-        exists || count < 1000,
-        "event_full",
-        "This event has reached its participant capacity.",
-        409,
-      );
-      await tx.query(
-        "INSERT INTO event_members(event_id,participant_id) VALUES($1,$2) ON CONFLICT DO NOTHING",
-        [e.id, s.participant_id],
-      );
-      await logEvent(tx, e.id, "participant.joined");
-    });
-    return { ok: true };
+  app.patch("/api/operator/events/:id/admission", async (req) => {
+    const op = await session(req, "operator");
+    return configureAdmission(
+      db,
+      op.artist_id,
+      id.parse((req.params as any).id),
+      admissionInput.parse(req.body),
+    );
   });
+  app.post(
+    "/api/events/:slug/join",
+    { config: { rateLimit: { max: 12, timeWindow: "1 minute" } } },
+    async (req) => {
+      const s = await session(req, "guest");
+      return joinEvent(
+        db,
+        (req.params as { slug: string }).slug,
+        s.participant_id,
+        joinInput.parse(req.body ?? {}),
+      );
+    },
+  );
   app.put("/api/rounds/:id/allocations", async (req) => {
     const s = await session(req, "guest");
     return allocate(
