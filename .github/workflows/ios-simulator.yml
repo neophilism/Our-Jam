@@ -1,16 +1,19 @@
 name: Native iOS simulator
 on:
   pull_request:
-    paths: ['apps/ios/**', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', '.github/workflows/ios-simulator.yml']
+    paths: ['apps/ios/**', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', 'scripts/run-native-simulator.py', '.github/workflows/ios-simulator.yml']
   push:
     branches: [main]
-    paths: ['apps/ios/**', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', '.github/workflows/ios-simulator.yml']
+    paths: ['apps/ios/**', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', 'scripts/run-native-simulator.py', '.github/workflows/ios-simulator.yml']
 permissions:
   contents: read
+concurrency:
+  group: native-ios-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   simulator:
     runs-on: macos-15
-    timeout-minutes: 25
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,6 +30,7 @@ jobs:
           mkdir -p ios-evidence
           set -o pipefail
           xcodebuild -project apps/ios/OurJam.xcodeproj -scheme OurJam -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-build CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO build 2>&1 | tee ios-evidence/build.log
+          xcodebuild -version > ios-evidence/xcode-version.txt
       - name: Start isolated native integration backend
         run: |
           node --import tsx scripts/native-test-server.ts > ios-evidence/server.log 2>&1 &
@@ -39,11 +43,7 @@ jobs:
           exit 1
       - name: Run on a genuine iOS Simulator
         run: |
-          set -o pipefail
-          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(v["udid"] for k,vs in d["devices"].items() if "iOS" in k for v in vs if v["name"].startswith("iPhone")))')
-          xcrun simctl boot "$DEVICE" || true
-          xcrun simctl bootstatus "$DEVICE" -b
-          xcodebuild -project apps/ios/OurJam.xcodeproj -scheme OurJam -configuration Debug -destination "platform=iOS Simulator,id=$DEVICE" -derivedDataPath ios-test-build -resultBundlePath ios-evidence/NativeTests.xcresult CODE_SIGNING_ALLOWED=NO test 2>&1 | tee ios-evidence/tests.log
+          python3 scripts/run-native-simulator.py
           curl -fsS http://127.0.0.1:4173/__test__/native-evidence > ios-evidence/participation.json
       - name: Package actual app and complete local source
         run: |
