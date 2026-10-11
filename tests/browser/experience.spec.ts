@@ -137,6 +137,27 @@ test("performer owns playback, pauses voting, and recovers saved recording chunk
     .getByRole("button", { name: "Resume the round", exact: true })
     .click();
   await expect(page.getByText("UNTIL THE NEXT WAVE")).toBeVisible();
+  // CI Chromium exposes no usable microphone backend (getUserMedia rejects
+  // NotSupportedError). Supply a real synthetic MediaStream while exercising
+  // the real MediaRecorder, IndexedDB writes, checksums and recovery unchanged.
+  await page.evaluate(() => {
+    navigator.mediaDevices.getUserMedia = async () => {
+      const context = new AudioContext();
+      const oscillator = context.createOscillator();
+      const destination = context.createMediaStreamDestination();
+      oscillator.connect(destination);
+      oscillator.start();
+      await context.resume();
+      const track = destination.stream.getAudioTracks()[0];
+      const stop = track.stop.bind(track);
+      track.stop = () => {
+        oscillator.stop();
+        void context.close();
+        stop();
+      };
+      return destination.stream;
+    };
+  });
   await page.getByRole("button", { name: "Record browser microphone" }).click();
   await expect(
     page.getByRole("button", { name: "Stop recording" }),
