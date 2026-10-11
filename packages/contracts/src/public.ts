@@ -72,6 +72,13 @@ export type EventState = {
   }[];
   people: number;
   joined: boolean;
+  canContribute: boolean;
+  admission: {
+    mode: "open" | "room_code";
+    limit: number;
+    contributors: number;
+    codeConfigured: boolean;
+  };
   isOperator: boolean;
   queue?: any[];
 };

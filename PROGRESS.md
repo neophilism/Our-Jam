@@ -26,7 +26,7 @@ P002 remains blocked on real provider entitlement/rights and physical Soundcore 
 ## External resource state
 
 - GitHub initially empty; application and all planning documents now live in this repository.
-- Migrations 001–006 rehearsed on isolated Neon branch `br-blue-unit-b5rk1hit`. Production branch `br-aged-sea-b55fzq0v` is untouched. Workspace direct Neon DNS failed, so connector rehearsal and CI PostgreSQL tests are distinct evidence.
+- Migrations 001–007 rehearsed on isolated Neon branch `br-blue-unit-b5rk1hit`. Production branch `br-aged-sea-b55fzq0v` is untouched. Workspace direct Neon DNS failed, so connector rehearsal and CI PostgreSQL tests are distinct evidence.
 - No Our Jam service deployed to Render. The service-creation connector cannot assign project/environment, the dashboard attempt timed out, and no project-specific API credential was available. Target remains `prj-db5btotckfvc739m1ck0`. Docker builds in CI; Blueprint validates against Render's official schema.
 - Engine Room discovery manifest is committed. Actual ingestion is unverified.
 - No real generation requests, email deliveries, paid resource creation or production database changes occurred.
@@ -70,3 +70,9 @@ Artist controls now freeze each round's boundary, immediate or review policy; ho
 Migration 006 was rehearsed transactionally on isolated Neon branch `br-blue-unit-b5rk1hit`. Production remains untouched. The release-control increment passed 34 local domain/API/media tests and the production build; CI and browser approval evidence are tracked in its implementation PR.
 
 PR [#15](https://github.com/neophilism/Our-Jam/pull/15) merged after CI run `38131676715`: 32 domain/API/media tests, eighteen desktop/mobile browser scenarios, dependency audit and Docker build passed. This includes real synthetic local-audio playback with networking disabled and recording-input selection; physical hardware remains unverified.
+
+## Audience admission increment
+
+PR [#16](https://github.com/neophilism/Our-Jam/pull/16) merged at `672ffe7e1ce8ec7a1e4f6299c86e4365cd4ed6d5` after CI run `38131941543`: 34 domain/API/media tests, twenty desktop/mobile browser scenarios, dependency audit and Docker build passed. Private artist review, held publication, explicit approval and never-dispatched cancellation are on main.
+
+Room-code admission, explicit remote voting and transactional contributor capacity are implemented in the admission increment. New performer-created rooms default to code-based voting; existing/API-default rooms preserve open voting. Listeners retain free music and feedback. The test suite exercises simultaneous admission, listener isolation, code rotation and a 100-slot invariant; this is not venue-load certification. Migration 007 was rehearsed on isolated Neon development branch `br-blue-unit-b5rk1hit`. See `docs/audience-admission.md` for deployment and rollback restrictions. The native draft still needs the new admission flow before distribution.

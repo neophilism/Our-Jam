@@ -56,7 +56,7 @@ export async function publicArtist(
     events: rows.slice(0, input.limit),
     nextOffset: rows.length > input.limit ? input.offset + input.limit : null,
     participation:
-      "Anyone with an event link can join co-creation while the round is open.",
+      "Each show explains whether voting is open remotely or needs the artist’s room code.",
   };
 }
 export async function editArtist(

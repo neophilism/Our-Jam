@@ -49,7 +49,10 @@
       "title": "Local album playback and show audio foundation",
       "origin": "original",
       "status": "in_progress",
-      "implementationNotes": "Prepared device files persist in IndexedDB with SHA-256 verification; local album-order continuation releases live control and keeps generation paused. Offline console reload, hardware routing and rehearsal remain open."
+      "implementationNotes": "Prepared device files persist in IndexedDB with SHA-256 verification; local album-order continuation releases live control and keeps generation paused. Offline console reload, hardware routing and rehearsal remain open.",
+      "pullRequests": [
+        15
+      ]
     },
     {
       "id": "OJ-008",
@@ -98,7 +101,11 @@
       "title": "Validated releases and artist review",
       "origin": "original",
       "status": "in_progress",
-      "implementationNotes": "Boundary, immediate and artist-review policies are frozen per round; private previews and explicit publish obey tenant access, holds and moderation. Atomic cancellation is limited to never-dispatched work. Real provider/storage delivery, exports and production rollout remain open."
+      "implementationNotes": "Boundary, immediate and artist-review policies are frozen per round; private previews and explicit publish obey tenant access, holds and moderation. Atomic cancellation is limited to never-dispatched work. Real provider/storage delivery, exports and production rollout remain open.",
+      "pullRequests": [
+        5,
+        16
+      ]
     },
     {
       "id": "OJ-017",
@@ -140,7 +147,11 @@
       "title": "Recording capture and recovery",
       "origin": "original",
       "status": "in_progress",
-      "implementationNotes": "Chunked checksummed local recording now selects an exact browser input and stops on input disconnection. Synthetic browser coverage does not verify physical Rave/USB routing, long sessions or multitrack capture."
+      "implementationNotes": "Chunked checksummed local recording now selects an exact browser input and stops on input disconnection. Synthetic browser coverage does not verify physical Rave/USB routing, long sessions or multitrack capture.",
+      "pullRequests": [
+        4,
+        15
+      ]
     },
     {
       "id": "OJ-023",
@@ -149,10 +160,14 @@
     },
     {
       "id": "OJ-024",
-      "title": "Artist pages event archives and album commerce",
+      "title": "Artist archives and remote audience access",
       "origin": "original",
       "status": "in_progress",
-      "implementationNotes": "Editable public artist profile, HTTPS music links, filtered session archive, listener-first event links and album storefront links implemented. Room-code/remote-admission controls and native commerce review remain open."
+      "implementationNotes": "Public artist profiles, session archives and liked tracks are joined by explicit remote voting, room codes, listener-only membership and transactional contributor caps. Native admission flow, physical devices and full venue/load acceptance remain open.",
+      "pullRequests": [
+        14,
+        17
+      ]
     },
     {
       "id": "OJ-025",

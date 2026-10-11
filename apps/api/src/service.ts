@@ -55,9 +55,11 @@ async function lockedRound(tx: Sql, id: string, actor: Actor) {
     await tx.query("SELECT event_id FROM rounds WHERE id=$1", [id])
   ).rows[0];
   requireThat(parent, "not_found", "Round not found.", 404);
-  await tx.query("SELECT id FROM events WHERE id=$1 FOR UPDATE", [
-    parent.event_id,
-  ]);
+  const event = (
+    await tx.query("SELECT settings FROM events WHERE id=$1 FOR UPDATE", [
+      parent.event_id,
+    ])
+  ).rows[0];
   const r = (
     await tx.query(
       "SELECT *,clock_timestamp() AS server_time FROM rounds WHERE id=$1 FOR UPDATE",
@@ -67,7 +69,7 @@ async function lockedRound(tx: Sql, id: string, actor: Actor) {
   requireThat(r, "not_found", "Round not found.", 404);
   const member = (
     await tx.query(
-      "SELECT 1 FROM event_members WHERE event_id=$1 AND participant_id=$2",
+      "SELECT venue_admitted FROM event_members WHERE event_id=$1 AND participant_id=$2",
       [r.event_id, actor.participantId],
     )
   ).rows[0];
@@ -75,6 +77,12 @@ async function lockedRound(tx: Sql, id: string, actor: Actor) {
     member,
     "join_required",
     "Join this event before contributing.",
+    403,
+  );
+  requireThat(
+    event.settings.admissionMode !== "room_code" || member.venue_admitted,
+    "admission_required",
+    "Enter the show's room code to contribute. Listening and feedback remain open.",
     403,
   );
   const lease = (
@@ -359,6 +367,8 @@ export async function createEvent(
       maxGenerations: input.maxGenerations,
       promptLimit: 3500,
       releaseMode: input.releaseMode,
+      admissionMode: input.admissionMode,
+      participantLimit: input.participantLimit,
     };
     await tx.query(
       "INSERT INTO events(id,artist_id,slug,title,artist_name,purchase_url,settings) VALUES($1,$2,$3,$4,$5,$6,$7)",
@@ -627,16 +637,22 @@ export async function snapshot(
       [event.id],
     )
   ).rows[0].n;
-  const joined = participantId
-    ? Boolean(
-        (
-          await db.query(
-            "SELECT 1 FROM event_members WHERE event_id=$1 AND participant_id=$2",
-            [event.id, participantId],
-          )
-        ).rows[0],
-      )
-    : false;
+  const member = participantId
+    ? (
+        await db.query(
+          "SELECT venue_admitted FROM event_members WHERE event_id=$1 AND participant_id=$2",
+          [event.id, participantId],
+        )
+      ).rows[0]
+    : undefined;
+  const joined = Boolean(member);
+  const restricted = event.settings.admissionMode === "room_code";
+  const contributors = (
+    await db.query(
+      "SELECT count(*)::integer n FROM event_members WHERE event_id=$1 AND ($2::boolean OR venue_admitted)",
+      [event.id, !restricted],
+    )
+  ).rows[0].n;
   const publicRound = round
     ? {
         id: round.id,
@@ -689,6 +705,13 @@ export async function snapshot(
     jobs,
     people,
     joined,
+    canContribute: joined && (!restricted || Boolean(member?.venue_admitted)),
+    admission: {
+      mode: restricted ? "room_code" : "open",
+      limit: event.settings.participantLimit ?? 100,
+      contributors,
+      codeConfigured: Boolean(event.room_code_hash),
+    },
     queue,
     isOperator,
   };
