@@ -1,0 +1,670 @@
+{
+  "schemaVersion": 1,
+  "repository": "neophilism/Our-Jam",
+  "roadmapVersion": 1,
+  "planVerified": true,
+  "plannedPrCount": 54,
+  "observedAt": "2026-10-11T17:41:45.550Z",
+  "units": [
+    {
+      "id": "OJ-001",
+      "title": "Production V1 — approved work package 1 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-002",
+      "title": "Production V1 — approved work package 2 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-003",
+      "title": "Production V1 — approved work package 3 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-004",
+      "title": "Production V1 — approved work package 4 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-005",
+      "title": "Identity roles and scoped authorization",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-006",
+      "title": "Artist album and event preparation",
+      "origin": "original",
+      "prs": [
+        12
+      ]
+    },
+    {
+      "id": "OJ-007",
+      "title": "Local album playback and show audio foundation",
+      "origin": "original",
+      "prs": [
+        15
+      ]
+    },
+    {
+      "id": "OJ-008",
+      "title": "Production V1 — approved work package 8 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-009",
+      "title": "Production V1 — approved work package 9 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-010",
+      "title": "Production V1 — approved work package 10 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-011",
+      "title": "Durable realtime subscriptions and recovery",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-012",
+      "title": "Production V1 — approved work package 12 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-013",
+      "title": "Production V1 — approved work package 13 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-014",
+      "title": "Production V1 — approved work package 14 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-015",
+      "title": "Production V1 — approved work package 15 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-016",
+      "title": "Validated releases and artist review",
+      "origin": "original",
+      "prs": [
+        5,
+        16
+      ]
+    },
+    {
+      "id": "OJ-017",
+      "title": "Production V1 — approved work package 17 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-018",
+      "title": "Production V1 — approved work package 18 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-019",
+      "title": "Release email push and preferences",
+      "origin": "original",
+      "prs": [
+        13
+      ]
+    },
+    {
+      "id": "OJ-020",
+      "title": "Performer feedback dashboard and Play next",
+      "origin": "original",
+      "prs": [
+        12
+      ]
+    },
+    {
+      "id": "OJ-021",
+      "title": "Private headphone cue and audio diagnostics",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-022",
+      "title": "Recording capture and recovery",
+      "origin": "original",
+      "prs": [
+        4,
+        15
+      ]
+    },
+    {
+      "id": "OJ-023",
+      "title": "Production V1 — approved work package 23 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-024",
+      "title": "Artist archives and remote audience access",
+      "origin": "original",
+      "prs": [
+        14,
+        17
+      ]
+    },
+    {
+      "id": "OJ-025",
+      "title": "Production V1 — approved work package 25 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-026",
+      "title": "Load monitoring recovery and full show rehearsal",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-027",
+      "title": "Production V1 — approved work package 27 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-028",
+      "title": "Visual quality and performance refinement",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-029",
+      "title": "Production V1 — approved work package 29 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-030",
+      "title": "Production V1 — approved work package 30 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-031",
+      "title": "Fan collections following and return journeys",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-032",
+      "title": "Native iOS and Android foundation",
+      "origin": "original",
+      "prs": [
+        11
+      ]
+    },
+    {
+      "id": "OJ-033",
+      "title": "Production V1 — approved work package 33 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-034",
+      "title": "Production V1 — approved work package 34 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-035",
+      "title": "Production V1 — approved work package 35 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-036",
+      "title": "Production V1 — approved work package 36 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-037",
+      "title": "Production V1 — approved work package 37 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-038",
+      "title": "Production V1 — approved work package 38 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-039",
+      "title": "Production V1 — approved work package 39 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-040",
+      "title": "Production V1 — approved work package 40 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-041",
+      "title": "Production V1 — approved work package 41 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-042",
+      "title": "Production V1 — approved work package 42 of 42",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-043",
+      "title": "DJ V2 — approved work package 1 of 8",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-044",
+      "title": "DJ V2 — approved work package 2 of 8",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-045",
+      "title": "DJ V2 — approved work package 3 of 8",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-046",
+      "title": "DJ V2 — approved work package 4 of 8",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-047",
+      "title": "DJ V2 — approved work package 5 of 8",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-048",
+      "title": "DJ V2 — approved work package 6 of 8",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-049",
+      "title": "DJ V2 — approved work package 7 of 8",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-050",
+      "title": "DJ V2 — approved work package 8 of 8",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-051",
+      "title": "Secondary demonstration — approved work package 1 of 4",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-052",
+      "title": "Secondary demonstration — approved work package 2 of 4",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-053",
+      "title": "Secondary demonstration — approved work package 3 of 4",
+      "origin": "original",
+      "prs": []
+    },
+    {
+      "id": "OJ-054",
+      "title": "Secondary demonstration — approved work package 4 of 4",
+      "origin": "original",
+      "prs": []
+    }
+  ],
+  "pullRequests": [
+    {
+      "id": 4820106517,
+      "number": 21,
+      "title": "Route show audio and headphone cues through tested separate browser outputs",
+      "url": "https://github.com/neophilism/Our-Jam/pull/21",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T15:20:32.000Z",
+      "updatedAt": "2026-10-11T15:35:27.000Z",
+      "closedAt": "2026-10-11T15:35:27.000Z",
+      "mergedAt": "2026-10-11T15:35:27.000Z",
+      "headSha": "6a0e5781c7716c07f220077a83303946139efac8",
+      "baseRef": "main",
+      "mergeCommitSha": "38af27cb184d6d02753ccd8b8405edced61f3f96"
+    },
+    {
+      "id": 4820012536,
+      "number": 20,
+      "title": "Let fans recover their profiles and follow artists between shows",
+      "url": "https://github.com/neophilism/Our-Jam/pull/20",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T15:05:57.000Z",
+      "updatedAt": "2026-10-11T15:12:53.000Z",
+      "closedAt": "2026-10-11T15:12:52.000Z",
+      "mergedAt": "2026-10-11T15:12:52.000Z",
+      "headSha": "19da564c68b09bd53f27e91aaf28e394fe7c99cd",
+      "baseRef": "main",
+      "mergeCommitSha": "efe509935845ab5ba47bf6a1cd1b22d96a9ba8a3"
+    },
+    {
+      "id": 4819949683,
+      "number": 19,
+      "title": "Keep crowd arrivals and slow connections from exhausting live participation",
+      "url": "https://github.com/neophilism/Our-Jam/pull/19",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T14:56:01.000Z",
+      "updatedAt": "2026-10-11T15:00:23.000Z",
+      "closedAt": "2026-10-11T15:00:22.000Z",
+      "mergedAt": "2026-10-11T15:00:22.000Z",
+      "headSha": "e23150c6f8b0018f5bd5aec8951e618e3c55d8fc",
+      "baseRef": "main",
+      "mergeCommitSha": "fe6e9007ee269516e00a31970129bc9384d5421d"
+    },
+    {
+      "id": 4818474717,
+      "number": 18,
+      "title": "Keep Sound Waves usable with motion preferences and graphics fallback",
+      "url": "https://github.com/neophilism/Our-Jam/pull/18",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T10:43:28.000Z",
+      "updatedAt": "2026-10-11T10:52:40.000Z",
+      "closedAt": "2026-10-11T10:52:40.000Z",
+      "mergedAt": "2026-10-11T10:52:40.000Z",
+      "headSha": "84f3df9c71165b0cfbac92cfd49f5077821c58cd",
+      "baseRef": "main",
+      "mergeCommitSha": "5a67a1f5434e22ca01fc7363d75450cc407aeada"
+    },
+    {
+      "id": 4818430176,
+      "number": 17,
+      "title": "Add room-code voting, remote-listener access and contributor capacity",
+      "url": "https://github.com/neophilism/Our-Jam/pull/17",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T10:35:04.000Z",
+      "updatedAt": "2026-10-11T10:40:39.000Z",
+      "closedAt": "2026-10-11T10:40:39.000Z",
+      "mergedAt": "2026-10-11T10:40:39.000Z",
+      "headSha": "dda13534e8582c2309c261f623d51684ec5950d6",
+      "baseRef": "main",
+      "mergeCommitSha": "392efb6ae2c3a6eca90d572c5a9b744c8d9cdc9d"
+    },
+    {
+      "id": 4818382914,
+      "number": 16,
+      "title": "Give artists private review, publication holds and safe generation cancellation",
+      "url": "https://github.com/neophilism/Our-Jam/pull/16",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T10:26:10.000Z",
+      "updatedAt": "2026-10-11T10:30:45.000Z",
+      "closedAt": "2026-10-11T10:30:45.000Z",
+      "mergedAt": "2026-10-11T10:30:45.000Z",
+      "headSha": "650d282b46b2802d5b0bbb995e9964ef9b191465",
+      "baseRef": "main",
+      "mergeCommitSha": "672ffe7e1ce8ec7a1e4f6299c86e4365cd4ed6d5"
+    },
+    {
+      "id": 4818322595,
+      "number": 15,
+      "title": "Preserve local album playback and select recording inputs",
+      "url": "https://github.com/neophilism/Our-Jam/pull/15",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T10:16:23.000Z",
+      "updatedAt": "2026-10-11T10:25:26.000Z",
+      "closedAt": "2026-10-11T10:25:26.000Z",
+      "mergedAt": "2026-10-11T10:25:26.000Z",
+      "headSha": "89e0c15e2f55c7e375e2c580ae0008b381aeb52d",
+      "baseRef": "main",
+      "mergeCommitSha": "8e56f5eae45d7c8d48d1d41a03065086679e8fbf"
+    },
+    {
+      "id": 4818227823,
+      "number": 14,
+      "title": "Add artist archives, liked-track collections and voting reconnect guards",
+      "url": "https://github.com/neophilism/Our-Jam/pull/14",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T10:00:40.000Z",
+      "updatedAt": "2026-10-11T10:11:07.000Z",
+      "closedAt": "2026-10-11T10:11:07.000Z",
+      "mergedAt": "2026-10-11T10:11:06.000Z",
+      "headSha": "2046788f54b69bffbee7ffb767507ae90358491d",
+      "baseRef": "main",
+      "mergeCommitSha": "ba43b5d62c26fe8eae26849682dd21925d8b2d41"
+    },
+    {
+      "id": 4818156497,
+      "number": 13,
+      "title": "Add opt-in verified release email and foreground notifications",
+      "url": "https://github.com/neophilism/Our-Jam/pull/13",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T09:47:41.000Z",
+      "updatedAt": "2026-10-11T09:55:22.000Z",
+      "closedAt": "2026-10-11T09:55:21.000Z",
+      "mergedAt": "2026-10-11T09:55:21.000Z",
+      "headSha": "90dbd5a7951055f183075478ef2000996ad1d250",
+      "baseRef": "main",
+      "mergeCommitSha": "507a959b94446de4365a976560e728242c90ea81"
+    },
+    {
+      "id": 4818079728,
+      "number": 12,
+      "title": "Prepare shows, validate audio timing and reorder the live queue",
+      "url": "https://github.com/neophilism/Our-Jam/pull/12",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T09:32:56.000Z",
+      "updatedAt": "2026-10-11T09:38:16.000Z",
+      "closedAt": "2026-10-11T09:38:16.000Z",
+      "mergedAt": "2026-10-11T09:38:16.000Z",
+      "headSha": "572bc0c74603672bbe36bdf9fe75567ecc818d59",
+      "baseRef": "main",
+      "mergeCommitSha": "69163c03ac6c582aaf0a2710de3be4a0d34c8a37"
+    },
+    {
+      "id": 4818022709,
+      "number": 11,
+      "title": "Draft: native iOS/Android audience client — upstream dependency gate blocked",
+      "url": "https://github.com/neophilism/Our-Jam/pull/11",
+      "state": "open",
+      "draft": true,
+      "createdAt": "2026-10-11T09:21:41.000Z",
+      "updatedAt": "2026-10-11T09:21:41.000Z",
+      "closedAt": null,
+      "mergedAt": null,
+      "headSha": "e17818c124b977f62beb660df22b1e0a39c0b563",
+      "baseRef": "main",
+      "mergeCommitSha": null
+    },
+    {
+      "id": 4816762016,
+      "number": 10,
+      "title": "Reconcile merged PR 8 and P003 evidence",
+      "url": "https://github.com/neophilism/Our-Jam/pull/10",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T05:13:54.000Z",
+      "updatedAt": "2026-10-11T05:17:04.000Z",
+      "closedAt": "2026-10-11T05:17:04.000Z",
+      "mergedAt": "2026-10-11T05:17:03.000Z",
+      "headSha": "e9d2bdbeb020f3979e6ac86b2a65d8863b51fc50",
+      "baseRef": "main",
+      "mergeCommitSha": "0101eeb99cfea9b5c98dfc02e5751cec4b5db539"
+    },
+    {
+      "id": 4816586500,
+      "number": 9,
+      "title": "P003: verify migration replay and event-scoped schema isolation",
+      "url": "https://github.com/neophilism/Our-Jam/pull/9",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T04:32:23.000Z",
+      "updatedAt": "2026-10-11T04:35:33.000Z",
+      "closedAt": "2026-10-11T04:35:33.000Z",
+      "mergedAt": "2026-10-11T04:35:33.000Z",
+      "headSha": "e703ba8cbd324cbfd93dee674ef730bc02f20449",
+      "baseRef": "main",
+      "mergeCommitSha": "1a8e965dc68b5d3952c72720f6c0b98c901b8a78"
+    },
+    {
+      "id": 4815566343,
+      "number": 8,
+      "title": "Add scoped native guest API and web/mobile contract parity",
+      "url": "https://github.com/neophilism/Our-Jam/pull/8",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T00:46:59.000Z",
+      "updatedAt": "2026-10-11T04:16:20.000Z",
+      "closedAt": "2026-10-11T04:16:20.000Z",
+      "mergedAt": "2026-10-11T04:16:20.000Z",
+      "headSha": "421cdd9555b05e36fafc851f233a4e4fca8ffc6c",
+      "baseRef": "main",
+      "mergeCommitSha": "800de1cabe256d15a05335b7d09f3735c3877765"
+    },
+    {
+      "id": 4815519659,
+      "number": 7,
+      "title": "Add safe playback handoff and artist community review",
+      "url": "https://github.com/neophilism/Our-Jam/pull/7",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T00:36:56.000Z",
+      "updatedAt": "2026-10-11T00:43:06.000Z",
+      "closedAt": "2026-10-11T00:43:06.000Z",
+      "mergedAt": "2026-10-11T00:43:05.000Z",
+      "headSha": "780f7da644f4b696f3b142c104c0a57f4afe8dd3",
+      "baseRef": "main",
+      "mergeCommitSha": "51ec3c3e50dfabb903c2781434f3b26434bcc3ed"
+    },
+    {
+      "id": 4815477085,
+      "number": 6,
+      "title": "Add contributor recognition, listening feedback and room-reactive visuals",
+      "url": "https://github.com/neophilism/Our-Jam/pull/6",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T00:27:41.000Z",
+      "updatedAt": "2026-10-11T00:32:49.000Z",
+      "closedAt": "2026-10-11T00:32:49.000Z",
+      "mergedAt": "2026-10-11T00:32:49.000Z",
+      "headSha": "17a2f4907ce72d394fd4635d235b3896881e220b",
+      "baseRef": "main",
+      "mergeCommitSha": "ed686fef95bf2f44cd4c4b67022934637c5b6146"
+    },
+    {
+      "id": 4815430648,
+      "number": 5,
+      "title": "Add budgeted generation, verified media delivery and Render deployment configuration",
+      "url": "https://github.com/neophilism/Our-Jam/pull/5",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T00:18:59.000Z",
+      "updatedAt": "2026-10-11T00:23:34.000Z",
+      "closedAt": "2026-10-11T00:23:34.000Z",
+      "mergedAt": "2026-10-11T00:23:34.000Z",
+      "headSha": "dc0a381a2d3fb5eb1062992e42883853bfd36457",
+      "baseRef": "main",
+      "mergeCommitSha": "7289a5b9efdb60afb1c92954fc21c9340bb04f61"
+    },
+    {
+      "id": 4815356198,
+      "number": 4,
+      "title": "Fence show playback and persist recoverable microphone recordings",
+      "url": "https://github.com/neophilism/Our-Jam/pull/4",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-11T00:05:06.000Z",
+      "updatedAt": "2026-10-11T00:16:53.000Z",
+      "closedAt": "2026-10-11T00:16:53.000Z",
+      "mergedAt": "2026-10-11T00:16:53.000Z",
+      "headSha": "7cdb458e720325d02ab4d3c37e87932f4860ae58",
+      "baseRef": "main",
+      "mergeCommitSha": "e3c057485f1d3b740668b42c281a788fcde9d1e0"
+    },
+    {
+      "id": 4815294290,
+      "number": 3,
+      "title": "Build audience participation, 3D Sound Waves and performer console",
+      "url": "https://github.com/neophilism/Our-Jam/pull/3",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-10T23:52:15.000Z",
+      "updatedAt": "2026-10-10T23:57:56.000Z",
+      "closedAt": "2026-10-10T23:57:56.000Z",
+      "mergedAt": "2026-10-10T23:57:56.000Z",
+      "headSha": "e55fa6df9d25422d7fe8723c1877b883d06ac7bf",
+      "baseRef": "main",
+      "mergeCommitSha": "b4340aa52633df79b6f8b993dff98d912360bc1d"
+    },
+    {
+      "id": 4815035808,
+      "number": 2,
+      "title": "Build persistent events, atomic audience voting and release workflow",
+      "url": "https://github.com/neophilism/Our-Jam/pull/2",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-10T22:57:46.000Z",
+      "updatedAt": "2026-10-10T23:04:33.000Z",
+      "closedAt": "2026-10-10T23:04:33.000Z",
+      "mergedAt": "2026-10-10T23:04:33.000Z",
+      "headSha": "84b8e970a6c91f6c0eb0cb7ac30e7433c7ee51ce",
+      "baseRef": "main",
+      "mergeCommitSha": "2c8a4e7fbaf189e67ca83fc310cf609362543b78"
+    },
+    {
+      "id": 4814985265,
+      "number": 1,
+      "title": "P001: Establish Our Jam production plan and operating contract",
+      "url": "https://github.com/neophilism/Our-Jam/pull/1",
+      "state": "closed",
+      "draft": false,
+      "createdAt": "2026-10-10T22:47:32.000Z",
+      "updatedAt": "2026-10-10T22:50:02.000Z",
+      "closedAt": "2026-10-10T22:50:02.000Z",
+      "mergedAt": "2026-10-10T22:50:02.000Z",
+      "headSha": "416ec4ecf0f4881f6718efe692d1fbcc9432663e",
+      "baseRef": "main",
+      "mergeCommitSha": "21beb1bd5679675af944c3bdb34515bd88739b7f"
+    }
+  ]
+}
