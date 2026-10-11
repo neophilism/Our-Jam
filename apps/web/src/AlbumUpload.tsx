@@ -43,7 +43,7 @@ export function AlbumUpload({ data, refresh }: { data: EventState; refresh: () =
     {available === false && <p role="status">Private audio storage is not connected yet. Uploads are disabled; no file will be sent.</p>}
     <label style={{ marginTop: 12 }}>Album track<select value={sourceId} disabled={busy} onChange={(e) => setSourceId(e.target.value)}><option value="">Select an unplayed track</option>{sources.map((source) => <option key={source.id} value={source.id} disabled={source.played}>{source.title}{source.played ? " (already played)" : ""}</option>)}</select></label>
     <label style={{ marginTop: 12 }}>MP3 or WAV file<input ref={input} type="file" accept="audio/mpeg,audio/wav,.mp3,.wav" disabled={busy || !available} /></label>
-    <p className="tiny">Five seconds to ten minutes; up to 128 MiB. Title and private core prompt stay unchanged. A song cannot be replaced after its first round opens.</p>
+    <p className="tiny">15 seconds to ten minutes; up to 128 MiB. Title and private core prompt stay unchanged. A song cannot be replaced after its first round opens.</p>
     <button type="button" style={{ marginTop: 12 }} disabled={busy || !available || !sourceId || sources.find((source) => source.id === sourceId)?.played} onClick={() => void upload()}>{busy ? "Checking audio..." : "Upload and use this song"}</button>
     {message && <p role="status">{message}</p>}{error && <p role="alert">{error}</p>}
   </section>;

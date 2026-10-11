@@ -10,7 +10,7 @@ import { ingestAlbumAudio, uploadedAlbumUrl } from "../apps/api/src/album-upload
 import { prepareAlbumAudio } from "../apps/api/src/album-media.js";
 import type { MediaStore } from "../packages/providers/src/storage.js";
 const origin = "http://localhost:5173";
-function wav(seconds = 6) {
+function wav(seconds = 16) {
   const bytes = Buffer.alloc(44 + 8000 * seconds * 2);
   bytes.write("RIFF"); bytes.writeUInt32LE(bytes.length - 8, 4); bytes.write("WAVEfmt ", 8);
   bytes.writeUInt32LE(16, 16); bytes.writeUInt16LE(1, 20); bytes.writeUInt16LE(1, 22);
@@ -33,12 +33,12 @@ test("album file is fully decoded, privately attached with stable delivery and r
   const command = { commandId: randomUUID(), expectedRevision: 0 };
   const bytes = wav();
   const result = await ingestAlbumAudio(db, "our-jam", sourceId, command, bytes, origin, store);
-  assert.equal(result.ok, true); assert.ok(result.durationSeconds >= 6 && result.durationSeconds < 7);
+  assert.equal(result.ok, true); assert.ok(result.durationSeconds >= 16 && result.durationSeconds < 17);
   assert.match(result.audioUrl, /\/api\/operator\/sources\/.+\/audio\/[a-f0-9]{64}$/);
   assert.equal(stored.size, 1);
   assert.deepEqual(await ingestAlbumAudio(db, "our-jam", sourceId, command, bytes, origin, store), result);
   assert.equal(stored.size, 1);
-  await assert.rejects(ingestAlbumAudio(db, "our-jam", sourceId, command, wav(7), origin, store));
+  await assert.rejects(ingestAlbumAudio(db, "our-jam", sourceId, command, wav(17), origin, store));
   const row = (await db.query("SELECT * FROM source_tracks WHERE id=$1", [sourceId])).rows[0];
   assert.equal(row.core_prompt, "PRIVATE original core"); assert.equal(row.title, "My original"); assert.equal(row.duration_seconds, Math.ceil(result.durationSeconds));
   assert.match(await uploadedAlbumUrl(db, "our-jam", sourceId, result.sha256, origin, store), /^https:\/\/private\.example\.test\/albums\//);
@@ -53,17 +53,17 @@ test("album file is fully decoded, privately attached with stable delivery and r
 test("invalid uploads, stale revisions and storage failure preserve the previous album source", async (t) => {
   const { db, event, sourceId, store, stored } = await fixture(); t.after(() => db.close());
   await assert.rejects(prepareAlbumAudio(Buffer.from("#EXTM3U\nhttps://private.invalid/playlist")));
+  await assert.rejects(prepareAlbumAudio(wav(6)), (e: any) => e.code === "invalid_album_audio");
   await assert.rejects(ingestAlbumAudio(db, "our-jam", sourceId, { commandId: randomUUID(), expectedRevision: 0 }, new Uint8Array(2048), origin, store));
   assert.equal(stored.size, 0);
   await assert.rejects(ingestAlbumAudio(db, "another-artist", sourceId, { commandId: randomUUID(), expectedRevision: 0 }, wav(), origin, store));
   const fail: MediaStore = { ...store, put: async () => { throw new Error("unavailable"); } };
   await assert.rejects(ingestAlbumAudio(db, "our-jam", sourceId, { commandId: randomUUID(), expectedRevision: 0 }, wav(), origin, fail));
-  const row = (await db.query("SELECT audio_url FROM source_tracks WHERE id=$1", [sourceId])).rows[0];
-  assert.equal(row.audio_url, null);
+  assert.equal((await db.query("SELECT audio_url FROM source_tracks WHERE id=$1", [sourceId])).rows[0].audio_url, null);
   assert.equal((await db.query("SELECT revision FROM events WHERE id=$1", [event.id])).rows[0].revision, 0);
   const prepare = async () => {
     await db.query("UPDATE events SET revision=revision+1 WHERE id=$1", [event.id]);
-    return { bytes: new Uint8Array([1, 2, 3]), durationSeconds: 6 };
+    return { bytes: new Uint8Array([1, 2, 3]), durationSeconds: 16 };
   };
   await assert.rejects(ingestAlbumAudio(db, "our-jam", sourceId, { commandId: randomUUID(), expectedRevision: 0 }, wav(), origin, store, prepare), (e: any) => e.code === "revision_conflict");
   assert.equal(stored.size, 0);
@@ -79,10 +79,8 @@ test("album upload and delivery routes enforce authentication, Origin and config
   const cookie = login.headers["set-cookie"]!.toString().split(";")[0];
   const url = `/api/operator/sources/${sourceId}/upload`;
   const headers = { origin, cookie, "content-type": "application/octet-stream", "x-command-id": randomUUID(), "x-event-revision": "0" };
-  const unauthorized = await app.inject({ method: "POST", url, headers: { ...headers, cookie: "" }, payload: wav() });
-  assert.equal(unauthorized.statusCode, 401);
-  const crossSite = await app.inject({ method: "POST", url, headers: { ...headers, origin: "https://evil.example.test" }, payload: wav() });
-  assert.equal(crossSite.statusCode, 403);
+  assert.equal((await app.inject({ method: "POST", url, headers: { ...headers, cookie: "" }, payload: wav() })).statusCode, 401);
+  assert.equal((await app.inject({ method: "POST", url, headers: { ...headers, origin: "https://evil.example.test" }, payload: wav() })).statusCode, 403);
   const result = await app.inject({ method: "POST", url, headers, payload: wav() });
   assert.equal(result.statusCode, 200, result.body); assert.equal(stored.size, 1);
   const path = new URL(result.json().audioUrl).pathname;
