@@ -20,6 +20,7 @@ import {
   listenerPresence,
 } from "./FeedbackNudge";
 import { ShowPlayer } from "./ShowPlayer";
+import { ShowSetup } from "./ShowSetup";
 import { Recorder } from "./Recorder";
 
 function Mark() {
@@ -1296,6 +1297,20 @@ function Console({ slug }: { slug: string }) {
   const [preview, setPreview] = useState<string | null>(null);
   const [mainOutput, setMainOutput] = useState(false);
   const beat = useRef(0);
+  const queued = data?.queue?.filter((q) => q.state === "queued") ?? [];
+  function move(id: string, to: number) {
+    const ids = queued.map((q) => q.id),
+      from = ids.indexOf(id);
+    if (from < 0 || to < 0 || to >= ids.length || !data) return;
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    void action(() =>
+      api(`/operator/events/${data.event.id}/queue`, "PUT", {
+        commandId: crypto.randomUUID(),
+        expectedRevision: data.event.revision,
+        queueIds: ids,
+      }),
+    );
+  }
   async function action(fn: () => Promise<unknown>) {
     setBusy(true);
     try {
@@ -1363,16 +1378,39 @@ function Console({ slug }: { slug: string }) {
             />
             <h3>Up next</h3>
             <ol className="queue">
-              {data.queue
-                ?.filter((q) => q.state === "queued")
-                .map((q) => (
-                  <li key={q.id}>
-                    <span>
-                      {q.title}
-                      <small>
-                        {q.release_id ? "Crowd creation" : "Album track"}
-                      </small>
-                    </span>
+              {queued.map((q, index) => (
+                <li key={q.id}>
+                  <span>
+                    {q.title}
+                    <small>
+                      {q.release_id ? "Crowd creation" : "Album track"}
+                    </small>
+                  </span>
+                  <div className="queue-actions">
+                    <button
+                      className="ghost small"
+                      disabled={busy || index === 0}
+                      aria-label={`Move ${q.title} next`}
+                      onClick={() => move(q.id, 0)}
+                    >
+                      Next
+                    </button>
+                    <button
+                      className="ghost small"
+                      disabled={busy || index === 0}
+                      aria-label={`Move ${q.title} up`}
+                      onClick={() => move(q.id, index - 1)}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      className="ghost small"
+                      disabled={busy || index === queued.length - 1}
+                      aria-label={`Move ${q.title} down`}
+                      onClick={() => move(q.id, index + 1)}
+                    >
+                      ↓
+                    </button>
                     <button
                       className="ghost small"
                       disabled={busy}
@@ -1384,8 +1422,9 @@ function Console({ slug }: { slug: string }) {
                     >
                       Remove
                     </button>
-                  </li>
-                ))}
+                  </div>
+                </li>
+              ))}
             </ol>
           </section>
           <section className="card">
@@ -1553,6 +1592,7 @@ function Console({ slug }: { slug: string }) {
             </details>
           ))}
         </section>
+        <ShowSetup data={data} refresh={refresh} />
         <Moderation eventId={data.event.id} />
         <Recorder
           eventId={data.event.id}

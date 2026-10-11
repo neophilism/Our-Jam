@@ -30,7 +30,12 @@ export type EventState = {
     artistId: string;
     purchaseUrl?: string;
     state: string;
-    settings: { screenLimit: number; maxWaves: number };
+    settings: {
+      screenLimit: number;
+      maxWaves: number;
+      minimumRoundSeconds: number;
+      maxGenerations: number;
+    };
     revision: number;
   };
   round: null | {
