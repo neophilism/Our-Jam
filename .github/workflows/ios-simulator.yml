@@ -45,7 +45,11 @@ jobs:
         timeout-minutes: 15
         run: |
           set -o pipefail
-          xcodebuild -project apps/ios/OurJam.xcodeproj -scheme OurJam -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-build CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO build 2>&1 | tee ios-evidence/build.log
+          xcodebuild -project apps/ios/OurJam.xcodeproj -scheme OurJam -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-build CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- ONLY_ACTIVE_ARCH=NO build 2>&1 | tee ios-evidence/build.log
+      - name: Verify the Simulator signature
+        run: |
+          codesign --verify --deep --strict ios-build/Build/Products/Release-iphonesimulator/OurJam.app
+          codesign -d --entitlements :- ios-build/Build/Products/Release-iphonesimulator/OurJam.app > ios-evidence/simulator-entitlements.plist 2> ios-evidence/signature.log
       - name: Preserve compiled binary and exact source
         run: |
           mkdir -p ios-artifact
@@ -93,5 +97,11 @@ jobs:
         if: always()
         with:
           name: native-ios-evidence
-          path: ios-evidence/
+          path: |
+            ios-evidence/*.log
+            ios-evidence/*.json
+            ios-evidence/*.png
+            ios-evidence/*.plist
+            ios-evidence/*.txt
+            ios-evidence/attachments/
           retention-days: 7
