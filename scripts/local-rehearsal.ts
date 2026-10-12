@@ -8,7 +8,7 @@ import { spawn } from "node:child_process";
 import { createApp } from "../apps/api/src/app.js";
 import { migrate, type Database, type Sql } from "../apps/api/src/db.js";
 import { configuredGeneration } from "../apps/api/src/generation-config.js";
-import { generationTick } from "../apps/api/src/generation.js";
+import { startLocalLifecycle } from "../apps/api/src/local-lifecycle.js";
 import { localMediaStore } from "../apps/api/src/local-media-store.js";
 if (process.env.NODE_ENV === "production") throw new Error("Use the hosted entry point for production. This script is explicitly loopback-only.");
 const directory = path.resolve(process.env.OUR_JAM_LOCAL_DIR || path.join(homedir(), ".our-jam-local"));
@@ -34,14 +34,15 @@ const media = await localMediaStore(path.join(directory, "audio"), origin, token
 const generation = configuredGeneration(media.store, { GENERATION_ENABLED: "1", GENERATION_EVENT_BUDGET_CENTS: "0", GENERATION_TOTAL_BUDGET_CENTS: "0" })!;
 const app = await createApp(db, { origin, operatorToken: token, secureCookies: false, serveWeb: true, mediaStore: media.store, providerReady: true, generation });
 media.register(app);
-let active = false;
-const timer = setInterval(async () => {
-  if (active) return; active = true;
-  try { await generationTick(db, generation); }
-  catch { console.error("Local generation processing failed; saved rounds were not resubmitted."); }
-  finally { active = false; }
-}, 1000);
-await app.listen({ host: "127.0.0.1", port });
+const lifecycle = startLocalLifecycle(db, generation);
+try {
+  // Reconcile restored deadlines and expired playback control before serving.
+  await lifecycle.tick();
+  await app.listen({ host: "127.0.0.1", port });
+} catch (error) {
+  try { await lifecycle.stop(); } finally { await app.close(); await db.close(); }
+  throw error;
+}
 console.log(`Our Jam is running locally at ${origin}`);
 console.log(`Your private performer key is in ${tokenPath}`);
 console.log("Open that file and paste the key at /performer. Do not upload or share the key.");
@@ -54,6 +55,8 @@ if (process.platform === "darwin" && process.env.OUR_JAM_NO_OPEN !== "1") {
 }
 let closing = false;
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, async () => {
-  if (closing) return; closing = true; clearInterval(timer);
-  await app.close(); await db.close(); process.exit(0);
+  if (closing) return; closing = true;
+  try { await app.close(); await lifecycle.stop(); }
+  finally { await db.close(); }
+  process.exit(0);
 });

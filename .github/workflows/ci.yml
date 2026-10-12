@@ -36,6 +36,20 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - run: docker build -t our-jam:ci .
+      - name: Preserve exact checked local source
+        run: |
+          mkdir -p local-release
+          git archive --format=zip --prefix=OurJam-Local/ HEAD > local-release/OurJam-Local-Source.zip
+          git rev-parse HEAD > local-release/COMMIT.txt
+          (cd local-release && sha256sum OurJam-Local-Source.zip > SHA256SUMS.txt)
+          cp docs/local-real-rehearsal.md local-release/LOCAL-SETUP.md
+          printf '%s\n' 'Application, browser, audit, production-build and Docker checks passed before packaging. This ZIP is exact tracked source, not an iOS binary or TestFlight build. Native acceptance is recorded by the separate Simulator workflow.' > local-release/BUILD-STATUS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OurJam-Local-Source
+          path: local-release/
+          retention-days: 14
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: always()
         with:

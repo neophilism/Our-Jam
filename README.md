@@ -2,42 +2,43 @@
 
 Live music made together. Fans contribute **Sound Waves**, move five votes among them, and help shape the crowd's next release.
 
-## Run the real zero-budget rehearsal on your Mac
+## Run the real zero-budget rehearsal
 
-The actual native iOS Simulator app and persistent local API have passed native-to-public-screen acceptance. Download the verified artifact linked in [PROGRESS.md](PROGRESS.md), or use the source checkout. This is real user data, not a seeded demonstration. It is not a TestFlight release or hosted public event.
+The native iOS Simulator app and persistent local API have passed native-to-public-screen acceptance. The accepted artifacts and exact test runs are in [PROGRESS.md](PROGRESS.md). This is real user data, not a seeded demonstration, TestFlight distribution or a hosted public event.
 
-Install Node.js 24, FFmpeg/ffprobe, and Xcode with an iOS Simulator runtime. The Simulator path does not require paid Apple membership. From this repository run:
+On your Mac, install Node.js 24 and FFmpeg/ffprobe. Xcode with an installed iOS Simulator runtime is needed only for the native app; the browser and monitor routes do not require Xcode or Apple membership. Double-click **Check Our Jam Setup.command** to check prerequisites, then **Start Our Jam.command**. From Terminal the equivalent is:
 
 ```sh
+bash "Check Our Jam Setup.command"
 bash "Start Our Jam.command"
 ```
 
-The performer console opens at `http://127.0.0.1:4173/performer`. A TextEdit window shows your locally generated private performer key; paste it into sign-in without sharing it. Create your own event, add track titles/private core prompts, and upload your own MP3/WAV files. Choose Mureka or Stable Audio for future rounds. Use **Open monitor window** to open the existing `/screen/:slug` route in a separate window; drag that same window onto your external display.
+The launcher installs locked dependencies when necessary and opens `http://127.0.0.1:4173/performer`. TextEdit shows your locally generated private performer key. Paste it into sign-in; do not share it. Create your event, enter song titles and private core prompts, and attach your actual MP3/WAV files in **Upload album audio**. Keep the original masters: uploads make validated MP3 playback copies.
 
-Extract the accepted `OurJam-Simulator.zip`, place `OurJam.app` beside `Open Simulator.command`, and run that launcher. Enter the same server address and event code. The event code and restricted voting room code are different. Start/resume playback in the performer console, join from the native app, submit a Sound Wave and watch it appear on the public display.
+Use **Open monitor window** in the performer console. It opens the existing `/screen/:slug` renderer, not a preview or another event. Drag that same window onto the external monitor and use the browser's full-screen control. The panel supplies the exact server address and event code for the native app.
 
-For a fast first test, set **Minimum participation seconds** to 0 before the round, or wait the configured minimum before closing it. The local generation processor records the genuine `approved_budget_zero` block before any provider request; it does not reject tags, fabricate a provider error or insert prerecorded results. No keys or paid credits are needed for this loop. Data persist under `~/.our-jam-local`. See [full local instructions](docs/local-real-rehearsal.md).
+Extract the accepted `OurJam-Simulator.zip` beside **Open Simulator.command**, then run that launcher. Enter the same server address and event code. The event code and the restricted voting room code are different. Start/resume playback in the performer console, join from the native app, submit a Sound Wave and see it appear on the public display. Nothing is added automatically.
 
-## Funding and hosting boundaries
+For an immediate first test, set **Minimum participation seconds** to 0 before opening the round, or wait the configured minimum before closing it. Mureka / Stable Audio is a two-button selector for future rounds. The real job processor records **approved_budget_zero** before any provider request. Tags and votes are not rejected because of the budget. No provider error or audio result is fabricated.
 
-The localhost server is reachable by the same Mac's Simulator, not separate phones over Wi-Fi. The public display is real, but a localhost QR cannot onboard a remote crowd. Hosted deployment and real private Neon media delivery remain separate gates.
+Data persist under `~/.our-jam-local`. First dependency installation needs internet; subsequent unchanged installs are reused. Keep the server terminal open. [Detailed local instructions](docs/local-real-rehearsal.md) describe storage, startup and recovery limits.
 
-The current Mureka and Stable Audio adapters generate from the saved core prompt plus selected Sound Waves, not the original song's waveform. Both local budgets stay at $0 regardless of environment settings. Live provider comparison requires explicit nonzero authorization, usable API credits, current pricing/rights checks and approved server-side configuration. GitHub secrets are not automatically Render environment variables. See [dual-generation controls](docs/dual-generation.md) and [resource state](docs/rehearsal-resource-state.md).
+## Boundaries
 
-TestFlight needs a separately signed production build and the owner's Apple membership/submission access. The existing Expo draft remains security-blocked; the independent SwiftUI Simulator acceptance is not Android or full V1 completion.
+The local server is reachable by this Mac and its Simulator, not separate audience phones over Wi-Fi. Its localhost QR cannot onboard a remote crowd. Hosted deployment and actual Neon S3 media delivery remain unverified; see [resource reconciliation](docs/rehearsal-resource-state.md).
 
-## Development and full plan
+Both adapters generate from the saved core prompt plus selected Sound Waves, not the uploaded waveform. Both local spending limits are hardcoded to $0 and ignore outside provider configuration. Funded comparison requires a new explicit allowance, API credits and verified server-side pricing/rights configuration. `MUREKA_API_KEY` and `STABLE_AUDIO_KEY` are supported secret names; GitHub secrets are not automatically Render environment variables. There is no automatic Thursday activation.
 
-Read [AGENTS.md](AGENTS.md), [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md), [PROGRESS.md](PROGRESS.md) and the [canonical 54-work-package roadmap](registry/roadmap.json). Original dependencies and acceptance remain in [backlog.json](backlog.json). DJ V2 and the secondary demonstration have separate plans. Use `npm ci` and `npm run check`; run all relevant browser/native gates before merging.
+A Simulator `.app` is not a TestFlight `.ipa`. TestFlight requires membership, appropriate signing/submission access and store acceptance. The separate Expo draft remains security-blocked; this SwiftUI target does not complete Android or all native V1 features.
 
-The system uses React, Fastify, PostgreSQL, a durable generation queue and the SwiftUI iOS target. Local rehearsal uses persistent PGlite. Hosted setup remains documented in [deployment](docs/deployment.md); read the newer resource reconciliation before acting on historical status text.
+## Development
+
+Read [AGENTS.md](AGENTS.md), [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md), [PROGRESS.md](PROGRESS.md) and the [54-work-package roadmap](registry/roadmap.json). Original dependencies and acceptance remain in [backlog.json](backlog.json). DJ V2 and the secondary demonstration have separate plans. Use `npm ci` and `npm run check`, plus applicable browser/native checks before merging.
+
+After all application checks, audit, production builds and Docker pass, CI preserves a source-only release with its commit and checksum. Native artifacts have their own Simulator gate. See [release packaging](docs/release-packaging.md); a source ZIP never claims to be an installable iOS binary.
 
 ## Project resources
 
-- GitHub: `neophilism/Our-Jam`
-- Render project: `prj-db5btotckfvc739m1ck0`
-- Neon project: `crimson-hat-87508124`
-- Production branch: `br-aged-sea-b55fzq0v`
-- Isolated rehearsal branch: `br-blue-unit-b5rk1hit`
+GitHub `neophilism/Our-Jam`; Render project `prj-db5btotckfvc739m1ck0`; Neon project `crimson-hat-87508124`; production branch `br-aged-sea-b55fzq0v`; isolated rehearsal branch `br-blue-unit-b5rk1hit`.
 
-Never reuse unrelated credentials/services or commit secret values. Artist core prompts and unpublished recordings stay private. The architecture has explicit server trust boundaries; no end-to-end-encryption or independent security certification is claimed.
+Never reuse unrelated credentials/services or commit secret values. Artist core prompts and unpublished recordings stay private. The server-authorized architecture is not an end-to-end-encryption or independent security certification claim.
