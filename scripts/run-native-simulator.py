@@ -37,7 +37,7 @@ try:
     # A simctl bootable device is not necessarily an eligible Xcode run target.
     # The old code blindly chose the first iOS 18.6 phone despite using SDK 26.2.
     build = ['xcodebuild', '-project', 'apps/ios/OurJam.xcodeproj', '-scheme', 'OurJam', '-configuration', 'Release', '-sdk', 'iphonesimulator']
-    destinations = command(build + ['-showdestinations', 'CODE_SIGNING_ALLOWED=NO'], 180, 'eligible-destinations.log')
+    destinations = command(build + ['-showdestinations', 'CODE_SIGNING_ALLOWED=YES', 'CODE_SIGN_IDENTITY=-'], 180, 'eligible-destinations.log')
     eligible = set(re.findall(r'platform:iOS Simulator,[^\n}]*?id:([A-Fa-f0-9-]{36})', destinations))
     candidates = [dict(d, runtime=runtime) for runtime, devices in listing['devices'].items() if '.iOS-' in runtime for d in devices if d.get('isAvailable', True) and d['udid'] in eligible and (d['name'].startswith('iPhone') or d['name'].startswith('iPad'))]
     def preference(device):
@@ -55,7 +55,7 @@ try:
     command(['xcrun', 'simctl', 'bootstatus', device, '-b'], 300, 'boot-status.log')
     # Use the same SDK/configuration/DerivedData as the compiled user artifact.
     # This avoids recompiling a second Debug app and tests the Release code path.
-    command(build + ['-destination', f'platform=iOS Simulator,id={device}', '-destination-timeout', '90', '-parallel-testing-enabled', 'NO', '-derivedDataPath', 'ios-build', '-resultBundlePath', 'ios-evidence/NativeTests.xcresult', 'CODE_SIGNING_ALLOWED=NO', 'test'], 720, 'tests.log')
+    command(build + ['-destination', f'platform=iOS Simulator,id={device}', '-destination-timeout', '90', '-parallel-testing-enabled', 'NO', '-derivedDataPath', 'ios-build', '-resultBundlePath', 'ios-evidence/NativeTests.xcresult', 'CODE_SIGNING_ALLOWED=YES', 'CODE_SIGN_IDENTITY=-', 'test'], 720, 'tests.log')
 except Exception as error:
     failure = error
 finally:
