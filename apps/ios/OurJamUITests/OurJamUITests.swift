@@ -46,7 +46,18 @@ final class OurJamUITests: XCTestCase {
         let key = keyView.label
         XCTAssertTrue(key.hasPrefix("ojr_"))
         XCTAssertEqual(key.count, 68)
-        app.buttons["I saved it"].tap()
+        // Cover at least one of the real three-second snapshot refreshes.
+        // A briefly visible key is not acceptance: the fan must be able to save it.
+        let vanished = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: keyView)
+        vanished.isInverted = true
+        XCTAssertEqual(XCTWaiter.wait(for: [vanished], timeout: 4), .completed, "The recovery disclosure must survive form updates")
+        XCTAssertTrue(keyView.label == key, "The disclosed key must not change")
+        let savedButton = app.buttons["recoveryKeySaved"]
+        XCTAssertTrue(savedButton.waitForExistence(timeout: 5))
+        XCTAssertTrue(savedButton.isHittable, "The save confirmation must be reachable on the small screen")
+        savedButton.tap()
+        let hidden = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: keyView)
+        XCTAssertEqual(XCTWaiter.wait(for: [hidden], timeout: 5), .completed)
         app.terminate()
         app.launch()
         let restore = app.secureTextFields["restoreRecoveryKey"]
