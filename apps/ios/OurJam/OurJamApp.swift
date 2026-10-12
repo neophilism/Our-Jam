@@ -156,6 +156,14 @@ struct TracksView: View {
 struct ProfileView: View {
     @ObservedObject var model: SessionModel
     @State private var confirmSignOut = false
+    @State private var issuedKey = ""
+    @State private var disclosureEpoch = UUID()
+    @Environment(\.scenePhase) private var scene
+
+    private func eraseDisclosure() {
+        issuedKey = ""
+        disclosureEpoch = UUID()
+    }
     @FocusState private var editingName: Bool
     var body: some View {
         NavigationStack {
@@ -165,7 +173,7 @@ struct ProfileView: View {
                     Toggle("Keep my credit anonymous", isOn: $model.anonymous)
                     Button("Save profile") { editingName = false; Task { await model.saveProfile() } }.disabled(model.busy).accessibilityIdentifier("saveProfile")
                 }
-                NativeAccountControls(model: model)
+                NativeAccountControls(model: model, issuedKey: $issuedKey, disclosureEpoch: $disclosureEpoch)
                 Section("Connected event") {
                     Text(model.state?.event.title ?? model.eventCode)
                     Text(model.origin).font(.caption).textSelection(.enabled)
@@ -176,6 +184,31 @@ struct ProfileView: View {
                 if !model.error.isEmpty { Text(model.error).foregroundStyle(.orange) }
             }.scrollDismissesKeyboard(.interactively).navigationTitle("Your profile")
             .confirmationDialog("Sign out and remove this device credential?", isPresented: $confirmSignOut, titleVisibility: .visible) { Button("Sign out", role: .destructive) { Task { await model.signOut() } } }
+        }
+        // Form sections are lazy and their rows change after key creation. Keep
+        // both the state and presentation on the stable navigation container.
+        .sheet(isPresented: Binding(get: { !issuedKey.isEmpty }, set: { if !$0 { eraseDisclosure() } })) {
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
+                        Text("Save your recovery key").font(.title.bold())
+                        Text("Save this in your password manager before dismissing. We will not show this key again.")
+                        Text(issuedKey).font(.system(.footnote, design: .monospaced))
+                            .textSelection(.enabled).privacySensitive().accessibilityIdentifier("newRecoveryKey")
+                    }.frame(maxWidth: .infinity, alignment: .leading).padding(24)
+                }
+                Button("I saved it") { eraseDisclosure() }
+                    .buttonStyle(.borderedProminent).accessibilityIdentifier("recoveryKeySaved").padding(24)
+            }.interactiveDismissDisabled()
+        }
+        .onChange(of: scene) { _, value in if value != .active { eraseDisclosure() } }
+        .onChange(of: model.connected) { _, connected in if !connected { eraseDisclosure() } }
+        .onChange(of: model.state?.event.id) { _, _ in eraseDisclosure() }
+        .onChange(of: model.origin) { _, _ in eraseDisclosure() }
+        .onDisappear {
+            // A sheet may hide its presenter. Do not dismiss that sheet from
+            // its presenter's disappearance; invalidate only pending issuance.
+            if issuedKey.isEmpty { disclosureEpoch = UUID() }
         }
     }
 }
