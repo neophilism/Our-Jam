@@ -12,9 +12,9 @@ concurrency:
   cancel-in-progress: true
 jobs:
   simulator:
-    # Standard public-repository runner, not a paid larger runner.
+    # Standard public-repository Apple Silicon runner, not a paid larger runner.
     if: github.repository == 'neophilism/Our-Jam' && github.event.repository.private == false
-    runs-on: macos-15-intel
+    runs-on: macos-15
     timeout-minutes: 35
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
@@ -34,6 +34,8 @@ jobs:
         timeout-minutes: 4
         run: |
           mkdir -p ios-evidence
+          uname -m | tee ios-evidence/runner-architecture.txt
+          test "$(uname -m)" = arm64
           test -d "$DEVELOPER_DIR"
           sudo xcode-select --switch "$DEVELOPER_DIR"
           xcodebuild -version | tee ios-evidence/xcode-version.txt
@@ -45,7 +47,7 @@ jobs:
         timeout-minutes: 15
         run: |
           set -o pipefail
-          xcodebuild -project apps/ios/OurJam.xcodeproj -scheme OurJam -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-build CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- ONLY_ACTIVE_ARCH=NO build 2>&1 | tee ios-evidence/build.log
+          xcodebuild -jobs 2 -project apps/ios/OurJam.xcodeproj -scheme OurJam -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-build CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- ONLY_ACTIVE_ARCH=NO build 2>&1 | tee ios-evidence/build.log
       - name: Verify the Simulator signature
         run: |
           codesign --verify --deep --strict ios-build/Build/Products/Release-iphonesimulator/OurJam.app

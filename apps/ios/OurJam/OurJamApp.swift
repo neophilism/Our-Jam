@@ -29,12 +29,13 @@ struct ConnectView: View {
                     Text("Connect to your actual Our Jam server and enter the event code. No demonstration data is created.")
                 }
                 Section("Connect to a real session") {
-                    TextField("Server address", text: $model.origin).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled().accessibilityIdentifier("serverAddress")
-                    TextField("Event code", text: $model.eventCode).textInputAutocapitalization(.never).autocorrectionDisabled().accessibilityIdentifier("eventCode")
+                    TextField("Server address", text: $model.origin).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled().disabled(model.busy).accessibilityIdentifier("serverAddress")
+                    TextField("Event code", text: $model.eventCode).textInputAutocapitalization(.never).autocorrectionDisabled().disabled(model.busy).accessibilityIdentifier("eventCode")
                     Button(model.busy ? "Connecting..." : "Open session") { Task { await model.connect() } }.disabled(model.busy).accessibilityIdentifier("connectButton")
                 }
+                NativeRecoveryConnect(model: model)
                 Section { Text("For a simulator and server on this Mac, use http://127.0.0.1:4173. A physical phone needs a reachable HTTPS deployment, not the Mac's loopback address.").font(.footnote) }
-            }.navigationTitle("our jam")
+            }.scrollDismissesKeyboard(.interactively).navigationTitle("our jam")
             .safeAreaInset(edge: .top) {
                 if !model.error.isEmpty {
                     Text(model.error).font(.callout).foregroundStyle(.orange).padding()
@@ -155,24 +156,59 @@ struct TracksView: View {
 struct ProfileView: View {
     @ObservedObject var model: SessionModel
     @State private var confirmSignOut = false
+    @State private var issuedKey = ""
+    @State private var disclosureEpoch = UUID()
+    @Environment(\.scenePhase) private var scene
+
+    private func eraseDisclosure() {
+        issuedKey = ""
+        disclosureEpoch = UUID()
+    }
+    @FocusState private var editingName: Bool
     var body: some View {
         NavigationStack {
             Form {
                 Section("Your public credit") {
-                    TextField("Display name", text: $model.profileName).onChange(of: model.profileName) { _, value in if value.count > 32 { model.profileName = String(value.prefix(32)) } }
+                    TextField("Display name", text: $model.profileName).focused($editingName).submitLabel(.done).onSubmit { editingName = false }.accessibilityIdentifier("profileName").onChange(of: model.profileName) { _, value in if value.count > 32 { model.profileName = String(value.prefix(32)) } }
                     Toggle("Keep my credit anonymous", isOn: $model.anonymous)
-                    Button("Save profile") { Task { await model.saveProfile() } }.disabled(model.busy)
+                    Button("Save profile") { editingName = false; Task { await model.saveProfile() } }.disabled(model.busy).accessibilityIdentifier("saveProfile")
                 }
+                NativeAccountControls(model: model, issuedKey: $issuedKey, disclosureEpoch: $disclosureEpoch)
                 Section("Connected event") {
                     Text(model.state?.event.title ?? model.eventCode)
                     Text(model.origin).font(.caption).textSelection(.enabled)
-                    Button("Change event or server") { model.disconnect() }
-                    Button("Sign out this device", role: .destructive) { confirmSignOut = true }
+                    Button("Change event or server") { model.disconnect() }.disabled(model.busy)
+                    Button("Sign out this device", role: .destructive) { confirmSignOut = true }.disabled(model.busy)
                 }
                 Section { Text("Your guest credential is stored in this device's Keychain, not in the browser. Signing out removes this device's access. Save a recovery key before discarding a profile you want to keep.").font(.footnote) }
                 if !model.error.isEmpty { Text(model.error).foregroundStyle(.orange) }
-            }.navigationTitle("Your profile")
+            }.scrollDismissesKeyboard(.interactively).navigationTitle("Your profile")
             .confirmationDialog("Sign out and remove this device credential?", isPresented: $confirmSignOut, titleVisibility: .visible) { Button("Sign out", role: .destructive) { Task { await model.signOut() } } }
+        }
+        // Form sections are lazy and their rows change after key creation. Keep
+        // both the state and presentation on the stable navigation container.
+        .sheet(isPresented: Binding(get: { !issuedKey.isEmpty }, set: { if !$0 { eraseDisclosure() } })) {
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
+                        Text("Save your recovery key").font(.title.bold())
+                        Text("Save this in your password manager before dismissing. We will not show this key again.")
+                        Text(issuedKey).font(.system(.footnote, design: .monospaced))
+                            .textSelection(.enabled).privacySensitive().accessibilityIdentifier("newRecoveryKey")
+                    }.frame(maxWidth: .infinity, alignment: .leading).padding(24)
+                }
+                Button("I saved it") { eraseDisclosure() }
+                    .buttonStyle(.borderedProminent).accessibilityIdentifier("recoveryKeySaved").padding(24)
+            }.interactiveDismissDisabled()
+        }
+        .onChange(of: scene) { _, value in if value != .active { eraseDisclosure() } }
+        .onChange(of: model.connected) { _, connected in if !connected { eraseDisclosure() } }
+        .onChange(of: model.state?.event.id) { _, _ in eraseDisclosure() }
+        .onChange(of: model.origin) { _, _ in eraseDisclosure() }
+        .onDisappear {
+            // A sheet may hide its presenter. Do not dismiss that sheet from
+            // its presenter's disappearance; invalidate only pending issuance.
+            if issuedKey.isEmpty { disclosureEpoch = UUID() }
         }
     }
 }

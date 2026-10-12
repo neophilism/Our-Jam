@@ -2,6 +2,7 @@
 """Run native UI acceptance on an Xcode-eligible device; preserve failure evidence."""
 import json
 import os
+import plistlib
 import re
 import signal
 import subprocess
@@ -32,10 +33,14 @@ def command(args, timeout, log_name):
 
 failure = None
 try:
-    sdk = subprocess.check_output(['xcrun', '--sdk', 'iphonesimulator', '--show-sdk-version'], text=True, timeout=30).strip()
+    # The completed build records its SDK; avoid another slow xcrun lookup.
+    with Path('ios-build/Build/Products/Release-iphonesimulator/OurJam.app/Info.plist').open('rb') as info_file:
+        sdk_name = plistlib.load(info_file).get('DTSDKName', '')
+    match = re.fullmatch(r'iphonesimulator(\d+(?:\.\d+)*)', sdk_name)
+    if not match:
+        raise RuntimeError('The built artifact does not identify its iOS Simulator SDK.')
+    sdk = match.group(1)
     listing = json.loads(subprocess.check_output(['xcrun', 'simctl', 'list', 'devices', 'available', '-j'], timeout=60))
-    # A simctl bootable device is not necessarily an eligible Xcode run target.
-    # The old code blindly chose the first iOS 18.6 phone despite using SDK 26.2.
     build = ['xcodebuild', '-project', 'apps/ios/OurJam.xcodeproj', '-scheme', 'OurJam', '-configuration', 'Release', '-sdk', 'iphonesimulator']
     destinations = command(build + ['-showdestinations', 'CODE_SIGNING_ALLOWED=YES', 'CODE_SIGN_IDENTITY=-'], 180, 'eligible-destinations.log')
     eligible = set(re.findall(r'platform:iOS Simulator,[^\n}]*?id:([A-Fa-f0-9-]{36})', destinations))
@@ -53,8 +58,6 @@ try:
     if chosen.get('state') != 'Booted':
         command(['xcrun', 'simctl', 'boot', device], 60, 'boot.log')
     command(['xcrun', 'simctl', 'bootstatus', device, '-b'], 300, 'boot-status.log')
-    # Use the same SDK/configuration/DerivedData as the compiled user artifact.
-    # This avoids recompiling a second Debug app and tests the Release code path.
     command(build + ['-destination', f'platform=iOS Simulator,id={device}', '-destination-timeout', '90', '-parallel-testing-enabled', 'NO', '-derivedDataPath', 'ios-build', '-resultBundlePath', 'ios-evidence/NativeTests.xcresult', 'CODE_SIGNING_ALLOWED=YES', 'CODE_SIGN_IDENTITY=-', 'test'], 720, 'tests.log')
 except Exception as error:
     failure = error
