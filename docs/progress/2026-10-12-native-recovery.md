@@ -1,0 +1,9 @@
+# Native profile recovery and following - October 12, 2026
+
+The iOS profile screen now uses the existing real recovery and following APIs. A fan can create/replace a private recovery key, disable it, follow/unfollow the current artist, and restore the same profile from the connection screen. Recovery uses channel=mobile, validates the returned guest token, and writes it only into origin-scoped Keychain. It preserves identity and follows, and the existing server revokes the recovered profile's other guest sessions.
+
+Recovery keys are shown transiently in a dismissible sheet, cleared on scene inactivity/view departure, and never deliberately saved in preferences, logs, URLs or the clipboard. Restore uses a secure field, a user-confirmed server origin and explicit confirmation. The connection controls stay disabled while restoration is in progress. The server receives no Apple, performer, provider, database or storage credentials. Following does not subscribe a fan to email.
+
+Native XCUITest adds real profile creation, following, recovery-key issuance and restoration against the isolated loopback API/database. Its credentials are disposable CI-only data, not production accounts. Existing native Sound Wave participation and public-screen verification remain required. Linux syntax parsing and deterministic project generation pass locally; this is not iOS compilation or native UI acceptance. Attach exact-head macOS CI evidence before claiming these controls are verified.
+
+This is a dependency-ordered increment on #25, addressing OJ-031/OJ-032 and issue #22. It does not change the database, create a service, spend money or bypass the blocked Expo dependency gate. Paid music, store signing/submission and physical-device acceptance remain separate. Reverting this UI does not delete the server profile or its recovery key; owners can continue through the web account page.

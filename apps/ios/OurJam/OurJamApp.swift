@@ -29,10 +29,11 @@ struct ConnectView: View {
                     Text("Connect to your actual Our Jam server and enter the event code. No demonstration data is created.")
                 }
                 Section("Connect to a real session") {
-                    TextField("Server address", text: $model.origin).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled().accessibilityIdentifier("serverAddress")
-                    TextField("Event code", text: $model.eventCode).textInputAutocapitalization(.never).autocorrectionDisabled().accessibilityIdentifier("eventCode")
+                    TextField("Server address", text: $model.origin).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled().disabled(model.busy).accessibilityIdentifier("serverAddress")
+                    TextField("Event code", text: $model.eventCode).textInputAutocapitalization(.never).autocorrectionDisabled().disabled(model.busy).accessibilityIdentifier("eventCode")
                     Button(model.busy ? "Connecting..." : "Open session") { Task { await model.connect() } }.disabled(model.busy).accessibilityIdentifier("connectButton")
                 }
+                NativeRecoveryConnect(model: model)
                 Section { Text("For a simulator and server on this Mac, use http://127.0.0.1:4173. A physical phone needs a reachable HTTPS deployment, not the Mac's loopback address.").font(.footnote) }
                 if !model.error.isEmpty { Section { Text(model.error).foregroundStyle(.orange).accessibilityIdentifier("connectionError") } }
             }.navigationTitle("our jam")
@@ -153,15 +154,16 @@ struct ProfileView: View {
         NavigationStack {
             Form {
                 Section("Your public credit") {
-                    TextField("Display name", text: $model.profileName).onChange(of: model.profileName) { _, value in if value.count > 32 { model.profileName = String(value.prefix(32)) } }
+                    TextField("Display name", text: $model.profileName).accessibilityIdentifier("profileName").onChange(of: model.profileName) { _, value in if value.count > 32 { model.profileName = String(value.prefix(32)) } }
                     Toggle("Keep my credit anonymous", isOn: $model.anonymous)
-                    Button("Save profile") { Task { await model.saveProfile() } }.disabled(model.busy)
+                    Button("Save profile") { Task { await model.saveProfile() } }.disabled(model.busy).accessibilityIdentifier("saveProfile")
                 }
+                NativeAccountControls(model: model)
                 Section("Connected event") {
                     Text(model.state?.event.title ?? model.eventCode)
                     Text(model.origin).font(.caption).textSelection(.enabled)
-                    Button("Change event or server") { model.disconnect() }
-                    Button("Sign out this device", role: .destructive) { confirmSignOut = true }
+                    Button("Change event or server") { model.disconnect() }.disabled(model.busy)
+                    Button("Sign out this device", role: .destructive) { confirmSignOut = true }.disabled(model.busy)
                 }
                 Section { Text("Your guest credential is stored in this device's Keychain, not in the browser. Signing out removes this device's access. Save a recovery key before discarding a profile you want to keep.").font(.footnote) }
                 if !model.error.isEmpty { Text(model.error).foregroundStyle(.orange) }
