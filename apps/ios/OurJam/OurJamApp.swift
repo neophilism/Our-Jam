@@ -35,7 +35,7 @@ struct ConnectView: View {
                 }
                 NativeRecoveryConnect(model: model)
                 Section { Text("For a simulator and server on this Mac, use http://127.0.0.1:4173. A physical phone needs a reachable HTTPS deployment, not the Mac's loopback address.").font(.footnote) }
-            }.navigationTitle("our jam")
+            }.scrollDismissesKeyboard(.interactively).navigationTitle("our jam")
             .safeAreaInset(edge: .top) {
                 if !model.error.isEmpty {
                     Text(model.error).font(.callout).foregroundStyle(.orange).padding()
@@ -156,13 +156,14 @@ struct TracksView: View {
 struct ProfileView: View {
     @ObservedObject var model: SessionModel
     @State private var confirmSignOut = false
+    @FocusState private var editingName: Bool
     var body: some View {
         NavigationStack {
             Form {
                 Section("Your public credit") {
-                    TextField("Display name", text: $model.profileName).accessibilityIdentifier("profileName").onChange(of: model.profileName) { _, value in if value.count > 32 { model.profileName = String(value.prefix(32)) } }
+                    TextField("Display name", text: $model.profileName).focused($editingName).submitLabel(.done).onSubmit { editingName = false }.accessibilityIdentifier("profileName").onChange(of: model.profileName) { _, value in if value.count > 32 { model.profileName = String(value.prefix(32)) } }
                     Toggle("Keep my credit anonymous", isOn: $model.anonymous)
-                    Button("Save profile") { Task { await model.saveProfile() } }.disabled(model.busy).accessibilityIdentifier("saveProfile")
+                    Button("Save profile") { editingName = false; Task { await model.saveProfile() } }.disabled(model.busy).accessibilityIdentifier("saveProfile")
                 }
                 NativeAccountControls(model: model)
                 Section("Connected event") {
@@ -173,7 +174,7 @@ struct ProfileView: View {
                 }
                 Section { Text("Your guest credential is stored in this device's Keychain, not in the browser. Signing out removes this device's access. Save a recovery key before discarding a profile you want to keep.").font(.footnote) }
                 if !model.error.isEmpty { Text(model.error).foregroundStyle(.orange) }
-            }.navigationTitle("Your profile")
+            }.scrollDismissesKeyboard(.interactively).navigationTitle("Your profile")
             .confirmationDialog("Sign out and remove this device credential?", isPresented: $confirmSignOut, titleVisibility: .visible) { Button("Sign out", role: .destructive) { Task { await model.signOut() } } }
         }
     }

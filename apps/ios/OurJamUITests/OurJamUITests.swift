@@ -1,6 +1,19 @@
 import XCTest
 
 final class OurJamUITests: XCTestCase {
+    @MainActor private func reveal(_ element: XCUIElement, in app: XCUIApplication, towardTop: Bool = false, file: StaticString = #filePath, line: UInt = #line) {
+        // A whole-screen swipe can land on the software keyboard rather than
+        // the Form. Keep this gesture between the navigation bar and keyboard.
+        for _ in 0..<8 {
+            if element.waitForExistence(timeout: 1), element.isHittable { return }
+            let top = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
+            let bottom = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.53))
+            if towardTop { top.press(forDuration: 0.1, thenDragTo: bottom) }
+            else { bottom.press(forDuration: 0.1, thenDragTo: top) }
+        }
+        XCTAssertTrue(element.exists && element.isHittable, app.debugDescription, file: file, line: line)
+    }
+
     @MainActor func testNativeProfileRecoveryAndFollowing() throws {
         continueAfterFailure = false
         let app = XCUIApplication()
@@ -16,14 +29,17 @@ final class OurJamUITests: XCTestCase {
         let existing = (name.value as? String) ?? ""
         name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: existing.count) + "Native returning fan")
         app.buttons["saveProfile"].tap()
-        app.swipeUp()
+        let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.keyboards.firstMatch)
+        XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 8), .completed, "Saving a profile must dismiss the keyboard")
         let follow = app.buttons["followArtist"]
-        XCTAssertTrue(follow.waitForExistence(timeout: 15))
+        reveal(follow, in: app)
         if follow.label == "Follow artist" { follow.tap() }
         let followed = NSPredicate(format: "label == %@", "Unfollow artist")
         expectation(for: followed, evaluatedWith: follow)
         waitForExpectations(timeout: 15)
-        app.buttons["createRecoveryKey"].tap()
+        let create = app.buttons["createRecoveryKey"]
+        reveal(create, in: app, towardTop: true)
+        create.tap()
         app.buttons["Create and show key"].tap()
         let keyView = app.staticTexts["newRecoveryKey"]
         XCTAssertTrue(keyView.waitForExistence(timeout: 15))
@@ -34,20 +50,22 @@ final class OurJamUITests: XCTestCase {
         app.terminate()
         app.launch()
         let restore = app.secureTextFields["restoreRecoveryKey"]
-        XCTAssertTrue(restore.waitForExistence(timeout: 15))
+        reveal(restore, in: app)
         restore.tap(); restore.typeText(key)
-        app.buttons["restoreProfile"].tap()
+        let restoreButton = app.buttons["restoreProfile"]
+        reveal(restoreButton, in: app)
+        restoreButton.tap()
         app.buttons["Restore saved profile"].tap()
         XCTAssertTrue(app.tabBars.buttons["You"].waitForExistence(timeout: 20))
         app.tabBars.buttons["You"].tap()
         XCTAssertTrue(app.textFields["profileName"].waitForExistence(timeout: 10))
         XCTAssertEqual(app.textFields["profileName"].value as? String, "Native returning fan")
-        app.swipeUp()
-        XCTAssertTrue(app.buttons["followArtist"].waitForExistence(timeout: 15))
-        expectation(for: followed, evaluatedWith: app.buttons["followArtist"])
+        let restoredFollow = app.buttons["followArtist"]
+        reveal(restoredFollow, in: app)
+        expectation(for: followed, evaluatedWith: restoredFollow)
         waitForExpectations(timeout: 15)
-        // This credential belongs only to the ephemeral, loopback CI database.
-        // No production profile or service credential is used in this test.
+        // The key belongs only to the ephemeral loopback CI database. It is
+        // never a production profile or an external service credential.
     }
 
     @MainActor func testRealNativeParticipation() throws {
