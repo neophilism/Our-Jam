@@ -4,335 +4,61 @@
   "version": 1,
   "planVerified": true,
   "plannedPrCount": 54,
-  "sourceFiles": [
-    ".exechub/project.yml",
-    "DEVELOPMENT_PLAN.md"
-  ],
+  "sourceFiles": [".exechub/project.yml", "DEVELOPMENT_PLAN.md", "backlog.json", "PROGRESS.md"],
   "milestones": [
-    {
-      "id": "OJ-001",
-      "title": "Production V1 \u2014 approved work package 1 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-002",
-      "title": "Production V1 \u2014 approved work package 2 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-003",
-      "title": "Production V1 \u2014 approved work package 3 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-004",
-      "title": "Production V1 \u2014 approved work package 4 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-005",
-      "title": "Identity roles and scoped authorization",
-      "origin": "original",
-      "status": "in_progress",
-      "implementationNotes": "Guest web/native identities and private recovery keys are implemented. Multi-artist provisioning, staff roles, display pairing and stronger artist authentication remain open."
-    },
-    {
-      "id": "OJ-006",
-      "title": "Artist album and event preparation",
-      "origin": "original",
-      "status": "in_progress",
-      "implementationNotes": "Revision-fenced show settings, private unplayed-track editing and browser metadata checks implemented; durable ingest and real-show preparation remain open.",
-      "pullRequests": [
-        12
-      ]
-    },
-    {
-      "id": "OJ-007",
-      "title": "Local album playback and show audio foundation",
-      "origin": "original",
-      "status": "in_progress",
-      "implementationNotes": "Prepared device files persist in IndexedDB with SHA-256 verification; local album-order continuation releases live control and keeps generation paused. Offline console reload, hardware routing and rehearsal remain open.",
-      "pullRequests": [
-        15
-      ]
-    },
-    {
-      "id": "OJ-008",
-      "title": "Production V1 \u2014 approved work package 8 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-009",
-      "title": "Production V1 \u2014 approved work package 9 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-010",
-      "title": "Production V1 \u2014 approved work package 10 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-011",
-      "title": "Durable realtime subscriptions and recovery",
-      "origin": "original",
-      "status": "in_progress",
-      "implementationNotes": "Existing durable event-log streaming and snapshot fallback now reject older arriving responses and disable audience voting while offline, stale or awaiting foreground refresh. Multi-instance fanout and venue/load acceptance remain open. Per-process snapshot concurrency/wait bounds, in-flight identity isolation, shared-network read budgets and slow-socket disconnection added; deployment-scale evidence remains open."
-    },
-    {
-      "id": "OJ-012",
-      "title": "Production V1 \u2014 approved work package 12 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-013",
-      "title": "Production V1 \u2014 approved work package 13 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-014",
-      "title": "Production V1 \u2014 approved work package 14 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-015",
-      "title": "Production V1 \u2014 approved work package 15 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-016",
-      "title": "Validated releases and artist review",
-      "origin": "original",
-      "status": "in_progress",
-      "implementationNotes": "Boundary, immediate and artist-review policies are frozen per round; private previews and explicit publish obey tenant access, holds and moderation. Atomic cancellation is limited to never-dispatched work. Real provider/storage delivery, exports and production rollout remain open.",
-      "pullRequests": [
-        5,
-        16
-      ]
-    },
-    {
-      "id": "OJ-017",
-      "title": "Production V1 \u2014 approved work package 17 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-018",
-      "title": "Production V1 \u2014 approved work package 18 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-019",
-      "title": "Release email push and preferences",
-      "origin": "original",
-      "status": "in_progress",
-      "implementationNotes": "Opt-in verified event email, encrypted contacts, bounded durable outbox, unsubscribe, signed suppression callbacks and foreground web release notices implemented behind disabled delivery configuration. Real sender delivery, web/native push, large-crowd throughput and production migration remain open.",
-      "pullRequests": [
-        13
-      ]
-    },
-    {
-      "id": "OJ-020",
-      "title": "Performer feedback dashboard and Play next",
-      "origin": "original",
-      "status": "in_progress",
-      "implementationNotes": "Reorder queued tracks with one-click Next, Up and Down; commands preserve current playback and reject stale queue state. Physical private-cue rehearsal remains open.",
-      "pullRequests": [
-        12
-      ]
-    },
-    {
-      "id": "OJ-021",
-      "title": "Private headphone cue and audio diagnostics",
-      "origin": "original",
-      "status": "in_progress",
-      "implementationNotes": "Capability-detected browser output selection, distinct-output tone/confirmation gates, selected-sink playback and output-loss recovery implemented. Default remains a separate headphone device; physical isolation, recording exclusion and native acceptance remain open."
-    },
-    {
-      "id": "OJ-022",
-      "title": "Recording capture and recovery",
-      "origin": "original",
-      "status": "in_progress",
-      "implementationNotes": "Chunked checksummed local recording now selects an exact browser input and stops on input disconnection. Synthetic browser coverage does not verify physical Rave/USB routing, long sessions or multitrack capture.",
-      "pullRequests": [
-        4,
-        15
-      ]
-    },
-    {
-      "id": "OJ-023",
-      "title": "Production V1 \u2014 approved work package 23 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-024",
-      "title": "Artist archives and remote audience access",
-      "origin": "original",
-      "status": "in_progress",
-      "implementationNotes": "Public artist profiles, session archives and liked tracks are joined by explicit remote voting, room codes, listener-only membership and transactional contributor caps. Native admission flow, physical devices and full venue/load acceptance remain open.",
-      "pullRequests": [
-        14,
-        17
-      ]
-    },
-    {
-      "id": "OJ-025",
-      "title": "Production V1 \u2014 approved work package 25 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-026",
-      "title": "Load monitoring recovery and full show rehearsal",
-      "origin": "original",
-      "status": "in_progress",
-      "implementationNotes": "Free Render rehearsal service creation rejected by 25-service Hobby workspace limit; production initialization rejected by automatic approval review. Isolated Neon runtime role privileges verified; origin validation and bounded venue traffic implemented. Deployment and real venue evidence remain open."
-    },
-    {
-      "id": "OJ-027",
-      "title": "Production V1 \u2014 approved work package 27 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-028",
-      "title": "Visual quality and performance refinement",
-      "origin": "original",
-      "status": "in_progress",
-      "implementationNotes": "3D Sound Waves now separate their readable layout from the lazy renderer, remember motion preferences, stop hidden/offscreen loops and recover context loss with a 2D field. Hardware frame/thermal targets, advanced packing and cinematic refinement remain open."
-    },
-    {
-      "id": "OJ-029",
-      "title": "Production V1 \u2014 approved work package 29 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-030",
-      "title": "Production V1 \u2014 approved work package 30 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-031",
-      "title": "Fan collections following and return journeys",
-      "origin": "original",
-      "status": "in_progress",
-      "implementationNotes": "Recoverable guest profiles with revocable private keys, artist following and private public-release feeds implemented. Verified accounts, native UI and richer engagement remain open."
-    },
-    {
-      "id": "OJ-032",
-      "title": "Native iOS and Android foundation",
-      "origin": "original",
-      "status": "blocked",
-      "implementationNotes": "Draft PR #11 exports both platforms and generates native projects; high-severity upstream Expo dependency advisories fail its audit gate. No signed builds or real-device acceptance.",
-      "pullRequests": [
-        11
-      ]
-    },
-    {
-      "id": "OJ-033",
-      "title": "Production V1 \u2014 approved work package 33 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-034",
-      "title": "Production V1 \u2014 approved work package 34 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-035",
-      "title": "Production V1 \u2014 approved work package 35 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-036",
-      "title": "Production V1 \u2014 approved work package 36 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-037",
-      "title": "Production V1 \u2014 approved work package 37 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-038",
-      "title": "Production V1 \u2014 approved work package 38 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-039",
-      "title": "Production V1 \u2014 approved work package 39 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-040",
-      "title": "Production V1 \u2014 approved work package 40 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-041",
-      "title": "Production V1 \u2014 approved work package 41 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-042",
-      "title": "Production V1 \u2014 approved work package 42 of 42",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-043",
-      "title": "DJ V2 \u2014 approved work package 1 of 8",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-044",
-      "title": "DJ V2 \u2014 approved work package 2 of 8",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-045",
-      "title": "DJ V2 \u2014 approved work package 3 of 8",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-046",
-      "title": "DJ V2 \u2014 approved work package 4 of 8",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-047",
-      "title": "DJ V2 \u2014 approved work package 5 of 8",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-048",
-      "title": "DJ V2 \u2014 approved work package 6 of 8",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-049",
-      "title": "DJ V2 \u2014 approved work package 7 of 8",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-050",
-      "title": "DJ V2 \u2014 approved work package 8 of 8",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-051",
-      "title": "Secondary demonstration \u2014 approved work package 1 of 4",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-052",
-      "title": "Secondary demonstration \u2014 approved work package 2 of 4",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-053",
-      "title": "Secondary demonstration \u2014 approved work package 3 of 4",
-      "origin": "original"
-    },
-    {
-      "id": "OJ-054",
-      "title": "Secondary demonstration \u2014 approved work package 4 of 4",
-      "origin": "original"
-    }
+    {"id":"OJ-001","title":"Repository and operating contract","origin":"original"},
+    {"id":"OJ-002","title":"Provider audio and security feasibility","origin":"original"},
+    {"id":"OJ-003","title":"Domain contracts and initial schema","origin":"original"},
+    {"id":"OJ-004","title":"Continuous integration and staging infrastructure","origin":"original"},
+    {"id":"OJ-005","title":"Guest identity accounts and role boundaries","origin":"original","status":"in_progress","implementationNotes":"Web/native guest identities, private recovery keys and origin-scoped Keychain credentials exist. PR25's native-to-API-to-stage test passed. Multi-artist provisioning, staff roles, display pairing and stronger artist authentication remain open.","pullRequests":[8,20,25]},
+    {"id":"OJ-006","title":"Artist album and event preparation","origin":"original","status":"in_progress","implementationNotes":"Revision-fenced settings and private source editing include merged MP3/WAV ingestion, decoded duration, private content-addressed storage and authenticated delivery. Uploads retain MP3 playback derivatives, not original masters. Real local upload/playback/restart acceptance passed; actual Neon delivery and owner-file/hardware acceptance remain open.","pullRequests":[12,24,25]},
+    {"id":"OJ-007","title":"Durable media ingest and local album cache","origin":"original","status":"in_progress","implementationNotes":"IndexedDB backup with SHA-256 and local continuation exists. Persistent loopback API/database/audio startup passed real browser acceptance. PR28's automatic deadlines/controller reconciliation and graceful shutdown passed both application and native gates and merged. PR31 prerequisite checks and source/platform-specific dependency repair passed and merged. Hosted offline reload, physical routing and venue acceptance remain open.","pullRequests":[15,25,28,31]},
+    {"id":"OJ-008","title":"Playback leader queue and round lifecycle","origin":"original"},
+    {"id":"OJ-009","title":"Atomic five-point voting","origin":"original"},
+    {"id":"OJ-010","title":"Wave moderation and duplicate handling","origin":"original"},
+    {"id":"OJ-011","title":"Durable realtime subscriptions and recovery","origin":"original","status":"in_progress","implementationNotes":"Event-log streaming and snapshot fallback reject older responses and pause stale/offline votes. Snapshot bounds, identity isolation, shared-network budgets and slow-socket disconnection exist. Merged PR28 verifies stream shutdown while ordinary requests drain. Multi-instance fanout and deployed venue/load evidence remain open.","pullRequests":[14,19,28]},
+    {"id":"OJ-012","title":"Audience web app and stable voting controls","origin":"original"},
+    {"id":"OJ-013","title":"Production screen and baseline 3D waves","origin":"original","status":"in_progress","implementationNotes":"The actual public renderer displayed a native Simulator submission and stored vote count in PR25 and PR28 acceptance. PR29's monitor window and exact connection fields passed desktop/mobile tests and merged. Physical display visibility, QR distance and venue acceptance remain open.","pullRequests":[3,18,25,28,29]},
+    {"id":"OJ-014","title":"Generation adapter durable jobs and cost reservation","origin":"original","status":"in_progress","implementationNotes":"Frozen round selection dispatches Stable Audio 2.5 or Mureka instrumental text generation without cross-provider fallback. Mureka task IDs persist before polling; $0 blocks before attempts/cost/calls. Real provider billing, entitlement, quality and latency evidence remain unavailable under the zero-spend allowance.","pullRequests":[5,23]},
+    {"id":"OJ-015","title":"Prompt compiler and boundary dispatch","origin":"original","status":"in_progress","implementationNotes":"Immutable core prompts and selected Sound Waves form closed-round snapshots. Mureka's 1,024-character limit blocks without truncation; output length is variable. Unknown tasks are not blindly resubmitted. Operator reconciliation UI and real-provider acceptance remain open.","pullRequests":[5,23]},
+    {"id":"OJ-016","title":"Validated synchronized releases and downloads","origin":"original","status":"in_progress","implementationNotes":"Boundary/immediate/review policies, private previews, holds and never-dispatched cancellation preserve ownership, moderation and budget rules. Both adapters validate decoded audio. Actual provider/storage delivery, exports and production rollout remain open.","pullRequests":[5,16,23]},
+    {"id":"OJ-017","title":"Listener player and trustworthy play metrics","origin":"original"},
+    {"id":"OJ-018","title":"Reactions comments and listening prompts","origin":"original"},
+    {"id":"OJ-019","title":"Release email push and preferences","origin":"original","status":"in_progress","implementationNotes":"Verified opt-in email, encrypted contacts, bounded outbox, unsubscribe, signed suppression and foreground notices exist behind disabled delivery. Real sender delivery, native/web push, large-crowd throughput and production migration remain open.","pullRequests":[13]},
+    {"id":"OJ-020","title":"Performer feedback dashboard and Play next","origin":"original","status":"in_progress","implementationNotes":"Queue controls preserve current playback and reject stale commands. The two-button provider selector and distinct generation-failure panel are merged. Private-cue hardware rehearsal remains open.","pullRequests":[12,23]},
+    {"id":"OJ-021","title":"Private headphone cue and audio diagnostics","origin":"original","status":"in_progress","implementationNotes":"Capability-detected outputs, test tones/confirmation, selected-sink playback and output-loss recovery exist. Separate headphone-device fallback remains. Physical isolation, recording exclusion and native output acceptance remain open.","pullRequests":[21]},
+    {"id":"OJ-022","title":"Recoverable recording and hardware tier support","origin":"original","status":"in_progress","implementationNotes":"Checksummed local recording selects browser inputs and handles disconnection. Synthetic browser tests do not prove physical Rave/USB routing, long recordings or multitrack capture.","pullRequests":[4,15]},
+    {"id":"OJ-023","title":"Profiles avatars and core leaderboards","origin":"original"},
+    {"id":"OJ-024","title":"Artist pages event archives and album commerce","origin":"original","status":"in_progress","implementationNotes":"Profiles, archives and liked tracks include remote-voting policy, listener access, room-code admission and bounded capacity. SwiftUI admission exists; core open-room native participation passed. Restricted-room native UI acceptance, Expo parity, physical devices and venue-load evidence remain open.","pullRequests":[14,17,25]},
+    {"id":"OJ-025","title":"Security privacy and content release review","origin":"original"},
+    {"id":"OJ-026","title":"Load monitoring recovery and full show rehearsal","origin":"original","status":"in_progress","implementationNotes":"The owner confirmed the workspace and prior scoped migration approval. The free Render create was safety-blocked and not rerouted; no hosted deployment is claimed. Isolated Neon private storage and restricted SQL role exist. PR25/28 actual local and native-to-stage acceptance passed; PR31 startup repairs passed. Live S3, cloud and physical venue evidence remain open.","pullRequests":[19,25,28,31]},
+    {"id":"OJ-027","title":"First production event release gate","origin":"original"},
+    {"id":"OJ-028","title":"Cinematic wave rendering and visual identity","origin":"original","status":"in_progress","implementationNotes":"Readable layout is separate from the lazy 3D renderer, with motion preferences, hidden/offscreen suspension and graphics-loss fallback. Physical frame/thermal tests, advanced packing and cinematic refinement remain open.","pullRequests":[18]},
+    {"id":"OJ-029","title":"Dense crowds adaptive layout and discovery","origin":"original"},
+    {"id":"OJ-030","title":"Advanced recognition and leaderboard analytics","origin":"original"},
+    {"id":"OJ-031","title":"Fan collections following and return journeys","origin":"original","status":"in_progress","implementationNotes":"Recoverable profiles, revocable keys, follows and private release feeds are implemented on web/API. PR30 adds native recovery/follow controls; current application checks and compilation passed, but the actual native UI gate remains unresolved after a test-runner bootstrap failure. A failed-job retry does not establish acceptance. Verified accounts and richer engagement remain open.","pullRequests":[14,20,30]},
+    {"id":"OJ-032","title":"Native iOS and Android foundation","origin":"original","status":"in_progress","implementationNotes":"PR25 delivered a real SwiftUI Simulator app with Keychain, native contribution/vote and public-screen acceptance; PR28 repeated that gate successfully. Both architectures compiled; iPhone SE iOS26.2 supplied interaction evidence. PR30 recovery and PR32 keyboard/playback changes await native gates. Expo draft11/Android, membership/signing, TestFlight, physical devices and full native/store parity remain separate.","pullRequests":[11,25,28,30,32]},
+    {"id":"OJ-033","title":"Native voting profiles and optimized visualization","origin":"original"},
+    {"id":"OJ-034","title":"Native audio offline downloads and media sessions","origin":"original"},
+    {"id":"OJ-035","title":"Native notifications and event deep links","origin":"original"},
+    {"id":"OJ-036","title":"Store readiness privacy and user content review","origin":"original"},
+    {"id":"OJ-037","title":"Advanced recording exports and live performance releases","origin":"original"},
+    {"id":"OJ-038","title":"Artist onboarding quotas and cost administration","origin":"original"},
+    {"id":"OJ-039","title":"Event album export and distributor handoff","origin":"original"},
+    {"id":"OJ-040","title":"Horizontal scale and high attendance validation","origin":"original"},
+    {"id":"OJ-041","title":"Disaster recovery and provider continuity","origin":"original"},
+    {"id":"OJ-042","title":"Complete production V1 acceptance","origin":"original"},
+    {"id":"OJ-043","title":"DJ round and performance segment model","origin":"original"},
+    {"id":"OJ-044","title":"DJ controls and boundary gestures","origin":"original"},
+    {"id":"OJ-045","title":"External decks timing and audio bridges","origin":"original"},
+    {"id":"OJ-046","title":"Mix-aware prompt and generation policies","origin":"original"},
+    {"id":"OJ-047","title":"Two-deck preview and performance queue","origin":"original"},
+    {"id":"OJ-048","title":"DJ crowd display and release timing","origin":"original"},
+    {"id":"OJ-049","title":"DJ recording and set lineage","origin":"original"},
+    {"id":"OJ-050","title":"DJ production release and field acceptance","origin":"original"},
+    {"id":"OJ-051","title":"Isolated demonstration sessions","origin":"original"},
+    {"id":"OJ-052","title":"Presentation controls and simulated crowd","origin":"original"},
+    {"id":"OJ-053","title":"Optional real-generation demonstration","origin":"original"},
+    {"id":"OJ-054","title":"Demonstration packaging and regression gate","origin":"original"}
   ]
 }
