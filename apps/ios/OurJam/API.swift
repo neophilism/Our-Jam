@@ -17,7 +17,7 @@ struct GuestKeychain {
         var item: CFTypeRef?
         let result = SecItemCopyMatching(q as CFDictionary, &item)
         if result == errSecItemNotFound { return nil }
-        guard result == errSecSuccess, let data = item as? Data, let value = String(data: data, encoding: .utf8) else { throw APIError(status: 0, code: "keychain", message: "This device could not read its saved identity.") }
+        guard result == errSecSuccess, let data = item as? Data, let value = String(data: data, encoding: .utf8) else { throw APIError(status: 0, code: "keychain", message: "Secure identity storage could not be read (Keychain status \(result)).") }
         return value
     }
     static func write(_ origin: String, _ value: String) throws {
@@ -25,10 +25,11 @@ struct GuestKeychain {
         let data = Data(value.utf8)
         let update = SecItemUpdate(q as CFDictionary, [kSecValueData as String: data] as CFDictionary)
         if update == errSecSuccess { return }
-        guard update == errSecItemNotFound else { throw APIError(status: 0, code: "keychain", message: "This device could not save its identity.") }
+        guard update == errSecItemNotFound else { throw APIError(status: 0, code: "keychain", message: "Secure identity storage could not be updated (Keychain status \(update)).") }
         q[kSecValueData as String] = data
         q[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        guard SecItemAdd(q as CFDictionary, nil) == errSecSuccess else { throw APIError(status: 0, code: "keychain", message: "This device could not save its identity.") }
+        let added = SecItemAdd(q as CFDictionary, nil)
+        guard added == errSecSuccess else { throw APIError(status: 0, code: "keychain", message: "Secure identity storage could not be saved (Keychain status \(added)).") }
     }
     static func remove(_ origin: String) throws {
         let status = SecItemDelete(query(origin) as CFDictionary)

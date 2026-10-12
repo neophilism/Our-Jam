@@ -34,8 +34,14 @@ struct ConnectView: View {
                     Button(model.busy ? "Connecting..." : "Open session") { Task { await model.connect() } }.disabled(model.busy).accessibilityIdentifier("connectButton")
                 }
                 Section { Text("For a simulator and server on this Mac, use http://127.0.0.1:4173. A physical phone needs a reachable HTTPS deployment, not the Mac's loopback address.").font(.footnote) }
-                if !model.error.isEmpty { Section { Text(model.error).foregroundStyle(.orange).accessibilityIdentifier("connectionError") } }
             }.navigationTitle("our jam")
+            .safeAreaInset(edge: .top) {
+                if !model.error.isEmpty {
+                    Text(model.error).font(.callout).foregroundStyle(.orange).padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.black).accessibilityIdentifier("connectionError")
+                }
+            }
         }
     }
 }
