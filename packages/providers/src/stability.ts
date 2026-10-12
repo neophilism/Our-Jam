@@ -8,6 +8,7 @@ export type MusicProvider = {
   model: string;
   variableDuration?: boolean;
   generate(prompt: string, durationSeconds: number, context?: GenerationContext): Promise<GeneratedAudio>;
+  resume?(providerRef: string, prompt: string, durationSeconds: number, context?: GenerationContext): Promise<GeneratedAudio>;
 };
 export const MAX_AUDIO_BYTES = 32 * 1024 * 1024;
 export function stabilityProvider(key: string, request: typeof fetch = fetch): MusicProvider {
