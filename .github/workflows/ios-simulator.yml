@@ -1,0 +1,107 @@
+name: Native iOS simulator
+on:
+  pull_request:
+    paths: ['apps/ios/**', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', 'scripts/run-native-simulator.py', 'scripts/native-stage-evidence.mjs', '.github/workflows/ios-simulator.yml']
+  push:
+    branches: [main]
+    paths: ['apps/ios/**', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', 'scripts/run-native-simulator.py', 'scripts/native-stage-evidence.mjs', '.github/workflows/ios-simulator.yml']
+permissions:
+  contents: read
+concurrency:
+  group: native-ios-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  simulator:
+    # Standard public-repository runner, not a paid larger runner.
+    if: github.repository == 'neophilism/Our-Jam' && github.event.repository.private == false
+    runs-on: macos-15-intel
+    timeout-minutes: 35
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install backend dependencies
+        timeout-minutes: 4
+        run: npm ci
+      - run: npm run build
+      - name: Initialize the selected Simulator service
+        timeout-minutes: 4
+        run: |
+          mkdir -p ios-evidence
+          test -d "$DEVELOPER_DIR"
+          sudo xcode-select --switch "$DEVELOPER_DIR"
+          xcodebuild -version | tee ios-evidence/xcode-version.txt
+          open -a "$DEVELOPER_DIR/Applications/Simulator.app"
+          python3 -c 'import subprocess; subprocess.run(["xcrun","simctl","list","devices","available","-j"],check=True,timeout=180)' > ios-evidence/initial-devices.json
+      - name: Generate dependency-free Xcode project
+        run: python3 apps/ios/make-project.py
+      - name: Build actual simulator application
+        timeout-minutes: 15
+        run: |
+          set -o pipefail
+          xcodebuild -project apps/ios/OurJam.xcodeproj -scheme OurJam -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-build CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- ONLY_ACTIVE_ARCH=NO build 2>&1 | tee ios-evidence/build.log
+      - name: Verify the Simulator signature
+        run: |
+          codesign --verify --deep --strict ios-build/Build/Products/Release-iphonesimulator/OurJam.app
+          codesign -d --entitlements :- ios-build/Build/Products/Release-iphonesimulator/OurJam.app > ios-evidence/simulator-entitlements.plist 2> ios-evidence/signature.log
+      - name: Preserve compiled binary and exact source
+        run: |
+          mkdir -p ios-artifact
+          ditto -c -k --sequesterRsrc --keepParent ios-build/Build/Products/Release-iphonesimulator/OurJam.app ios-artifact/OurJam-Simulator.zip
+          cp 'apps/ios/Open Simulator.command' ios-artifact/
+          cp apps/ios/README.md ios-artifact/README.md
+          git archive --format=zip --prefix=OurJam-Local/ HEAD > ios-artifact/OurJam-Local-Source.zip
+          cp docs/local-real-rehearsal.md ios-artifact/LOCAL-SETUP.md
+          git rev-parse HEAD > ios-artifact/COMMIT.txt
+          shasum -a 256 ios-artifact/*.zip > ios-artifact/SHA256SUMS.txt
+          printf '%s\n' 'Compilation succeeded. This artifact alone is NOT evidence that native interaction tests passed. Check the exact workflow run. This is not a signed TestFlight build.' > ios-artifact/BUILD-STATUS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OurJam-iOS-Simulator-Compiled
+          path: ios-artifact/
+          retention-days: 7
+      - name: Start isolated native integration backend
+        run: |
+          node --import tsx scripts/native-test-server.ts > ios-evidence/server.log 2>&1 &
+          echo $! > ios-evidence/server.pid
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:4173/api/health; then exit 0; fi
+            sleep 1
+          done
+          cat ios-evidence/server.log
+          exit 1
+      - name: Run on a genuine iOS Simulator
+        run: |
+          python3 scripts/run-native-simulator.py
+          curl -fsS http://127.0.0.1:4173/__test__/native-evidence > ios-evidence/participation.json
+      - name: Verify the native submission on the real public screen
+        timeout-minutes: 3
+        run: |
+          npx playwright install chromium
+          node scripts/native-stage-evidence.mjs
+      - name: Mark native acceptance
+        run: |
+          printf '%s\n' 'Native simulator interaction and native-to-public-screen checks passed on this exact commit. Review the independent Our Jam checks run for full backend/browser acceptance. This is not TestFlight or full V1 certification.' > ios-artifact/BUILD-STATUS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OurJam-iOS-Simulator
+          path: ios-artifact/
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-ios-evidence
+          path: |
+            ios-evidence/*.log
+            ios-evidence/*.json
+            ios-evidence/*.png
+            ios-evidence/*.plist
+            ios-evidence/*.txt
+            ios-evidence/attachments/
+          retention-days: 7
