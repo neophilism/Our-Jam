@@ -70,7 +70,7 @@ export function murekaProvider(
       throw new ProviderError("provider_invalid_task_response", true);
     }
   }
-  return {
+  const provider: MusicProvider = {
     name: "mureka",
     model,
     variableDuration: true,
@@ -121,4 +121,9 @@ export function murekaProvider(
       return { bytes: await read(response, MAX_AUDIO_BYTES), providerRef: taskId };
     },
   };
+  // A separate capability prevents reconciliation from falling back
+  // to a provider that ignores resumeRef and sends a new generation POST.
+  provider.resume = (reference, prompt, duration, context) =>
+    provider.generate(prompt, duration, { ...context, resumeRef: reference });
+  return provider;
 }
