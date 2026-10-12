@@ -21,6 +21,7 @@ struct NativeAccountControls: View {
     @State private var error = ""
     @State private var confirmCreate = false
     @State private var confirmDisable = false
+    @State private var viewVisible = false
 
     private func load() async {
         guard let api = model.api else { return }
@@ -42,7 +43,7 @@ struct NativeAccountControls: View {
             guard result.key.range(of: "^ojr_[a-f0-9]{64}$", options: .regularExpression) != nil else {
                 throw APIError(status: 0, code: "recovery", message: "The server returned an invalid recovery key.")
             }
-            if scene == .active { issuedKey = result.key }
+            if scene == .active && viewVisible && model.connected { issuedKey = result.key }
             else { error = "A recovery key was created while this view was inactive. Create a replacement and save it before leaving." }
             await load()
         } catch {
@@ -92,16 +93,25 @@ struct NativeAccountControls: View {
         .confirmationDialog("Disable recovery? Saved copies of your key will stop working.", isPresented: $confirmDisable, titleVisibility: .visible) {
             Button("Disable key", role: .destructive) { Task { await disableKey() } }
         }
-        .sheet(isPresented: Binding(get: { !issuedKey.isEmpty }, set: { if !$0 { issuedKey = "" } })) {
+        .sheet(isPresented: Binding(get: { !issuedKey.isEmpty }, set: { if !$0 { issuedKey = "" } }), onDismiss: { issuedKey = "" }) {
             VStack(alignment: .leading, spacing: 22) {
                 Text("Save your recovery key").font(.title.bold())
                 Text("Save this in your password manager before dismissing. We will not show this key again.")
                 Text(issuedKey).font(.system(.footnote, design: .monospaced)).textSelection(.enabled).privacySensitive().accessibilityIdentifier("newRecoveryKey")
-                Button("I saved it") { issuedKey = "" }.buttonStyle(.borderedProminent)
-            }.padding(24)
+                Button("I saved it") { issuedKey = "" }.buttonStyle(.borderedProminent).accessibilityIdentifier("recoveryKeySaved")
+            }.padding(24).interactiveDismissDisabled()
+        }
+        .onAppear { viewVisible = true }
+        .onDisappear {
+            // A full-height sheet can make its presenting Section disappear.
+            // Clearing its own presentation state here dismissed the key before
+            // the user could save it. The sheet owns explicit dismissal; actual
+            // backgrounding, disconnect and event changes still erase the key.
+            viewVisible = false
         }
         .onChange(of: scene) { _, value in if value != .active { issuedKey = "" } }
-        .onDisappear { issuedKey = "" }
+        .onChange(of: model.connected) { _, connected in if !connected { issuedKey = "" } }
+        .onChange(of: model.state?.event.id) { _, _ in issuedKey = "" }
     }
 }
 
