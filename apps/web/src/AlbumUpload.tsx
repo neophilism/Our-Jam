@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useId } from "react";
 import { api, type EventState } from "./api";
 type Source = { id: string; title: string; played: boolean };
 export function AlbumUpload({ data, refresh }: { data: EventState; refresh: () => Promise<void> }) {
@@ -6,6 +6,7 @@ export function AlbumUpload({ data, refresh }: { data: EventState; refresh: () =
   const [available, setAvailable] = useState<boolean | null>(null), [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(""), [error, setError] = useState("");
   const input = useRef<HTMLInputElement>(null);
+  const trackId = useId(), fileId = useId();
   const mounted = useRef(true), abort = useRef<AbortController | null>(null);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; abort.current?.abort(); }; }, []);
   useEffect(() => {
@@ -41,8 +42,10 @@ export function AlbumUpload({ data, refresh }: { data: EventState; refresh: () =
     <h3 id="album-upload-heading">Upload album audio</h3>
     <p>Choose a track from this session and upload its MP3 or WAV. The server validates the file, measures its duration, and stores a private 192 kbps MP3 playback copy. Keep your original master: the original upload is not retained.</p>
     {available === false && <p role="status">Private audio storage is not connected yet. Uploads are disabled; no file will be sent.</p>}
-    <label style={{ marginTop: 12 }}>Album track<select value={sourceId} disabled={busy} onChange={(e) => setSourceId(e.target.value)}><option value="">Select an unplayed track</option>{sources.map((source) => <option key={source.id} value={source.id} disabled={source.played}>{source.title}{source.played ? " (already played)" : ""}</option>)}</select></label>
-    <label style={{ marginTop: 12 }}>MP3 or WAV file<input ref={input} type="file" accept="audio/mpeg,audio/wav,.mp3,.wav" disabled={busy || !available} /></label>
+    <label htmlFor={trackId} style={{ marginTop: 12 }}>Album track</label>
+    <select id={trackId} value={sourceId} disabled={busy} onChange={(e) => setSourceId(e.target.value)}><option value="">Select an unplayed track</option>{sources.map((source) => <option key={source.id} value={source.id} disabled={source.played}>{source.title}{source.played ? " (already played)" : ""}</option>)}</select>
+    <label htmlFor={fileId} style={{ marginTop: 12 }}>MP3 or WAV file</label>
+    <input id={fileId} ref={input} type="file" accept="audio/mpeg,audio/wav,.mp3,.wav" disabled={busy || !available} />
     <p className="tiny">15 seconds to ten minutes; up to 128 MiB. Title and private core prompt stay unchanged. A song cannot be replaced after its first round opens.</p>
     <button type="button" style={{ marginTop: 12 }} disabled={busy || !available || !sourceId || sources.find((source) => source.id === sourceId)?.played} onClick={() => void upload()}>{busy ? "Checking audio..." : "Upload and use this song"}</button>
     {message && <p role="status">{message}</p>}{error && <p role="alert">{error}</p>}
