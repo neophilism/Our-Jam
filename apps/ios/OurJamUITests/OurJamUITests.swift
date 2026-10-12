@@ -82,6 +82,8 @@ final class OurJamUITests: XCTestCase {
         field.tap()
         field.typeText("Native warm brass")
         app.buttons["submitWave"].tap()
+        let keyboardDismissed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.keyboards.firstMatch)
+        XCTAssertEqual(XCTWaiter.wait(for: [keyboardDismissed], timeout: 8), .completed, "A submitted Sound Wave should reveal the live room, not leave it covered by the keyboard")
         XCTAssertTrue(app.staticTexts["Native warm brass"].waitForExistence(timeout: 15), app.debugDescription)
         app.swipeUp()
         let support = app.buttons["Support Native warm brass"]

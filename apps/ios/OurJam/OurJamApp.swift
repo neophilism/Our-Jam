@@ -70,6 +70,7 @@ struct LiveView: View {
     @ObservedObject var model: SessionModel
     @State private var text = ""
     @State private var roomCode = ""
+    @FocusState private var waveInputFocused: Bool
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -94,8 +95,8 @@ struct LiveView: View {
                         GroupBox("Your Sound Wave") {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("What would you mix into this sound?")
-                                TextField("Instrument, rhythm, mood...", text: $text).textFieldStyle(.roundedBorder).onChange(of: text) { _, value in if value.count > 48 { text = String(value.prefix(48)) } }.accessibilityIdentifier("waveText")
-                                Button("Contribute Sound Wave") { Task { if await model.submit(text) { text = "" } } }.buttonStyle(.borderedProminent).disabled(!model.canVote || text.trimmingCharacters(in: .whitespacesAndNewlines).count < 2).accessibilityIdentifier("submitWave")
+                                TextField("Instrument, rhythm, mood...", text: $text).textFieldStyle(.roundedBorder).onChange(of: text) { _, value in if value.count > 48 { text = String(value.prefix(48)) } }.focused($waveInputFocused).accessibilityIdentifier("waveText")
+                                Button("Contribute Sound Wave") { waveInputFocused = false; Task { if await model.submit(text) { text = "" } } }.buttonStyle(.borderedProminent).disabled(!model.canVote || text.trimmingCharacters(in: .whitespacesAndNewlines).count < 2).accessibilityIdentifier("submitWave")
                                 Text("\(5 - model.used) of 5 points available").font(.headline).accessibilityIdentifier("voteBudget")
                             }
                         }
@@ -122,19 +123,21 @@ struct LiveView: View {
                     }
                     if !model.error.isEmpty { Text(model.error).foregroundStyle(.orange).accessibilityIdentifier("liveError") }
                 }.padding()
-            }.refreshable { await model.refresh() }.navigationTitle("our jam").navigationBarTitleDisplayMode(.inline)
+            }.scrollDismissesKeyboard(.interactively).refreshable { await model.refresh() }.navigationTitle("our jam").navigationBarTitleDisplayMode(.inline)
         }
     }
 }
 struct TracksView: View {
     @ObservedObject var model: SessionModel
+    @Environment(\.scenePhase) private var scene
     @State private var player: AVPlayer?
     @State private var listeningTitle = ""
+    @State private var listeningID: String?
     var body: some View {
         NavigationStack {
             List {
                 if let player {
-                    Section("Private listening: " + listeningTitle) { VideoPlayer(player: player).frame(height: 160); Button("Stop listening") { player.pause(); self.player = nil } }
+                    Section("Private listening: " + listeningTitle) { VideoPlayer(player: player).frame(height: 160); Button("Stop listening") { player.pause(); self.player = nil; listeningID = nil } }
                 }
                 if model.state?.releases.isEmpty != false { Text("No crowd tracks have been released yet. Generation errors remain visible in Live; no prerecorded substitute is inserted.") }
                 ForEach(model.state?.releases ?? []) { release in
@@ -143,13 +146,19 @@ struct TracksView: View {
                         Text("\(Int(release.duration_seconds)) seconds | \(release.likes) likes").font(.caption)
                         if let url = model.api?.mediaURL(release.audio_url) {
                             Button("Listen") {
-                                player?.pause(); player = AVPlayer(url: url); listeningTitle = release.title; player?.play()
+                                player?.pause(); player = AVPlayer(url: url); listeningTitle = release.title; listeningID = release.id; player?.play()
                             }
                         }
                         if let url = model.api?.mediaURL(release.download_url) { Link("Download released track", destination: url) }
                     }.padding(.vertical, 8)
                 }
             }.navigationTitle("Crowd tracks").onDisappear { player?.pause() }
+            .onChange(of: scene) { _, value in if value != .active { player?.pause() } }
+            .onChange(of: model.state?.releases.map(\.id) ?? []) { _, visibleIDs in
+                if let listeningID, !visibleIDs.contains(listeningID) {
+                    player?.pause(); player = nil; self.listeningID = nil
+                }
+            }
         }
     }
 }
