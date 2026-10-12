@@ -1,0 +1,36 @@
+name: Native iOS rehearsal
+on:
+  pull_request:
+    paths: ['apps/ios/**', '.github/workflows/ios-rehearsal.yml']
+  push:
+    branches: [main]
+    paths: ['apps/ios/**', '.github/workflows/ios-rehearsal.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-ios-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  simulator:
+    # Standard hosted runners are free for this public repository. Never use paid larger runners.
+    if: github.repository == 'neophilism/Our-Jam' && github.event.repository.private == false
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build actual simulator app and run native contract tests
+        run: bash apps/ios/Scripts/build-simulator.sh
+      - name: Install and launch the actual application in Simulator
+        run: bash apps/ios/Scripts/smoke-simulator.sh
+      - name: Upload simulator artifacts and launch evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: OurJam-iOS-${{ matrix.runner }}
+          path: apps/ios/artifacts/
+          if-no-files-found: error
+          retention-days: 7

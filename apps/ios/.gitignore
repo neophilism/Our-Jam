@@ -1,0 +1,5 @@
+.build/
+build/
+artifacts/
+OurJam.xcodeproj/
+.DS_Store
