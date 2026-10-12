@@ -26,3 +26,7 @@ Install with `npm ci`. Configure `.env.local` from `.env.example` using only Our
 The performer route is `/performer`; audience entry is `/event/<code>` and the public display is `/screen/<code>`. Artist archives use `/artist/<id>` and the current guest’s liked tracks use `/library`. Artist core prompts remain private. Music generation starts disabled and needs approved provider/storage configuration. No demonstration data is seeded by production startup.
 
 See [deployment](docs/deployment.md), [generation activation](docs/generation-implementation.md), and [playback/recording recovery](docs/playback-and-recovery.md). Responsive browser clients are implemented; native iOS/Android delivery remains a separate V1 milestone.
+
+## End-to-End Everywhere progress
+
+The canonical [security/e2eesa-status.json](security/e2eesa-status.json) records standard implementation, complete testing and independent expert review separately. Engine Room reads it automatically from GitHub. All initial stages are pending; existing profile locks and approved decisions remain authoritative. Read [adoption and independent-account instructions](docs/E2EESA_ADOPTION.md), and run `python3 scripts/validate_e2eesa_status.py`. Record validation does not establish product security or certification.
