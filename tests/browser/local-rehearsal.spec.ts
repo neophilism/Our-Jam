@@ -67,7 +67,7 @@ test("empty local deployment accepts a song, shows real participation and persis
     await expect.poll(async () => (await (await owner.request.get(`/api/operator/events/${slug}`)).json()).round?.state).toBe("open");
     const audience = await guest.newPage(), screen = await display.newPage();
     await screen.goto("/screen/" + slug); await audience.goto("/event/" + slug);
-    await audience.getByRole("button", { name: "I'm in. Let's make music", exact: true }).click();
+    await audience.getByRole("button", { name: /^I'm in\. Let's make music/ }).click();
     await expect(audience.getByLabel("What would you mix this with?")).toBeEnabled();
     await audience.getByLabel("What would you mix this with?").fill("Local brass section");
     await audience.getByRole("button", { name: "Contribute Sound Wave" }).click();
