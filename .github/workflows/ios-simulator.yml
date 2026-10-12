@@ -1,10 +1,10 @@
 name: Native iOS simulator
 on:
   pull_request:
-    paths: ['apps/ios/**', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', 'scripts/run-native-simulator.py', '.github/workflows/ios-simulator.yml']
+    paths: ['apps/ios/**', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', 'scripts/run-native-simulator.py', 'scripts/native-stage-evidence.mjs', '.github/workflows/ios-simulator.yml']
   push:
     branches: [main]
-    paths: ['apps/ios/**', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', 'scripts/run-native-simulator.py', '.github/workflows/ios-simulator.yml']
+    paths: ['apps/ios/**', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', 'scripts/run-native-simulator.py', 'scripts/native-stage-evidence.mjs', '.github/workflows/ios-simulator.yml']
 permissions:
   contents: read
 concurrency:
@@ -75,9 +75,14 @@ jobs:
         run: |
           python3 scripts/run-native-simulator.py
           curl -fsS http://127.0.0.1:4173/__test__/native-evidence > ios-evidence/participation.json
+      - name: Verify the native submission on the real public screen
+        timeout-minutes: 3
+        run: |
+          npx playwright install chromium
+          node scripts/native-stage-evidence.mjs
       - name: Mark native acceptance
         run: |
-          printf '%s\n' 'Native simulator interaction test passed on this exact commit. Review the independent Our Jam checks run for full backend/browser acceptance. This is not TestFlight or full V1 certification.' > ios-artifact/BUILD-STATUS.txt
+          printf '%s\n' 'Native simulator interaction and native-to-public-screen checks passed on this exact commit. Review the independent Our Jam checks run for full backend/browser acceptance. This is not TestFlight or full V1 certification.' > ios-artifact/BUILD-STATUS.txt
       - uses: actions/upload-artifact@v4
         with:
           name: OurJam-iOS-Simulator
