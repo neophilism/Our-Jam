@@ -4,6 +4,7 @@ import type { Database } from "./db.js";
 import type { GenerationConfig } from "./generation.js";
 import { ownedEvent, replay, remember, logEvent } from "./service.js";
 import { digest, requireThat } from "../../../packages/domain/src/index.js";
+import { reconciliationBlock, reconciliationInput, requestReconciliation } from "./generation-reconciliation.js";
 import { id } from "../../../packages/contracts/src/index.js";
 export const providerInput = z.object({ provider: z.enum(["stability", "mureka"]), commandId: id, expectedRevision: z.number().int().nonnegative() });
 export async function setGenerationProvider(db: Database, artistId: string, eventId: string, input: z.infer<typeof providerInput>) {
@@ -39,9 +40,19 @@ export function registerGenerationControls(app: FastifyInstance, db: Database, g
       state: zero ? "approved_budget_zero" : generation ? "configured" : "provider_not_configured",
       eventBudgetCents: generation?.eventBudgetCents ?? 0, totalBudgetCents: generation?.totalBudgetCents ?? 0,
       providers: ["stability", "mureka"].map((name) => ({ name, keyConfigured: Boolean(generation?.providers?.[name as "stability" | "mureka"]) })),
-      jobs: (await db.query("SELECT j.id,j.state,j.reason,j.provider,j.model,j.created_at,COALESCE(r.settings->>'generationProvider','stability') requested_provider FROM generation_jobs j JOIN rounds r ON r.id=j.round_id WHERE j.event_id=$1 ORDER BY j.created_at DESC LIMIT 20", [eventId])).rows,
+      jobs: (await db.query("SELECT j.id,j.state,j.reason,j.provider,j.model,j.provider_ref,j.attempt_id,j.attempts,j.reserved_cents,j.created_at,COALESCE(r.settings->>'generationProvider','stability') requested_provider FROM generation_jobs j JOIN rounds r ON r.id=j.round_id WHERE j.event_id=$1 ORDER BY j.created_at DESC LIMIT 20", [eventId])).rows.map((job) => ({
+        id: job.id, state: job.state, reason: job.reason, provider: job.provider, model: job.model,
+        requested_provider: job.requested_provider, created_at: job.created_at,
+        providerRef: job.provider_ref, attempts: job.attempts, reservedCents: job.reserved_cents,
+        reconciliation: {
+          canRequest: job.state === "unknown" && job.reason !== "reconciliation_requested" && !reconciliationBlock(generation, job),
+          blockReason: reconciliationBlock(generation, job),
+        },
+      })),
     };
   });
+  app.post("/api/operator/jobs/:id/reconcile", async (req) =>
+    requestReconciliation(db, await artist(req), id.parse((req.params as any).id), reconciliationInput.parse(req.body), generation));
   app.patch("/api/operator/events/:id/generation-provider", async (req) =>
     setGenerationProvider(db, await artist(req), id.parse((req.params as any).id), providerInput.parse(req.body)));
 }
