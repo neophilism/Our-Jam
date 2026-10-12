@@ -4,9 +4,11 @@ import type { GenerationConfig } from "./generation.js";
 import { configuredGeneration } from "./generation-config.js";
 import { registerGenerationControls } from "./provider-controls.js";
 import { registerAlbumUploads } from "./album-uploads.js";
+import { registerEventStreamShutdown } from "./event-stream-shutdown.js";
 export type AppConfig = CoreAppConfig & { generation?: GenerationConfig };
 export async function createApp(db: Database, config: AppConfig) {
   const app = await createCoreApp(db, config);
+  registerEventStreamShutdown(app);
   registerGenerationControls(app, db, config.generation ?? configuredGeneration(config.mediaStore));
   await registerAlbumUploads(app, db, config.origin, config.mediaStore);
   return app;

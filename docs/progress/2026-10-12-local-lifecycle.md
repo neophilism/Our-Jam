@@ -1,0 +1,11 @@
+# Real local rehearsal lifecycle correction - October 12, 2026
+
+Depends on PR #25's actual native/local application, not the superseded parallel PR #27. The local launcher previously ran only generationTick, omitting production's tickRounds. That left server-side expired-deadline closure and playback-controller loss handling dependent on further interaction.
+
+The local lifecycle now runs the same round/lease reconciliation before zero-budget generation processing. Concurrent ticks share one promise; shutdown stops new ticks and drains the current transaction before database closure. Startup reconciles restored state before serving requests. Both local budgets must remain exactly zero. No schema change, provider key, cloud mutation or spending is introduced.
+
+A second shutdown fix ends only tracked event-stream responses in Fastify preClose. The earlier core onClose cleanup ran after active requests, so a still-open public display could keep shutdown waiting. Ordinary in-flight requests continue to drain normally; this does not force-close uploads or all connections. The real-HTTP regression test keeps a live event stream and a deliberately pending ordinary request open, then verifies the stream ends while the ordinary request is allowed to finish. Fastify lifecycle reference: https://fastify.dev/docs/latest/Reference/Server/#close
+
+Four lifecycle tests cover deadline closure with saved Sound Waves and zero attempts/cost, expired controller pause without a new job, concurrent-tick coalescing, orderly shutdown and rejection of nonzero local budgets. At initial head 4778eaca2f2ffe9f1c4336b8c39f52e3dc6d868f, Our Jam checks run 38246467076 passed those tests, all existing browser checks, dependency audit and Docker build. The subsequent event-stream shutdown correction requires fresh exact-head CI before its acceptance is claimed. The current native simulator-selection fix from #25 is also preserved.
+
+Rollback restores the former local entrypoint but loses lifecycle reconciliation; removing stream shutdown restores the older close behavior. No user database or uploaded file should be deleted. The native Simulator binary and its UI tests remain governed by #25. Live provider comparison and hosted private storage still need separately authorized integration tests; missing tests are not counted as passed.
