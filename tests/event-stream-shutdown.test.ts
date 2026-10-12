@@ -7,9 +7,9 @@ import { createApp } from "../apps/api/src/app.js";
 import { createEvent } from "../apps/api/src/service.js";
 import { eventInput } from "../packages/contracts/src/index.js";
 
-function until<T>(promise: Promise<T>, ms = 3000): Promise<T> {
+function until<T>(promise: Promise<T>, phase: string, ms = 3000): Promise<T> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("Graceful shutdown did not complete")), ms);
+    const timer = setTimeout(() => reject(new Error("Graceful shutdown stalled at: " + phase)), ms);
     promise.then((value) => { clearTimeout(timer); resolve(value); }, (error) => { clearTimeout(timer); reject(error); });
   });
 }
@@ -27,6 +27,7 @@ test("shutdown ends a real live audience stream before onClose without aborting 
   let client: http.ClientRequest | undefined;
   t.after(async () => {
     allowRequest(); stream?.destroy(); client?.destroy();
+    app.server.closeAllConnections();
     await app.close(); await db.close();
   });
   const origin = await app.listen({ host: "127.0.0.1", port: 0 });
@@ -36,20 +37,20 @@ test("shutdown ends a real live audience stream before onClose without aborting 
       response.on("error", reject);
     });
     client.on("error", reject);
-  }));
+  }), "opening the stream");
   stream = opened;
   opened.resume();
   assert.equal(opened.statusCode, 200);
   assert.match(String(opened.headers["content-type"]), /text\/event-stream/);
   const ended = new Promise<void>((resolve, reject) => { opened.once("end", resolve); opened.once("error", reject); });
-  const pending = fetch(origin + "/__test__/held-request").then((r) => r.json());
-  await until(started);
+  const pending = fetch(origin + "/__test__/held-request", { headers: { Connection: "close" } }).then((r) => r.json());
+  await until(started, "starting the ordinary request");
   let closed = false;
   const closing = app.close().then(() => { closed = true; });
-  await until(ended);
+  await until(ended, "ending the SSE response");
   assert.equal(closed, false, "ordinary in-flight requests must still be allowed to complete");
   allowRequest();
-  assert.deepEqual(await until(pending), { completed: true });
-  await until(closing);
+  assert.deepEqual(await until(pending, "finishing the ordinary request"), { completed: true });
+  await until(closing, "closing the HTTP server");
   assert.equal(closed, true);
 });
