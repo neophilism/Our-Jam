@@ -282,3 +282,33 @@ test("private setup endpoints require operator identity and same-origin mutation
   });
   assert.ok(!publicState.body.includes("Unpublished private signature"));
 });
+
+
+test("editing a song description never deletes its uploaded or linked audio", async (t) => {
+  const db = await testDatabase();
+  t.after(() => db.close());
+  const event = await createEvent(db, "our-jam", eventInput.parse({
+    slug: "preserve-audio-" + randomUUID(),
+    title: "Keep the recording",
+    artistName: "Independent artist",
+    sources: [{
+      title: "Original song", corePrompt: "Soulful piano and bass",
+      audioUrl: "https://example.test/original.mp3", durationSeconds: 180,
+    }],
+  }));
+  const id = (await sources(db, "our-jam", event.id)).sources[0].id;
+  await updateSource(db, "our-jam", id, sourceEditInput.parse({
+    commandId: randomUUID(), expectedRevision: 0,
+    title: "Renamed song", corePrompt: "Soulful piano and warm bass",
+    durationSeconds: 180,
+  }));
+  let stored = (await db.query("SELECT audio_url FROM source_tracks WHERE id=$1", [id])).rows[0];
+  assert.equal(stored.audio_url, "https://example.test/original.mp3", "omitting audioUrl must not delete a recording");
+  await updateSource(db, "our-jam", id, sourceEditInput.parse({
+    commandId: randomUUID(), expectedRevision: 1,
+    title: "Renamed song", corePrompt: "Soulful piano and warm bass",
+    durationSeconds: 180, audioUrl: null,
+  }));
+  stored = (await db.query("SELECT audio_url FROM source_tracks WHERE id=$1", [id])).rows[0];
+  assert.equal(stored.audio_url, null, "explicit null can still clear a legacy link");
+});
