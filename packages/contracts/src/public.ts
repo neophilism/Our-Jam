@@ -44,6 +44,7 @@ export type EventState = {
   };
   round: null | {
     id: string;
+    voteLimit?: number;
     sourceTitle: string;
     state: string;
     openedAt: string;

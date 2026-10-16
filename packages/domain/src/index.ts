@@ -49,12 +49,12 @@ export function validateAllocations(values: Record<string, number>): void {
     points.length <= VOTE_BUDGET &&
       points.every((p) => Number.isSafeInteger(p) && p > 0 && p <= VOTE_BUDGET),
     "invalid_allocation",
-    "Each supported Sound Wave needs 1 to 5 whole points.",
+    "Choose a whole number of votes for each Sound Wave.",
   );
   requireThat(
     points.reduce((a, b) => a + b, 0) <= VOTE_BUDGET,
     "vote_budget_exceeded",
-    "You have five points in this round.",
+    "You have used all your votes for this song.",
   );
 }
 export type RankedWave = {

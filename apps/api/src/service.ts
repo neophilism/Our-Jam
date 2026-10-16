@@ -9,6 +9,7 @@ import {
   rankWaves,
   requireThat,
   validateAllocations,
+  VOTE_BUDGET,
   type RankedWave,
 } from "../../../packages/domain/src/index.js";
 import {
@@ -101,7 +102,7 @@ function open(r: Record<string, any>) {
       r.controllerAlive &&
       new Date(r.deadline_at) > new Date(r.server_time),
     "round_closed",
-    "This round has closed. Your points were not changed.",
+    "This song is over. Voting is closed, so your votes haven’t changed.",
     409,
   );
 }
@@ -158,7 +159,7 @@ async function ballot(
   requireThat(
     row.revision === revision,
     "revision_conflict",
-    "Your points changed in another tab. Refresh and try again.",
+    "Your votes changed in another tab. Refresh and try again.",
     409,
   );
   return row;
@@ -289,14 +290,14 @@ export async function submitWave(
       requireThat(
         allocation[input.moveFrom] > 0,
         "invalid_transfer",
-        "Choose a point you currently hold.",
+        "Choose a Sound Wave that has one of your votes.",
       );
       if (--allocation[input.moveFrom] === 0) delete allocation[input.moveFrom];
     }
     requireThat(
-      Object.values(allocation).reduce((a, b) => a + b, 0) < 5,
+      Object.values(allocation).reduce((a, b) => a + b, 0) < VOTE_BUDGET,
       "vote_budget_exceeded",
-      "Move one of your five points to contribute a new Sound Wave.",
+      "All your votes are in use. Take one back from another Sound Wave to share your idea.",
     );
     let wave = (
       await tx.query(
@@ -661,6 +662,7 @@ export async function snapshot(
   const publicRound = round
     ? {
         id: round.id,
+        voteLimit: VOTE_BUDGET,
         sourceTitle: round.source_title,
         state: round.state,
         openedAt: round.opened_at,
