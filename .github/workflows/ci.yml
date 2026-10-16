@@ -5,9 +5,13 @@ on:
     branches: [main]
 permissions:
   contents: read
+
+# Independent gates run concurrently on isolated runners. The checked-source
+# release is only published after EVERY required gate succeeds on this SHA.
 jobs:
-  checks:
+  application:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:18
@@ -24,6 +28,8 @@ jobs:
       TEST_DATABASE_URL: postgresql://ourjam:ourjam-ci-only@localhost:5432/ourjam_test
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -33,9 +39,61 @@ jobs:
       - run: npm run check
       - run: npm run build
       - run: npm audit --audit-level=high
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: ourjam
+          POSTGRES_PASSWORD: ourjam-ci-only
+          POSTGRES_DB: ourjam_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ourjam -d ourjam_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://ourjam:ourjam-ci-only@localhost:5432/ourjam_test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-evidence
+          path: test-results/
+          retention-days: 7
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - run: docker build -t our-jam:ci .
+
+  checked-source:
+    runs-on: ubuntu-latest
+    needs: [application, browser, docker]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Preserve exact checked local source
         run: |
           mkdir -p local-release
@@ -43,16 +101,10 @@ jobs:
           git rev-parse HEAD > local-release/COMMIT.txt
           (cd local-release && sha256sum OurJam-Local-Source.zip > SHA256SUMS.txt)
           cp docs/local-real-rehearsal.md local-release/LOCAL-SETUP.md
-          printf '%s\n' 'Application, browser, audit, production-build and Docker checks passed before packaging. This ZIP is exact tracked source, not an iOS binary or TestFlight build. Native acceptance is recorded by the separate Simulator workflow.' > local-release/BUILD-STATUS.txt
+          printf '%s\n' 'Application, browser, audit, production-build and Docker gates passed on the same SHA. This tracked source ZIP is not a native binary, TestFlight artifact, security certificate or venue acceptance.' > local-release/BUILD-STATUS.txt
       - uses: actions/upload-artifact@v4
         with:
           name: OurJam-Local-Source
           path: local-release/
           retention-days: 14
           if-no-files-found: error
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: browser-evidence
-          path: test-results/
-          retention-days: 7
