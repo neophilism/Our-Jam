@@ -13,3 +13,5 @@ The web homepage, audience room, performer sign-in/setup and private performer c
 **Native follow-up:** SwiftUI/Expo native clients still require platform-native coachmarks and actual VoiceOver/TalkBack/device acceptance. Web tutorial completion does not imply native tutorial support.
 
 **Rollback:** Remove the GuidedHelp component insertion from the shared Header and remove its two files. No server data or schema changes are made.
+
+For a first visit to each supported screen, a non-blocking introduction offers **Start guided tour** or **Not now**. Dismissing the invitation remembers that choice locally, while **Take a tour** remains accessible. The tour does not open a disruptive dialog automatically during an active concert.

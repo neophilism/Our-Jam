@@ -35,3 +35,9 @@
 @media (prefers-reduced-motion: reduce) {
   .guided-help-card, .guided-help-spotlight { animation: none !important; transition: none !important; }
 }
+
+.guided-help-invite { position: absolute; top: 82px; right: 5vw; z-index: 100; width: min(340px, calc(100vw - 28px)); padding: 14px; border: 1px solid var(--lime); border-radius: 9px; background: #24281b; box-shadow: 0 10px 32px #0008; color: #f7f8ef; }
+.guided-help-invite p { line-height: 1.5; font-size: 14px; }
+.guided-help-invite > div { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.guided-help-invite button { padding: 8px 12px; min-height: 44px; font-size: 12px; }
+@media (max-width: 650px) { .guided-help-invite { right: 14px; top: 70px; } }

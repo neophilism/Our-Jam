@@ -39,6 +39,11 @@ function currentSurface(): Surface | null {
   if (parts[0] === "performer") return parts[1] ? "console" : "performer";
   return null;
 }
+function inviteDismissed(surface: Surface | null): boolean {
+  if (!surface) return true;
+  try { return localStorage.getItem("our-jam-tour-v1:invite:" + surface) === "dismissed"; }
+  catch { return false; }
+}
 function seen(surface: Surface | null): boolean {
   if (!surface) return false;
   try { return localStorage.getItem("our-jam-tour-v1:" + surface) === "done"; }
@@ -47,6 +52,7 @@ function seen(surface: Surface | null): boolean {
 export function GuidedHelp() {
   const surface = currentSurface();
   const [completed, setCompleted] = useState(() => seen(surface));
+  const [invite, setInvite] = useState(() => !seen(surface) && !inviteDismissed(surface));
   const [steps, setSteps] = useState<Step[]>([]);
   const [index, setIndex] = useState(0);
   const [layout, setLayout] = useState<Layout | null>(null);
@@ -60,6 +66,7 @@ export function GuidedHelp() {
       catch { /* Restricted storage is nonfatal. */ }
     }
     setCompleted(true);
+    setInvite(false);
     setSteps([]);
     setIndex(0);
     setLayout(null);
@@ -67,7 +74,10 @@ export function GuidedHelp() {
   };
   const begin = () => {
     if (!surface) return;
-    const visible = guides[surface].filter((step) => !!document.querySelector(step.selector));
+    const visible = guides[surface].filter((step) => {
+      const element = document.querySelector<HTMLElement>(step.selector);
+      return Boolean(element && element.getClientRects().length && element.getBoundingClientRect().height > 0);
+    });
     setSteps(visible.length ? visible : [{
       selector: "header",
       title: "The screen is still loading",
@@ -75,6 +85,14 @@ export function GuidedHelp() {
     }]);
     setIndex(0);
     setLayout(null);
+    setInvite(false);
+  };
+  const dismissInvite = () => {
+    if (surface) {
+      try { localStorage.setItem("our-jam-tour-v1:invite:" + surface, "dismissed"); }
+      catch { /* Restricted storage is nonfatal. */ }
+    }
+    setInvite(false);
   };
   useEffect(() => {
     if (!current) return;
@@ -140,6 +158,15 @@ export function GuidedHelp() {
         <span aria-hidden="true">?</span>
         <span className="guided-help-trigger-text">{completed ? "Replay tour" : "Take a tour"}</span>
       </button>
+      {invite && !active && (
+        <aside className="guided-help-invite" aria-label="Guided tour invitation">
+          <p>New to OurJam? We'll show you what each control does.</p>
+          <div>
+            <button type="button" onClick={begin}>Start guided tour</button>
+            <button type="button" className="ghost" onClick={dismissInvite}>Not now</button>
+          </div>
+        </aside>
+      )}
       {active && (
         <>
           <div className="guided-help-shield" aria-hidden="true" onClick={end} />
