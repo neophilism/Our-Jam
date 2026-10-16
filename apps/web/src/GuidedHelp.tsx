@@ -6,30 +6,127 @@ type Step = { selector: string; title: string; description: string };
 type Layout = { top: number; left: number; width: number; targetTop: number; targetLeft: number; targetWidth: number; targetHeight: number };
 const guides: Record<Surface, Step[]> = {
   home: [
-    { selector: ".join-form", title: "Join the jam", description: "Enter the event code shown at the venue or use its QR link. You can take part in your browser without installing an app." },
-    { selector: ".how", title: "Help shape the music", description: "Listen to the artist, add a Sound Wave, and use your five points to support ideas. The artist can then release the crowd's new track." },
-    { selector: ".event-list", title: "Find your room", description: "Choose an event here or enter its code above. Return to hear and download tracks when the artist publishes them." },
+    {
+      selector: "#event-code",
+      title: "Enter your event code",
+      description: "Type the code shown at the concert or shared by the artist. You can also open the event's QR link on your phone.",
+    },
+    {
+      selector: ".join-form button",
+      title: "Open the jam",
+      description: "Select Join the jam to see the music, Sound Waves, and voting for that event. No app download is needed.",
+    },
+    {
+      selector: ".event-list a.event-card",
+      title: "Or choose a show",
+      description: "Select an event card to open that artist's jam directly.",
+    },
   ],
   audience: [
-    { selector: ".audience .event-heading", title: "The music playing now", description: "This tells you what the artist is performing. Watch the time left to submit ideas and move votes for this round." },
-    { selector: ".audience .tabs", title: "Explore the room", description: "Sound Waves is where you contribute. Our tracks has released music, and The room shows the people behind the sound." },
-    { selector: ".audience .vote-panel", title: "Your five points", description: "Join the collaboration to receive five points per album track. Put them behind musical ideas you want the crowd and artist to hear." },
-    { selector: ".audience .join-panel, .audience .wave-form", title: "Make a Sound Wave", description: "Join first if prompted. Then type a short idea, such as smoky jazz trumpet. Making your own Sound Wave uses one point." },
-    { selector: ".audience .wave-list, .audience .crowd-scene", title: "Support other ideas", description: "Use plus and minus on the wave list to move points between ideas while the round is open. Nothing is submitted on your behalf." },
-    { selector: ".audience .tabs button:nth-child(2)", title: "Hear the results", description: "Choose Our tracks to listen privately or download tracks after the artist publishes them. Joining never turns on phone audio automatically." },
+    {
+      selector: ".audience .countdown",
+      title: "Watch the voting time",
+      description: "This countdown tells you how long you can suggest Sound Waves and vote for this song. Voting pauses if the artist pauses the music.",
+    },
+    {
+      selector: ".audience .tabs",
+      title: "Choose what to explore",
+      description: "Open Sound Waves to join in, Our tracks to hear the crowd's released music, or The room to see who's taking part.",
+    },
+    {
+      selector: ".audience .join-panel button.full",
+      title: "Join to contribute",
+      description: "Select this button to share your ideas and vote. If the event needs a room code, enter the code announced at the show first.",
+    },
+    {
+      selector: ".audience #wave-input",
+      title: "Write a Sound Wave",
+      description: "Type a musical idea you'd like to hear—such as funky bass guitar or a dreamy string section. One clear phrase is enough.",
+    },
+    {
+      selector: ".audience .wave-form .input-action button",
+      title: "Share your idea",
+      description: "Select this arrow to submit your Sound Wave. It receives one of your votes automatically.",
+    },
+    {
+      selector: ".audience .vote-progress",
+      title: "See your available votes",
+      description: "This bar shows how many votes you still have for the current song. You can change your votes until the round closes.",
+    },
+    {
+      selector: ".audience .vote-controls",
+      title: "Vote on Sound Waves",
+      description: "Select + next to an idea you like. Select − to take back a vote. You can vote for different ideas or vote more than once for one idea.",
+    },
+    {
+      selector: ".audience .tabs button:nth-child(2)",
+      title: "Open the crowd's tracks",
+      description: "Choose Our tracks to listen to new music that the artist has released from earlier rounds.",
+    },
+    {
+      selector: ".audience .listener .reactions",
+      title: "Vote for a crowd-created track",
+      description: "After listening, choose Love this or Not my sound to share your reaction. The artist can use that feedback when choosing what to play.",
+    },
   ],
   performer: [
-    { selector: ".performer .login", title: "Private performer access", description: "Enter your performer credential to manage your show. Never share this private access with the audience." },
-    { selector: ".performer .event-list", title: "Open a prepared show", description: "Select a session to control playback, crowd participation, audio and publishing, or open the public audience view separately." },
-    { selector: ".performer .create-event", title: "Create your show", description: "Set an event code and title, add your own album tracks and private core prompts, and choose who may contribute before inviting fans." },
+    {
+      selector: ".performer .login input[type=password]",
+      title: "Sign in as the performer",
+      description: "Enter your private performer credential here. Only people running the event should have access.",
+    },
+    {
+      selector: ".performer .event-list a.event-card",
+      title: "Open an existing show",
+      description: "Choose one of your saved events to return to its live controls and show settings.",
+    },
+    {
+      selector: ".performer .create-event input[name=title]",
+      title: "Name your jam",
+      description: "Give the event a title your fans will recognize, such as Friday Night Album Jam.",
+    },
+    {
+      selector: ".performer .create-event textarea",
+      title: "Describe each song",
+      description: "Tell OurJam which instruments, rhythm, and style make your song recognizable. This private description helps preserve its identity in new music.",
+    },
+    {
+      selector: ".performer .create-event input[type=file]",
+      title: "Upload the music",
+      description: "Choose an MP3 or WAV directly from your computer. OurJam stores a private playback copy; you don't need to host the audio somewhere else.",
+    },
+    {
+      selector: ".performer .create-event .purchase-editor",
+      title: "Add your music links",
+      description: "Enter the stores or music services where fans can find your album. Choose whether fans see all links or go straight to your preferred provider.",
+    },
   ],
   console: [
-    { selector: ".console .event-heading", title: "Your live show", description: "See the current event, participation and time remaining. Open the crowd display or audience view separately using the links above." },
-    { selector: ".console .show-player", title: "Control real playback", description: "Choose your actual show output and operate the player here. Check your hardware and backup before the audience arrives." },
-    { selector: ".console .queue", title: "Choose what comes next", description: "Rearrange upcoming album and crowd tracks in the queue without interrupting the track that is playing now." },
-    { selector: ".console .console-grid > section:nth-child(2)", title: "Watch the crowd", description: "See ideas and their support as fans participate. Hide unsuitable contributions without sharing performer access." },
-    { selector: ".console .track, .console .job-detail", title: "Preview before release", description: "Review crowd generations and privately preview audio. Publishing or adding music to the queue always requires a real action, not a tutorial step." },
-    { selector: ".console .show-setup", title: "Check show settings", description: "Review track timing, admission and show settings before going live. This tour only explains controls and never changes them." },
+    {
+      selector: ".console .show-player",
+      title: "Control the show's audio",
+      description: "Choose your real audio output and use the player to start or pause playback. Test the speakers and backup before the event.",
+    },
+    {
+      selector: ".console .queue",
+      title: "Choose the next track",
+      description: "Use Next or the up and down controls to reorder tracks waiting to play. The currently playing track keeps going.",
+    },
+    {
+      selector: ".console .moderation-list",
+      title: "Review live Sound Waves",
+      description: "See what fans are suggesting and voting for. Hide an unsuitable idea here if necessary.",
+    },
+    {
+      selector: ".console .track",
+      title: "Preview a crowd-created track",
+      description: "Listen privately to a new track before deciding whether to release it or play it at the event.",
+    },
+    {
+      selector: ".console .show-setup summary",
+      title: "Check the show settings",
+      description: "Open this section to adjust show access, audio, and participation settings before the music starts.",
+    },
   ],
 };
 function currentSurface(): Surface | null {
@@ -41,12 +138,12 @@ function currentSurface(): Surface | null {
 }
 function inviteDismissed(surface: Surface | null): boolean {
   if (!surface) return true;
-  try { return localStorage.getItem("our-jam-tour-v1:invite:" + surface) === "dismissed"; }
+  try { return localStorage.getItem("our-jam-tour-v2:invite:" + surface) === "dismissed"; }
   catch { return false; }
 }
 function seen(surface: Surface | null): boolean {
   if (!surface) return false;
-  try { return localStorage.getItem("our-jam-tour-v1:" + surface) === "done"; }
+  try { return localStorage.getItem("our-jam-tour-v2:" + surface) === "done"; }
   catch { return false; }
 }
 export function GuidedHelp() {
@@ -62,7 +159,7 @@ export function GuidedHelp() {
   const active = Boolean(current);
   const end = () => {
     if (surface) {
-      try { localStorage.setItem("our-jam-tour-v1:" + surface, "done"); }
+      try { localStorage.setItem("our-jam-tour-v2:" + surface, "done"); }
       catch { /* Restricted storage is nonfatal. */ }
     }
     setCompleted(true);
@@ -89,7 +186,7 @@ export function GuidedHelp() {
   };
   const dismissInvite = () => {
     if (surface) {
-      try { localStorage.setItem("our-jam-tour-v1:invite:" + surface, "dismissed"); }
+      try { localStorage.setItem("our-jam-tour-v2:invite:" + surface, "dismissed"); }
       catch { /* Restricted storage is nonfatal. */ }
     }
     setInvite(false);
@@ -160,7 +257,7 @@ export function GuidedHelp() {
       </button>
       {invite && !active && (
         <aside className="guided-help-invite" aria-label="Guided tour invitation">
-          <p>New to OurJam? We'll show you what each control does.</p>
+          <p>New to OurJam? See exactly how to join, share a Sound Wave, and vote.</p>
           <div>
             <button type="button" onClick={begin}>Start guided tour</button>
             <button type="button" className="ghost" onClick={dismissInvite}>Not now</button>
