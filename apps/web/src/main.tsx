@@ -664,7 +664,7 @@ function Audience({ slug }: { slug: string }) {
                         >
                           <option value="">Choose a Sound Wave</option>
                           {waves
-                            .filter((w) => w.mine)
+                            .filter((w) => w.mine && (!singleVote || !w.own))
                             .map((w) => (
                               <option value={w.id} key={w.id}>
                                 {w.text}
@@ -674,7 +674,7 @@ function Audience({ slug }: { slug: string }) {
                       </label>
                     )}
                     <p className="tiny muted">
-                      Share one musical idea for this song. Submitting it uses one vote; you can still vote for other ideas.
+                      Share as many musical ideas as your vote allowance permits. Each Sound Wave you create uses one vote, leaving the rest for other ideas.
                     </p>
                   </form>
                   <div className="wave-list">
@@ -699,7 +699,7 @@ function Audience({ slug }: { slug: string }) {
                           <button
                             className="ghost"
                             aria-label={`Take back a vote from ${w.text}`}
-                            disabled={!open || !w.mine || busy}
+                            disabled={!open || !w.mine || (singleVote && w.own) || busy}
                             onClick={() => vote(w, -1)}
                           >
                             −
