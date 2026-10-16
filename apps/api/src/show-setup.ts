@@ -1,4 +1,6 @@
+import { readPlatformVotePolicy, resolveVoteLimit, effectiveVoteLimit } from "./vote-policy.js";
 import { z } from "zod";
+import { VOTE_BUDGET } from "../../../packages/domain/src/index.js";
 import { purchaseLinksInput, publicPurchaseLinks, preferredPurchaseUrl, purchaseModeInput } from "../../../packages/contracts/src/purchase-providers.js";
 import type { Database } from "./db.js";
 import { ownedEvent, replay, remember, logEvent } from "./service.js";
@@ -32,6 +34,8 @@ export const settingsInput = eventInput
     preferredPurchaseProvider: z.string().max(40).nullable().optional(),
   });
 export const sourceEditInput = sourceInput.extend({
+  // Omission preserves uploaded/private audio; explicit null clears the link.
+  audioUrl: httpsUrl.nullable().optional(),
   commandId: id,
   expectedRevision: revision,
 });
@@ -107,17 +111,34 @@ export async function updateSettings(
       "The show changed. Refresh before saving settings.",
       409,
     );
+    const platform = await readPlatformVotePolicy(tx, true);
+    const requestedVoteMode = input.voteMode ?? event.settings.voteMode ?? "weighted";
+    requireThat(!(event.settings.voteMode === "single" && requestedVoteMode === "weighted"),
+      "legacy_vote_mode_locked", "This show uses one vote per Sound Wave and cannot switch back to the older voting mode.");
+    const voteLimit = requestedVoteMode === "single"
+      ? (platform.mode === "fixed" ? platform.fixedVotes
+          : input.votesPerListener === undefined
+            ? effectiveVoteLimit(platform, event.settings.votesPerListener)
+            : resolveVoteLimit(platform, input.votesPerListener))
+      : VOTE_BUDGET;
     const settings = {
       ...event.settings,
       screenLimit: input.screenLimit,
       minimumRoundSeconds: input.minimumRoundSeconds,
       maxWaves: input.maxWaves,
       maxGenerations: input.maxGenerations,
+      voteMode: requestedVoteMode,
+      votesPerListener: voteLimit,
       releaseMode: input.releaseMode,
       purchaseLinks: input.purchaseLinks ?? publicPurchaseLinks(event.settings.purchaseLinks, event.purchase_url),
       purchaseMode: input.purchaseMode ?? event.settings.purchaseMode ?? "menu",
       preferredPurchaseProvider: input.preferredPurchaseProvider === undefined ? event.settings.preferredPurchaseProvider ?? null : input.preferredPurchaseProvider,
     };
+    requireThat(
+      settings.voteMode !== "weighted" || settings.votesPerListener === VOTE_BUDGET,
+      "invalid_vote_policy",
+      "Legacy weighted voting keeps its original limit. Select one vote per Sound Wave to allow more choices.",
+    );
     requireThat(settings.purchaseMode !== "direct" || Boolean(preferredPurchaseUrl(settings.purchaseLinks, settings.purchaseMode, settings.preferredPurchaseProvider)), "invalid_purchase_destination", "Choose a listed provider for direct purchase.", 400);
     await tx.query(
       "UPDATE events SET title=$1,artist_name=$2,purchase_url=$3,settings=$4 WHERE id=$5",
@@ -167,7 +188,7 @@ export async function updateSource(
 ) {
   return db.transaction(async (tx) => {
     const source = (
-      await tx.query("SELECT event_id FROM source_tracks WHERE id=$1", [
+      await tx.query("SELECT event_id,audio_url FROM source_tracks WHERE id=$1", [
         sourceId,
       ])
     ).rows[0];
@@ -200,7 +221,7 @@ export async function updateSource(
       [
         input.title,
         input.corePrompt,
-        input.audioUrl ?? null,
+        input.audioUrl === undefined ? source.audio_url : input.audioUrl,
         input.durationSeconds,
         sourceId,
       ],

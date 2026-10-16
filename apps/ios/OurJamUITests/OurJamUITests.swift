@@ -97,7 +97,7 @@ final class OurJamUITests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [keyboardDismissed], timeout: 8), .completed, "A submitted Sound Wave should reveal the live room, not leave it covered by the keyboard")
         XCTAssertTrue(app.staticTexts["Native warm brass"].waitForExistence(timeout: 15), app.debugDescription)
         app.swipeUp()
-        let support = app.buttons["Support Native warm brass"]
+        let support = app.buttons["Vote for Native warm brass"]
         XCTAssertTrue(support.waitForExistence(timeout: 10))
         support.tap()
         let saved = expectation(description: "Native vote persisted in actual backend")

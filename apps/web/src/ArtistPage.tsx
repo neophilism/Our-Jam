@@ -64,7 +64,7 @@ export function ArtistPage({ id }: { id: string }) {
               <h1>{data.artist.name}</h1>
               <p>
                 {data.artist.bio ||
-                  "Every show starts with a signature sound and becomes something we make together."}
+                  "Discover the songs this artist is sharing, the Sound Waves fans are imagining, and the new music their crowds create together."}
               </p>
               <FollowArtist artistId={id} />
               <div className="artist-links">
@@ -90,15 +90,15 @@ export function ArtistPage({ id }: { id: string }) {
           <div className="section-heading">
             <div>
               <span className="eyebrow">KEEP COMING BACK</span>
-              <h2>Every room leaves a record.</h2>
+              <h2>Explore this artist’s jams.</h2>
             </div>
             <a className="button ghost small" href="/library">
               Your liked tracks ↗
             </a>
           </div>
           <p className="muted">
-            Listen from anywhere, explore earlier shows, and keep the free
-            tracks. {data.participation}
+            Join an upcoming show, revisit a live jam, or hear crowd-created
+            tracks from earlier events. {data.participation}
           </p>
           <nav className="tabs" aria-label="Filter artist sessions">
             {[
@@ -173,11 +173,11 @@ export function LikedLibrary() {
   return (
     <main className="artist-page">
       <span className="eyebrow">YOUR PART OF THE SOUND</span>
-      <h1>The tracks you love.</h1>
+      <h1>Your favorite crowd-created tracks.</h1>
       <p>
-        These likes belong to your profile. Save a private recovery key to bring
-        your music to another device, and download your favorite tracks to keep
-        them.
+        Every track you love is saved to your profile, so you can listen
+        again and download your favorites. Save a recovery key if you want to
+        take this collection to another device.
       </p>
       {error && (
         <p role="alert" className="notice">
@@ -284,8 +284,8 @@ export function ArtistEditor() {
     <details className="card artist-editor">
       <summary>Your public artist page</summary>
       <p>
-        Your artist page collects your sessions and music links. Individual
-        events keep their own displayed artist names.
+        This is where fans find your shows, discover your crowd-created tracks,
+        and follow your music. Add a short introduction and links to your music.
       </p>
       {error && (
         <p className="notice" role="alert">

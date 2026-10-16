@@ -35,6 +35,8 @@ export type EventState = {
     state: string;
     settings: {
       screenLimit: number;
+      voteMode?: "single" | "weighted";
+      votesPerListener?: number;
       maxWaves: number;
       minimumRoundSeconds: number;
       maxGenerations: number;
@@ -44,6 +46,8 @@ export type EventState = {
   };
   round: null | {
     id: string;
+    voteLimit?: number;
+    voteMode?: "single" | "weighted";
     sourceTitle: string;
     state: string;
     openedAt: string;
