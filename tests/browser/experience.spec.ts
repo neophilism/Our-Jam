@@ -106,7 +106,7 @@ test("performer owns playback, pauses voting, and recovers saved recording chunk
   await page.getByRole("button", { name: "Open my console" }).click();
   const slug = "control-" + Date.now();
   await expect(
-    page.getByRole("heading", { name: "Set up your album session." }),
+    page.getByRole("heading", { name: "Create a jam around your songs." }),
   ).toBeVisible();
   const response = await page.request.post("/api/operator/events", {
     headers: { Origin: "http://127.0.0.1:4173" },

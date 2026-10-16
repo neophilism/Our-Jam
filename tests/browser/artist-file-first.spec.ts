@@ -5,7 +5,7 @@ test("independent artists choose files, not hosted audio links, for new sessions
   await page.goto("/performer");
   await operatorSession(page);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Set up your album session." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create a jam around your songs." })).toBeVisible();
   await expect(page.getByLabel("Upload track (MP3 or WAV)")).toBeVisible();
   await expect(page.getByLabel("Track audio URL (HTTPS)")).toHaveCount(0);
   await expect(page.getByText("No separate audio hosting required.")).toBeVisible();
