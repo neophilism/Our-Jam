@@ -1331,7 +1331,7 @@ function CreateEvent() {
         <input name="votesPerListener" type="number" required min={platformVotes.minVotes} max={platformVotes.maxVotes}
           value={requestedVotes} onChange={e => setRequestedVotes(Number(e.target.value))}/>
         <span className="tiny muted">Choose from {platformVotes.minVotes} to {platformVotes.maxVotes} votes. Each Sound Wave a fan submits uses one vote; fans can vote once per idea.</span>
-      </label> : <p className="tiny muted vote-cap-setting" role="status">
+      </label> : <p className="tiny muted vote-cap-setting">
         {platformVotes?.mode === "fixed" ? `Each listener gets ${platformVotes.fixedVotes} votes per song, set by the platform.` : "Loading the platform's voting rules…"}
       </p>}
       <PurchaseEditor links={purchaseLinks} onChange={setPurchaseLinks} disabled={busy} mode={purchaseMode} onModeChange={setPurchaseMode} preferredProvider={preferredPurchaseProvider} onPreferredChange={setPreferredPurchaseProvider}/>
