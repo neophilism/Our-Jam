@@ -43,18 +43,35 @@ export function normalizeWave(value: string): {
   );
   return { text, normalized: text.toLocaleLowerCase("en-US") };
 }
-export function validateAllocations(values: Record<string, number>): void {
-  const points = Object.values(values);
+export type VotePolicy = { mode: "single" | "weighted"; limit: number };
+export const MAX_VOTE_CHOICES = 1000;
+export function validateAllocations(
+  values: Record<string, number>,
+  policy: VotePolicy = { mode: "weighted", limit: VOTE_BUDGET },
+): void {
   requireThat(
-    points.length <= VOTE_BUDGET &&
-      points.every((p) => Number.isSafeInteger(p) && p > 0 && p <= VOTE_BUDGET),
+    Number.isSafeInteger(policy.limit) &&
+      policy.limit >= 1 &&
+      policy.limit <= MAX_VOTE_CHOICES,
+    "invalid_vote_policy",
+    "This event has an invalid voting limit.",
+  );
+  const votes = Object.values(values);
+  const perIdeaLimit = policy.mode === "single" ? 1 : VOTE_BUDGET;
+  requireThat(
+    votes.every(
+      (count) =>
+        Number.isSafeInteger(count) && count > 0 && count <= perIdeaLimit,
+    ),
     "invalid_allocation",
-    "Each supported Sound Wave needs 1 to 5 whole points.",
+    policy.mode === "single"
+      ? "You can cast one vote per Sound Wave."
+      : "Choose a whole number of votes for each Sound Wave.",
   );
   requireThat(
-    points.reduce((a, b) => a + b, 0) <= VOTE_BUDGET,
+    votes.reduce((sum, count) => sum + count, 0) <= policy.limit,
     "vote_budget_exceeded",
-    "You have five points in this round.",
+    "You have used all the votes available for this song.",
   );
 }
 export type RankedWave = {

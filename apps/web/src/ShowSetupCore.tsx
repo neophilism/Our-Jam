@@ -1,4 +1,3 @@
-import { measureTrackDuration } from "./track-duration";
 import { PurchaseEditor } from "./PurchaseLinks";
 import type {
   PurchaseLink,
@@ -104,9 +103,9 @@ export function ShowSetup({
       >
         <summary>Event, screen & participation settings</summary>
         <p className="muted">
-          Screen size and album links update immediately. Generation limits,
-          release timing and participation time apply to newly opened rounds; an
-          active round keeps its original rules.
+          Change what fans see, where they find your music, and how new
+          crowd-created tracks are released. Participation and generation
+          settings take effect when the next song begins.
         </p>
         <button
           className="ghost small"
@@ -144,6 +143,8 @@ export function ShowSetup({
                     artistName: form.get("artistName"),
                     purchaseUrl: null,
                     purchaseLinks,
+                    voteMode: form.get("voteMode"),
+                    votesPerListener: Number(form.get("votesPerListener")),
                     purchaseMode,
                     preferredPurchaseProvider:
                       purchaseMode === "direct"
@@ -199,6 +200,35 @@ export function ShowSetup({
                   <option value="review">Hold for my approval</option>
                 </select>
               </div>
+              <label>
+                How should people vote on Sound Waves?
+                <select
+                  name="voteMode"
+                  defaultValue={settings.settings.voteMode ?? "weighted"}
+                >
+                  <option value="single">
+                    One vote per Sound Wave (recommended)
+                  </option>
+                  <option value="weighted">
+                    Older-show voting (allow multiple votes on one idea)
+                  </option>
+                </select>
+              </label>
+              <label>
+                Number of different Sound Waves each fan can vote for per song
+                <input
+                  name="votesPerListener"
+                  type="number"
+                  min={1}
+                  max={1000}
+                  required
+                  defaultValue={settings.settings.votesPerListener ?? 5}
+                />
+                <small className="muted">
+                  A higher limit applies only to one-vote-per-Sound-Wave shows,
+                  starting with the next song.
+                </small>
+              </label>
               <PurchaseEditor
                 links={purchaseLinks}
                 onChange={setPurchaseLinks}
@@ -217,10 +247,15 @@ export function ShowSetup({
                     0,
                     300,
                   ],
-                  ["maxWaves", "Maximum Sound Waves in a generation", 1, 12],
+                  [
+                    "maxWaves",
+                    "Top Sound Waves considered for each new track",
+                    1,
+                    12,
+                  ],
                   [
                     "maxGenerations",
-                    "Maximum generations for this event",
+                    "Maximum crowd-created tracks for this event",
                     0,
                     100,
                   ],
@@ -249,10 +284,11 @@ export function ShowSetup({
           if (e.currentTarget.open && !album) void action(loadAlbum);
         }}
       >
-        <summary>Album files & private signature prompts</summary>
+        <summary>Review your songs and musical descriptions</summary>
         <p className="muted">
-          You can edit a track until its first round starts. Earlier rounds and
-          signature prompts remain fixed.
+          Fix song titles or descriptions before the song starts. Your uploaded
+          audio stays attached. To replace a recording, use Upload album audio
+          in the performer console.
         </p>
         <button
           className="ghost small"
@@ -274,15 +310,7 @@ export function ShowSetup({
                   expectedRevision: inputRevision.current,
                   title: source.title,
                   corePrompt: source.core_prompt,
-                  audioUrl: source.audio_url || undefined,
-                  durationSeconds:
-                    source.audio_url &&
-                    !new URL(
-                      source.audio_url,
-                      location.origin,
-                    ).pathname.startsWith("/api/operator/sources/")
-                      ? await measureTrackDuration(source.audio_url, 15)
-                      : Number(source.duration_seconds),
+                  durationSeconds: Number(source.duration_seconds),
                 });
                 setAlbum(null);
               });
@@ -292,11 +320,14 @@ export function ShowSetup({
               {s.title}
               {s.played ? " · already played" : ""}
             </h3>
+            <p className="tiny muted">
+              Track length: {Number(s.duration_seconds).toFixed(1)} seconds.
+              Measured automatically from the uploaded audio.
+            </p>
             {(
               [
                 ["title", "Track title"],
-                ["audio_url", "Track audio URL (HTTPS)"],
-                ["core_prompt", "Private signature prompt"],
+                ["core_prompt", "Describe this song’s signature sound"],
               ] as const
             ).map(([key, label]) => (
               <label key={key}>
@@ -319,8 +350,8 @@ export function ShowSetup({
                 ) : (
                   <input
                     disabled={s.played || busy}
-                    required={key !== "audio_url"}
-                    type={key === "audio_url" ? "url" : "text"}
+                    required
+                    type="text"
                     value={s[key] ?? ""}
                     onChange={(e) =>
                       setAlbum((a) =>
@@ -344,7 +375,7 @@ export function ShowSetup({
         ))}
       </details>
       <div className="section-heading">
-        <h3>Check linked audio</h3>
+        <h3>Check that your songs will play</h3>
         <button className="ghost small" onClick={() => void checkAudio()}>
           Check this device’s audio links
         </button>

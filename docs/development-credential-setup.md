@@ -6,7 +6,7 @@ Keep all work on development branches until the complete feature set is accepted
 
 The separate Render development-service creation returned `Hobby Tier is limited to 25 services`. It did not create a service. Do not delete unrelated resources or change the active `our-jam-rehearsal` service to work around this.
 
-The existing suspended `Our-Jam` service is a possible development host: https://dashboard.render.com/web/srv-db6n4uid0e5s73aus43g . To repurpose it, select the tested development branch in Settings, keep automatic deploys off, and use only the isolated acceptance database/storage/Auth settings. It must not be resumed with old environment settings. Alternatively, make a service slot available and create the free `our-jam-development` service. The intended origin is `https://our-jam-development.onrender.com`; if reusing the suspended service, use `https://our-jam.onrender.com` consistently instead and add that exact origin to Neon Auth trusted domains.
+The owner approved repurposing the existing suspended `Our-Jam` service as the development host: https://dashboard.render.com/web/srv-db6n4uid0e5s73aus43g . Select the tested development branch in Settings, keep automatic deploys off, and use only the isolated acceptance database/storage/Auth settings. It must not be resumed with old environment settings. The development origin is `https://our-jam.onrender.com`, which is already registered in the isolated Neon Auth branch's trusted domains. The Render connector cannot change branches or resume a service; its environment update currently fails while this service is suspended. Dashboard authentication is required to finish that setup. Approval alone is not evidence that it has been deployed.
 
 ## Stripe sandbox credentials needed from the owner
 
@@ -33,7 +33,7 @@ Optional GitHub sign-in requires an OAuth app at https://github.com/settings/dev
 
 ## Acceptance already performed and still required
 
-The acceptance database received migrations 009–010 and restricted runtime grants. Runtime login has no schema creation, migration-history write, superuser, role creation, database creation or RLS bypass. Production and active rehearsal migrations/settings were not changed. A private acceptance media bucket is separate from rehearsal media.
+The acceptance database received migrations 009–011 and restricted runtime grants. Runtime login has no schema creation, migration-history write, superuser, role creation, database creation or RLS bypass. Production and active rehearsal migrations/settings were not changed. A private acceptance media bucket is separate from rehearsal media.
 
 Required next: isolated hosted readiness and media probe; real owner Google/email account signup, verification, reset, restore and logout; Stripe sandbox checkout/verified webhook/refund; sponsor upload/playback/countdown/pause/reconnect; physical iPhone/Android checks. Fixtures and public OAuth initiation do not prove successful account sign-in or email delivery.
 

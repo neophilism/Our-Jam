@@ -7,8 +7,8 @@ export function PurchaseEditor({ links, onChange, disabled = false, mode = "menu
   preferredProvider?: string; onPreferredChange?: (provider: string) => void;
 }) {
   return <fieldset className="purchase-editor">
-    <legend>Where can fans get your album?</legend>
-    <p className="muted">Choose each destination you offer and paste its album or artist-store link. Streaming-only services appear as listening destinations; no sale is implied.</p>
+    <legend>Where can fans find your album?</legend>
+    <p className="muted">Add stores or streaming services where your music is available. Fans can choose from your links, or you can direct everyone to one preferred destination.</p>
     {links.map((entry, index) => (
       <div className="purchase-editor-row" key={index}>
         <label>Provider

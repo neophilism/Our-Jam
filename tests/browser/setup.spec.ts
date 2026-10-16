@@ -125,7 +125,7 @@ test("performer prepares audio, reorders tracks and preserves unsaved settings a
       ),
   ).toBe(true);
   await page
-    .getByText("Album files & private signature prompts", { exact: true })
+    .getByText("Review your songs and musical descriptions", { exact: true })
     .click();
   const form = page.locator(".show-setup .source-form").filter({
     has: page.getByRole("heading", { name: "Second song", exact: true }),

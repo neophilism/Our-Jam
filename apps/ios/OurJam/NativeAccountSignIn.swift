@@ -36,7 +36,7 @@ struct NativeAccountSignIn: View {
     @ObservedObject var model: SessionModel
     var onSignedIn: () -> Void = {}
     @StateObject private var browser = NativeAccountBrowser()
-    @State private var enabled = false
+    @State private var enabled: Bool?
     @State private var error = ""
     private func signIn() async {
         guard let api = model.api, !model.busy else { return }
@@ -58,15 +58,17 @@ struct NativeAccountSignIn: View {
         } catch { self.error = error.localizedDescription }
     }
     var body: some View {
-        Group {
-            if enabled {
-                Section("Your account") {
-                    Button("Sign in or create an account") { Task { await signIn() } }.disabled(model.busy).accessibilityIdentifier("accountSignIn")
-                    Text("Use Google or email in a secure browser. Signing in restores your account profile here; separate guest votes stay with their original profile.").font(.footnote)
-                    if !error.isEmpty { Text(error).foregroundStyle(.orange) }
-                }
+        Section("Your account") {
+            if enabled == true {
+                Button("Sign in or create an account") { Task { await signIn() } }.disabled(model.busy).accessibilityIdentifier("accountSignIn")
+                Text("Use Google or email in a secure browser. Signing in restores your account profile here; separate guest votes stay with their original profile.").font(.footnote)
+            } else if enabled == nil {
+                Text("Checking sign-in options…").font(.footnote)
+            } else {
+                Text("You can participate as a guest on this server. Account sign-in is not available here yet.").font(.footnote)
             }
-        }.task {
+            if !error.isEmpty { Text(error).foregroundStyle(.orange) }
+        }.task(id: model.origin) {
             guard let api = model.api else { return }
             let config: AccountSignInConfig? = try? await api.request("/identity/config")
             enabled = config?.enabled == true

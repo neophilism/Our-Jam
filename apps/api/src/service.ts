@@ -18,6 +18,9 @@ import {
   rankWaves,
   requireThat,
   validateAllocations,
+  VOTE_BUDGET,
+  MAX_VOTE_CHOICES,
+  type VotePolicy,
   type RankedWave,
 } from "../../../packages/domain/src/index.js";
 import {
@@ -111,7 +114,7 @@ function open(r: Record<string, any>) {
       r.controllerAlive &&
       new Date(r.deadline_at) > new Date(r.server_time),
     "round_closed",
-    "This round has closed. Your points were not changed.",
+    "This song is over. Voting is closed, so your votes haven’t changed.",
     409,
   );
 }
@@ -168,7 +171,7 @@ async function ballot(
   requireThat(
     row.revision === revision,
     "revision_conflict",
-    "Your points changed in another tab. Refresh and try again.",
+    "Your votes changed in another tab. Refresh and try again.",
     409,
   );
   return row;
@@ -178,8 +181,9 @@ async function saveAllocation(
   roundId: string,
   participantId: string,
   allocation: Record<string, number>,
+  policy: VotePolicy,
 ) {
-  validateAllocations(allocation);
+  validateAllocations(allocation, policy);
   for (const waveId of Object.keys(allocation)) {
     const wave = (
       await tx.query(
@@ -241,6 +245,18 @@ export async function ranked(
     seed,
   );
 }
+function votePolicy(round: { settings?: Record<string, any> }): VotePolicy {
+  if (round.settings?.voteMode !== "single")
+    return { mode: "weighted", limit: VOTE_BUDGET };
+  const proposed = round.settings.votesPerListener ?? VOTE_BUDGET;
+  const limit =
+    Number.isSafeInteger(proposed) &&
+    proposed >= 1 &&
+    proposed <= MAX_VOTE_CHOICES
+      ? proposed
+      : VOTE_BUDGET;
+  return { mode: "single", limit };
+}
 export async function allocate(
   db: Database,
   actor: Actor,
@@ -257,7 +273,13 @@ export async function allocate(
     if (cache.response) return cache.response;
     open(r);
     await ballot(tx, roundId, actor.participantId, input.expectedRevision);
-    await saveAllocation(tx, roundId, actor.participantId, input.allocations);
+    await saveAllocation(
+      tx,
+      roundId,
+      actor.participantId,
+      input.allocations,
+      votePolicy(r),
+    );
     const result = { revision: input.expectedRevision + 1 };
     await remember(
       tx,
@@ -299,14 +321,15 @@ export async function submitWave(
       requireThat(
         allocation[input.moveFrom] > 0,
         "invalid_transfer",
-        "Choose a point you currently hold.",
+        "Choose a Sound Wave that has one of your votes.",
       );
       if (--allocation[input.moveFrom] === 0) delete allocation[input.moveFrom];
     }
     requireThat(
-      Object.values(allocation).reduce((a, b) => a + b, 0) < 5,
+      Object.values(allocation).reduce((a, b) => a + b, 0) <
+        votePolicy(r).limit,
       "vote_budget_exceeded",
-      "Move one of your five points to contribute a new Sound Wave.",
+      "All your votes are in use. Take one back from another Sound Wave to share your idea.",
     );
     let wave = (
       await tx.query(
@@ -351,7 +374,13 @@ export async function submitWave(
       );
     }
     allocation[wave.id] = (allocation[wave.id] ?? 0) + 1;
-    await saveAllocation(tx, roundId, actor.participantId, allocation);
+    await saveAllocation(
+      tx,
+      roundId,
+      actor.participantId,
+      allocation,
+      votePolicy(r),
+    );
     const result = { revision: input.expectedRevision + 1, waveId: wave.id };
     await remember(
       tx,
@@ -369,6 +398,13 @@ export async function createEvent(
   artistId: string,
   input: z.infer<typeof eventInput>,
 ) {
+  requireThat(
+    input.voteMode !== "weighted" ||
+      input.votesPerListener === undefined ||
+      input.votesPerListener === VOTE_BUDGET,
+    "invalid_vote_policy",
+    "Legacy weighted voting uses the existing event limit; choose one vote per Sound Wave for a different limit.",
+  );
   requireThat(
     input.purchaseMode !== "direct" ||
       Boolean(
@@ -392,6 +428,11 @@ export async function createEvent(
       minimumRoundSeconds: input.minimumRoundSeconds,
       maxWaves: input.maxWaves,
       maxGenerations: input.maxGenerations,
+      voteMode: input.voteMode ?? "weighted",
+      votesPerListener:
+        input.voteMode === "single"
+          ? (input.votesPerListener ?? VOTE_BUDGET)
+          : VOTE_BUDGET,
       promptLimit: 3500,
       releaseMode: input.releaseMode,
       admissionMode: input.admissionMode,
@@ -708,6 +749,8 @@ export async function snapshot(
   const publicRound = round
     ? {
         id: round.id,
+        voteLimit: votePolicy(round).limit,
+        voteMode: votePolicy(round).mode,
         sourceTitle: round.source_title,
         state: round.state,
         openedAt: round.opened_at,

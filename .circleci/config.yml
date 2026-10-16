@@ -101,7 +101,7 @@ jobs:
           no_output_timeout: 15m
           command: |
             set -o pipefail
-            xcodebuild -jobs 2 -project apps/ios/OurJam.xcodeproj -scheme OurJam -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-build CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- ONLY_ACTIVE_ARCH=NO build 2>&1 | tee ios-evidence/build.log
+            xcodebuild -jobs 2 -project apps/ios/OurJam.xcodeproj -scheme OurJam -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-build CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- ONLY_ACTIVE_ARCH=NO build-for-testing 2>&1 | tee ios-evidence/build.log
       - run:
           name: Validate simulator signature and entitlements
           command: |

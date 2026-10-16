@@ -41,6 +41,8 @@ export const eventInput = z.object({
   minimumRoundSeconds: z.number().int().min(0).max(300).default(60),
   maxWaves: z.number().int().min(1).max(12).default(8),
   maxGenerations: z.number().int().min(0).max(100).default(12),
+  voteMode: z.enum(["single", "weighted"]).optional(),
+  votesPerListener: z.number().int().min(1).max(1000).optional(),
   admissionMode: z.enum(["open", "room_code"]).default("open"),
   participantLimit: z.number().int().min(1).max(100).default(100),
   releaseMode: z.enum(["boundary", "immediate", "review"]).default("boundary"),

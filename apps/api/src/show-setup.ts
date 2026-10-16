@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { VOTE_BUDGET } from "../../../packages/domain/src/index.js";
 import {
   purchaseLinksInput,
   publicPurchaseLinks,
@@ -37,6 +38,8 @@ export const settingsInput = eventInput
     preferredPurchaseProvider: z.string().max(40).nullable().optional(),
   });
 export const sourceEditInput = sourceInput.extend({
+  // Omission preserves uploaded/private audio; explicit null clears the link.
+  audioUrl: httpsUrl.nullable().optional(),
   commandId: id,
   expectedRevision: revision,
 });
@@ -118,6 +121,11 @@ export async function updateSettings(
       minimumRoundSeconds: input.minimumRoundSeconds,
       maxWaves: input.maxWaves,
       maxGenerations: input.maxGenerations,
+      voteMode: input.voteMode ?? event.settings.voteMode ?? "weighted",
+      votesPerListener:
+        input.votesPerListener ??
+        event.settings.votesPerListener ??
+        VOTE_BUDGET,
       releaseMode: input.releaseMode,
       purchaseLinks:
         input.purchaseLinks ??
@@ -128,6 +136,12 @@ export async function updateSettings(
           ? (event.settings.preferredPurchaseProvider ?? null)
           : input.preferredPurchaseProvider,
     };
+    requireThat(
+      settings.voteMode !== "weighted" ||
+        settings.votesPerListener === VOTE_BUDGET,
+      "invalid_vote_policy",
+      "Legacy weighted voting keeps its original limit. Select one vote per Sound Wave to allow more choices.",
+    );
     requireThat(
       settings.purchaseMode !== "direct" ||
         Boolean(
@@ -189,9 +203,10 @@ export async function updateSource(
 ) {
   return db.transaction(async (tx) => {
     const source = (
-      await tx.query("SELECT event_id FROM source_tracks WHERE id=$1", [
-        sourceId,
-      ])
+      await tx.query(
+        "SELECT event_id,audio_url FROM source_tracks WHERE id=$1",
+        [sourceId],
+      )
     ).rows[0];
     requireThat(source, "not_found", "Album track not found.", 404);
     const event = await ownedEvent(tx, source.event_id, artistId, true);
@@ -222,7 +237,7 @@ export async function updateSource(
       [
         input.title,
         input.corePrompt,
-        input.audioUrl ?? null,
+        input.audioUrl === undefined ? source.audio_url : input.audioUrl,
         input.durationSeconds,
         sourceId,
       ],

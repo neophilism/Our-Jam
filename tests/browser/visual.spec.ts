@@ -60,10 +60,10 @@ test("still waves avoid the graphics download and voting survives a lost WebGL c
   await expect(field).toHaveAttribute("data-mode", "fallback");
   await expect(canvas).toHaveCount(0);
   await page
-    .getByRole("button", { name: "Support " + phrase, exact: true })
+    .getByRole("button", { name: "Vote for " + phrase, exact: true })
     .click();
   await expect(
-    page.getByLabel("3 of 5 points remaining", { exact: true }),
+    page.getByLabel("3 of 5 votes remaining", { exact: true }),
   ).toBeVisible();
   expect(
     await page.evaluate(

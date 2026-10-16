@@ -89,31 +89,33 @@ struct LiveView: View {
                         if !state.canContribute {
                             GroupBox("Join the collaboration") {
                                 VStack(alignment: .leading, spacing: 12) {
-                                    Text("You can listen without voting. Join to submit sound tags and move your five points.")
+                                    Text("Join to suggest Sound Waves and vote for musical ideas you love. You can listen without voting.")
                                     if state.admission.mode == "room_code" { TextField("Room code", text: $roomCode).textInputAutocapitalization(.characters).autocorrectionDisabled().textFieldStyle(.roundedBorder) }
                                     Button("Join and contribute") { Task { await model.join(roomCode: roomCode) } }.buttonStyle(.borderedProminent).disabled(model.busy).accessibilityIdentifier("joinButton")
                                 }
                             }
                         }
+                        Text("Jam with the song you’re hearing: suggest a beat, instrument, or mood, then vote on the crowd’s ideas.").font(.subheadline).foregroundStyle(.secondary)
                         GroupBox("Your Sound Wave") {
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("What would you mix into this sound?")
+                                Text("What musical idea would you add?")
                                 TextField("Instrument, rhythm, mood...", text: $text).textFieldStyle(.roundedBorder).onChange(of: text) { _, value in if value.count > 48 { text = String(value.prefix(48)) } }.focused($waveInputFocused).accessibilityIdentifier("waveText")
-                                Button("Contribute Sound Wave") { waveInputFocused = false; Task { if await model.submit(text) { text = "" } } }.buttonStyle(.borderedProminent).disabled(!model.canVote || text.trimmingCharacters(in: .whitespacesAndNewlines).count < 2).accessibilityIdentifier("submitWave")
-                                Text("\(5 - model.used) of 5 points available").font(.headline).accessibilityIdentifier("voteBudget")
+                                Button("Contribute Sound Wave") { waveInputFocused = false; Task { if await model.submit(text) { text = "" } } }.buttonStyle(.borderedProminent).disabled(!model.canVote || model.used >= model.voteLimit || text.trimmingCharacters(in: .whitespacesAndNewlines).count < 2).accessibilityIdentifier("submitWave")
+                                Text("\(max(0, model.voteLimit - model.used)) of \(model.voteLimit) votes remaining").font(.headline).accessibilityIdentifier("voteBudget")
+                                Text(model.used >= model.voteLimit ? "You have used all your votes. Take one back from a Sound Wave to submit another idea." : model.singleVoteMode ? "Submitting a Sound Wave uses one vote. Tap + once for each idea you like and − to change your mind." : "Submitting a Sound Wave uses one vote. Tap + to vote for other ideas and − to change your mind.").font(.caption).foregroundStyle(.secondary)
                             }
                         }
-                        Text("The room's sound").font(.title2.bold())
-                        if state.round?.waves.isEmpty != false { Text("The first Sound Wave starts with you. Nothing is added automatically.").foregroundStyle(.secondary) }
+                        Text("Sound Waves fans are voting for").font(.title2.bold())
+                        if state.round?.waves.isEmpty != false { Text("No Sound Waves yet. Be the first to share a musical idea.").foregroundStyle(.secondary) }
                         ForEach(state.round?.waves ?? []) { wave in
                             VStack(alignment: .leading, spacing: 10) {
                                 HStack { Image(systemName: "waveform.path").foregroundStyle(lime); Text(wave.text).font(.headline); Spacer(); Text("\(wave.votes)").font(.title2.bold()).foregroundStyle(lime) }
                                 HStack {
                                     Text(wave.name).font(.caption).foregroundStyle(.secondary)
                                     Spacer()
-                                    Button { Task { await model.vote(wave, change: -1) } } label: { Image(systemName: "minus") }.accessibilityLabel("Remove point from " + wave.text).disabled(!model.canVote || wave.mine == 0)
+                                    Button { Task { await model.vote(wave, change: -1) } } label: { Image(systemName: "minus") }.accessibilityLabel("Take back a vote from " + wave.text).disabled(!model.canVote || wave.mine == 0)
                                     Text("\(wave.mine)").monospacedDigit().frame(minWidth: 25)
-                                    Button { Task { await model.vote(wave, change: 1) } } label: { Image(systemName: "plus") }.accessibilityLabel("Support " + wave.text).disabled(!model.canVote || model.used >= 5)
+                                    Button { Task { await model.vote(wave, change: 1) } } label: { Image(systemName: "plus") }.accessibilityLabel("Vote for " + wave.text).disabled(!model.canVote || model.used >= model.voteLimit || (model.singleVoteMode && wave.mine > 0))
                                 }.buttonStyle(.bordered).controlSize(.large)
                             }.padding().background(Color.white.opacity(0.06)).clipShape(RoundedRectangle(cornerRadius: 16))
                         }
