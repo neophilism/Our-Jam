@@ -38,6 +38,15 @@ test("platform administrator can set fixed or artist range; performer and guest 
   assert.equal((await app.inject({method:"POST",url:"/api/admin/logout",headers,payload:{}})).statusCode,200);
   assert.equal((await app.inject({method:"GET",url,headers})).statusCode,401);
   assert.equal((await db.query("SELECT count(*)::integer n FROM platform_policy_audit")).rows[0].n,1);
+  const performer=await app.inject({method:"POST",url:"/api/operator/login",headers:{origin},payload:{token:"different-operator-credential-with-32-bytes"}});
+  assert.equal(performer.statusCode,200,performer.body);
+  const operatorCookie=performer.cookies.find(c=>c.name==="oj_operator");
+  const attempt=await app.inject({method:"POST",url:"/api/operator/events",
+    headers:{origin,cookie:"oj_operator="+operatorCookie!.value},
+    payload:{title:"No legacy bypass",artistName:"Artist",slug:"no-weighted-"+randomUUID(),voteMode:"weighted",
+      sources:[source("Song")]}});
+  assert.equal(attempt.statusCode,400,attempt.body);
+
 });
 
 test("fixed and artist range are enforced server-side for every newly created single-vote show",async t=>{
