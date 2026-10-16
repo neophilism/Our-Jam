@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { purchaseLinksInput, publicPurchaseLinks } from "../packages/contracts/src/purchase-providers.js";
+import { purchaseLinksInput, publicPurchaseLinks, preferredPurchaseUrl } from "../packages/contracts/src/purchase-providers.js";
 import { eventInput } from "../packages/contracts/src/index.js";
 test("purchase destinations require HTTPS, matching provider domains and unique services", () => {
   const links = purchaseLinksInput.parse([
@@ -23,4 +23,14 @@ test("artist setup accepts a bounded provider list and rejects invalid provider 
   const base = {title:"Show", artistName:"Singer", slug:"show-purchase",sources:[{title:"Song",corePrompt:"Original music",durationSeconds:60}]};
   assert.equal(eventInput.safeParse({...base,purchaseLinks:[{provider:"bandcamp",url:"https://artist.bandcamp.com/album/record"}]}).success,true);
   assert.equal(eventInput.safeParse({...base,purchaseLinks:[{provider:"spotify",url:"https://example.test"}]}).success,false);
+});
+
+test("direct routing resolves only an artist-listed provider", () => {
+  const links = purchaseLinksInput.parse([
+    { provider: "bandcamp", url: "https://artist.bandcamp.com/album/record" },
+    { provider: "spotify", url: "https://open.spotify.com/album/123" },
+  ]);
+  assert.equal(preferredPurchaseUrl(links, "menu", "bandcamp"), null);
+  assert.equal(preferredPurchaseUrl(links, "direct", "itunes"), null);
+  assert.equal(preferredPurchaseUrl(links, "direct", "bandcamp"), "https://artist.bandcamp.com/album/record");
 });
