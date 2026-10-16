@@ -11,3 +11,7 @@ The catalog stores a stable authenticated /api/operator/sources/:id/audio/:sha r
 No schema migration: audio_url stores the stable route and duration_seconds stores rounded-up measured duration, honoring the existing 15-second minimum. Responses retain precise duration and SHA. Rollback must preserve the delivery route or replace/export links; otherwise uploaded album playback breaks.
 
 Automated tests use isolated WAV fixtures and private in-memory storage, never seeded production content. Required live acceptance includes actual Neon bucket upload/download, private delivery on the deployed origin, and artist-file playback. Passing CI alone is not that evidence.
+
+## Signed private delivery diagnostic
+
+When `MEDIA_PROBE_ON_START=1` on the **isolated** hosted rehearsal service, the startup probe tests a random, non-user diagnostic object through authenticated S3 PUT/HEAD/GET, the actual SDK-generated short-lived signed HTTPS GET used by the private performer redirect, anonymous GET denial, and DELETE. This checks the storage transport/credential/presigning path without an operator credential or personal song. It does **not** establish actual owned-artist cookie/session authorization or uploaded MP3 playback; the performer must test those with their own recording and physical device before declaring the show ready.

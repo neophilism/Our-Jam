@@ -2,7 +2,7 @@ import type { MediaStore } from "../../../packages/providers/src/storage.js";
 
 /**
  * Opt-in deployment acceptance: a small private object must survive actual
- * S3 PUT, HEAD, GET and DELETE before we claim media is usable.
+ * S3 PUT, HEAD, GET, signed HTTPS GET, unsigned access denial and DELETE before we claim media is usable.
  * No artist content, provider requests or event records are involved.
  */
 export async function verifyStartupMedia(
