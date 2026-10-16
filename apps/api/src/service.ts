@@ -1,3 +1,4 @@
+import { readPlatformVotePolicy, resolveVoteLimit, effectiveVoteLimit } from "./vote-policy.js";
 import { publicPurchaseLinks, preferredPurchaseUrl } from "../../../packages/contracts/src/purchase-providers.js";
 import { randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -174,6 +175,17 @@ async function saveAllocation(
   policy: VotePolicy,
 ) {
   validateAllocations(allocation, policy);
+  if (policy.mode === "single") {
+    // Each submitted idea reserves exactly one vote from its author's allowance.
+    // Prevent reclaiming that vote and then submitting unlimited new ideas.
+    const own = (await tx.query(
+      "SELECT id FROM sound_waves WHERE round_id=$1 AND author_id=$2 AND NOT moderated",
+      [roundId, participantId],
+    )).rows;
+    for (const wave of own)
+      requireThat(allocation[wave.id] === 1, "submission_vote_required",
+        "Each Sound Wave you submit uses one of your votes until the song ends.");
+  }
   for (const waveId of Object.keys(allocation)) {
     const wave = (
       await tx.query(
@@ -323,16 +335,14 @@ export async function submitWave(
         "That Sound Wave is unavailable.",
       );
     if (!wave) {
-      const own = (
-        await tx.query(
-          "SELECT w.id FROM sound_waves w JOIN allocations a ON a.wave_id=w.id WHERE w.round_id=$1 AND w.author_id=$2 AND NOT w.moderated LIMIT 1",
-          [roundId, actor.participantId],
-        )
-      ).rows[0];
+      const ownCount = (await tx.query(
+        "SELECT count(*)::integer n FROM sound_waves WHERE round_id=$1 AND author_id=$2 AND NOT moderated",
+        [roundId, actor.participantId],
+      )).rows[0].n;
       requireThat(
-        !own,
-        "active_wave_exists",
-        "You already have a supported Sound Wave in this round.",
+        votePolicy(r).mode === "single" ? ownCount < votePolicy(r).limit : ownCount === 0,
+        "submission_limit",
+        "You've already submitted the maximum number of Sound Waves for this song.",
       );
       const count = (
         await tx.query(
@@ -378,6 +388,7 @@ export async function createEvent(
   );
   requireThat(input.purchaseMode !== "direct" || Boolean(preferredPurchaseUrl(input.purchaseLinks ?? (input.purchaseUrl ? [{ provider: "other", url: input.purchaseUrl }] : []), input.purchaseMode, input.preferredPurchaseProvider)), "invalid_purchase_destination", "Choose a listed provider for direct purchase.", 400);
   return db.transaction(async (tx) => {
+    const platform = await readPlatformVotePolicy(tx, true);
     const eventId = randomUUID();
     const settings = {
       screenLimit: input.screenLimit,
@@ -385,7 +396,7 @@ export async function createEvent(
       maxWaves: input.maxWaves,
       maxGenerations: input.maxGenerations,
       voteMode: input.voteMode ?? "weighted",
-      votesPerListener: input.voteMode === "single" ? input.votesPerListener ?? VOTE_BUDGET : VOTE_BUDGET,
+      votesPerListener: input.voteMode === "single" ? resolveVoteLimit(platform, input.votesPerListener) : VOTE_BUDGET,
       promptLimit: 3500,
       releaseMode: input.releaseMode,
       admissionMode: input.admissionMode,
@@ -572,7 +583,10 @@ export async function advance(
             seed,
             digest(seed),
             source.core_prompt,
-            JSON.stringify(event.settings),
+            JSON.stringify(event.settings.voteMode === "single" ? {
+              ...event.settings,
+              votesPerListener: effectiveVoteLimit(await readPlatformVotePolicy(tx, true), event.settings.votesPerListener),
+            } : event.settings),
           ],
         );
       }
