@@ -30,7 +30,7 @@ export function normalizeWave(value: string): {
   const text = value.normalize("NFKC").trim().replace(/\s+/gu, " ");
   // Unicode compatibility characters may become literal markup after NFKC.
   requireThat(
-    !/[\\p{C}<>]/u.test(text),
+    !/[\p{C}<>]/u.test(text),
     "invalid_wave",
     "Use a musical phrase without markup or hidden characters.",
   );
