@@ -29,6 +29,7 @@ export type EventState = {
     artistName: string;
     artistId: string;
     purchaseUrl?: string;
+    purchaseLinks?: { provider: string; url: string }[];
     state: string;
     settings: {
       screenLimit: number;

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { purchaseLinksInput, publicPurchaseLinks } from "../../../packages/contracts/src/purchase-providers.js";
 import type { Database } from "./db.js";
 import { ownedEvent, replay, remember, logEvent } from "./service.js";
 import { requireThat } from "../../../packages/domain/src/index.js";
@@ -26,6 +27,7 @@ export const settingsInput = eventInput
     commandId: id,
     expectedRevision: revision,
     purchaseUrl: httpsUrl.nullable().optional(),
+    purchaseLinks: purchaseLinksInput.optional(),
   });
 export const sourceEditInput = sourceInput.extend({
   commandId: id,
@@ -110,6 +112,7 @@ export async function updateSettings(
       maxWaves: input.maxWaves,
       maxGenerations: input.maxGenerations,
       releaseMode: input.releaseMode,
+      purchaseLinks: input.purchaseLinks ?? publicPurchaseLinks(event.settings.purchaseLinks, event.purchase_url),
     };
     await tx.query(
       "UPDATE events SET title=$1,artist_name=$2,purchase_url=$3,settings=$4 WHERE id=$5",

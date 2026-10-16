@@ -1,3 +1,4 @@
+import { publicPurchaseLinks } from "../../../packages/contracts/src/purchase-providers.js";
 import { z } from "zod";
 import type { Database } from "./db.js";
 import { requireThat } from "../../../packages/domain/src/index.js";
@@ -45,7 +46,7 @@ export async function publicArtist(
   requireThat(artist, "not_found", "Artist not found.", 404);
   const rows = (
     await db.query(
-      `SELECT e.id,e.slug,e.title,e.artist_name,e.state,e.purchase_url,e.created_at,
+      `SELECT e.id,e.slug,e.title,e.artist_name,e.state,e.purchase_url,e.settings,e.created_at,
     (SELECT count(*)::int FROM releases r WHERE r.event_id=e.id AND r.published_at IS NOT NULL AND NOT r.hidden) releases
     FROM events e WHERE e.artist_id=$1 AND ($2='all' OR e.state=$2) ORDER BY e.created_at DESC,e.id LIMIT $3 OFFSET $4`,
       [artistId, input.state, input.limit + 1, input.offset],
@@ -53,7 +54,7 @@ export async function publicArtist(
   ).rows;
   return {
     artist,
-    events: rows.slice(0, input.limit),
+    events: rows.slice(0, input.limit).map((row) => ({ ...row, purchase_links: publicPurchaseLinks(row.settings?.purchaseLinks, row.purchase_url), settings: undefined })),
     nextOffset: rows.length > input.limit ? input.offset + input.limit : null,
     participation:
       "Each show explains whether voting is open remotely or needs the artist’s room code.",

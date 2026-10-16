@@ -1,3 +1,4 @@
+import { publicPurchaseLinks } from "../../../packages/contracts/src/purchase-providers.js";
 import { randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Database, Sql } from "./db.js";
@@ -368,6 +369,7 @@ export async function createEvent(
       promptLimit: 3500,
       releaseMode: input.releaseMode,
       admissionMode: input.admissionMode,
+      purchaseLinks: input.purchaseLinks ?? (input.purchaseUrl ? [{ provider: "other", url: input.purchaseUrl }] : []),
       participantLimit: input.participantLimit,
     };
     await tx.query(
@@ -689,6 +691,7 @@ export async function snapshot(
       artistName: event.artist_name,
       artistId: event.artist_id,
       purchaseUrl: event.purchase_url,
+      purchaseLinks: publicPurchaseLinks(event.settings.purchaseLinks, event.purchase_url),
       state: event.state,
       settings: event.settings,
       revision: event.revision,
