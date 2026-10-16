@@ -1155,7 +1155,11 @@ summary {
 @media (max-width: 650px) {
   header {
     padding: 0 20px;
-    height: 75px;
+    min-height: 75px;
+    height: auto;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    flex-wrap: wrap;
   }
   .brand {
     font-size: 25px;
@@ -1163,6 +1167,7 @@ summary {
   }
   .header-right {
     gap: 10px;
+    flex-wrap: wrap;
   }
   .hide-mobile {
     display: none;
@@ -1874,16 +1879,69 @@ summary {
   margin: 20px 0;
 }
 
-.sponsor-break { position: relative; overflow: hidden; min-height: 260px; border-radius: 20px; background: #121a20; margin: 24px 0; border: 1px solid #596659; }
-.sponsor-break video { width: 100%; max-height: 65vh; display: block; object-fit: contain; }
-.sponsor-countdown { padding: 24px; background: linear-gradient(transparent,rgba(10,15,12,.96)); }
-.sponsor-break:has(video) .sponsor-countdown { position: absolute; bottom: 0; left: 0; right: 0; }
-.sponsor-countdown h2 { font-variant-numeric: tabular-nums; margin: 8px 0; }
-.stage .sponsor-break { position: absolute; inset: 16% 8% 20%; z-index: 5; margin: 0; }
-.stage .sponsor-break video { height: 100%; max-height: 100%; }
-.commerce-panel { padding: 24px; margin: 20px 0; }
-.sponsor-video-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; padding: 16px 0; border-bottom: 1px solid #57624e; }
+.sponsor-break {
+  position: relative;
+  overflow: hidden;
+  min-height: 260px;
+  border-radius: 20px;
+  background: #121a20;
+  margin: 24px 0;
+  border: 1px solid #596659;
+}
+.sponsor-break video {
+  width: 100%;
+  max-height: 65vh;
+  display: block;
+  object-fit: contain;
+}
+.sponsor-countdown {
+  padding: 24px;
+  background: linear-gradient(transparent, rgba(10, 15, 12, 0.96));
+}
+.sponsor-break:has(video) .sponsor-countdown {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+.sponsor-countdown h2 {
+  font-variant-numeric: tabular-nums;
+  margin: 8px 0;
+}
+.stage .sponsor-break {
+  position: absolute;
+  inset: 16% 8% 20%;
+  z-index: 5;
+  margin: 0;
+}
+.stage .sponsor-break video {
+  height: 100%;
+  max-height: 100%;
+}
+.commerce-panel {
+  padding: 24px;
+  margin: 20px 0;
+}
+.sponsor-video-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #57624e;
+}
 
-.identity-card { max-width: 640px; margin: 32px auto; }
-.identity-social,.identity-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
-.identity-social button { flex: 1 1 240px; }
+.identity-card {
+  max-width: 640px;
+  margin: 32px auto;
+}
+.identity-social,
+.identity-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0;
+}
+.identity-social button {
+  flex: 1 1 240px;
+}

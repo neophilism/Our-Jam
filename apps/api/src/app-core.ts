@@ -1,4 +1,4 @@
-import type { IdentityConfig } from "./identity.js";
+import { revokeBrowserSession, type IdentityConfig } from "./identity.js";
 import type { CommerceConfig } from "./commerce.js";
 import {
   accountStatus,
@@ -663,8 +663,7 @@ export async function createApp(db: Database, config: AppConfig) {
   );
   app.post("/api/operator/logout", async (req, reply) => {
     const raw = req.cookies.oj_operator;
-    if (raw)
-      await db.query("DELETE FROM sessions WHERE token_hash=$1", [digest(raw)]);
+    if (raw) await revokeBrowserSession(db, raw);
     reply.clearCookie("oj_operator", { path: "/" });
     return { ok: true };
   });

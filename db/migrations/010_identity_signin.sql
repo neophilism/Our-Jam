@@ -4,4 +4,6 @@ CREATE TABLE app_identities (
  created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(issuer,subject)
 );
 ALTER TABLE sessions ADD COLUMN identity_id uuid REFERENCES app_identities(id);
+ALTER TABLE sessions ADD COLUMN identity_family uuid;
 CREATE INDEX sessions_identity ON sessions(identity_id);
+CREATE INDEX sessions_identity_family ON sessions(identity_family);

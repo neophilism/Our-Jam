@@ -108,9 +108,11 @@ async function signOut(auth: VanillaBetterAuthClient) {
 export function IdentityLink({
   role = "audience",
   next,
+  compact = false,
 }: {
   role?: "audience" | "performer";
   next?: string;
+  compact?: boolean;
 }) {
   const [available, setAvailable] = useState(false);
   useEffect(() => {
@@ -124,7 +126,7 @@ export function IdentityLink({
       className="button small"
       href={`/signin?role=${role}&next=${encodeURIComponent(next ?? location.pathname)}`}
     >
-      Sign in or create an account
+      {compact ? "Sign in" : "Sign in or create an account"}
     </a>
   );
 }

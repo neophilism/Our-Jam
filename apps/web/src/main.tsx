@@ -65,7 +65,7 @@ function Header({ children }: { children?: React.ReactNode }) {
       <div className="header-right">
         {children ?? (
           <>
-            <IdentityLink />
+            <IdentityLink compact />
             <a className="small text-button" href="/library">
               Your likes
             </a>

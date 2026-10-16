@@ -89,14 +89,13 @@ test("verified audience sign-in links the existing profile without changing vote
     1,
   );
   assert.equal((await db.query("SELECT * FROM participants")).rows.length, 1);
-  assert.equal(
-    (
-      await db.query("SELECT token_hash FROM sessions WHERE token_hash=$1", [
-        digest(token),
-      ])
-    ).rows.length,
-    0,
-  );
+  const previous = (
+    await db.query("SELECT * FROM sessions WHERE token_hash=$1", [
+      digest(token),
+    ])
+  ).rows[0];
+  assert.equal(previous.identity_family, s.identity_family);
+  assert.ok(new Date(previous.expires_at).getTime() <= Date.now() + 31000);
   assert.ok(new Date(s.expires_at).getTime() <= c.exp * 1000);
   await assert.rejects(
     exchangeIdentity(
@@ -320,4 +319,61 @@ test("managed identity verifier checks signature, exact branch issuer/audience, 
     ),
   );
   await assert.rejects(config.verify("not-a-jwt"));
+});
+
+test("renewal permits in-flight cookies briefly and sign-out revokes that browser family without revoking another device", async (t) => {
+  const db = await testDatabase();
+  t.after(() => db.close());
+  const c = claims(),
+    origin = "http://localhost:5173";
+  const app = await createApp(db, {
+    origin,
+    secureCookies: false,
+    identity: { authUrl: c.iss, providers: ["google"], verify: async () => c },
+  });
+  t.after(() => app.close());
+  const exchange = async (cookie?: string) => {
+    const r = await app.inject({
+      method: "POST",
+      url: "/api/identity/session",
+      headers: {
+        origin,
+        authorization: "Bearer fixture",
+        ...(cookie ? { cookie } : {}),
+      },
+      payload: { role: "performer" },
+    });
+    assert.equal(r.statusCode, 200, r.body);
+    return r.headers["set-cookie"]!.toString().split(";")[0];
+  };
+  const first = await exchange(),
+    renewed = await exchange(first),
+    anotherDevice = await exchange();
+  for (const cookie of [first, renewed, anotherDevice])
+    assert.equal(
+      (await app.inject({ url: "/api/operator/events", headers: { cookie } }))
+        .statusCode,
+      200,
+    );
+  await app.inject({
+    method: "POST",
+    url: "/api/identity/logout",
+    headers: { origin, cookie: renewed },
+    payload: {},
+  });
+  for (const cookie of [first, renewed])
+    assert.equal(
+      (await app.inject({ url: "/api/operator/events", headers: { cookie } }))
+        .statusCode,
+      401,
+    );
+  assert.equal(
+    (
+      await app.inject({
+        url: "/api/operator/events",
+        headers: { cookie: anotherDevice },
+      })
+    ).statusCode,
+    200,
+  );
 });

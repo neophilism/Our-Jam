@@ -165,12 +165,16 @@ export async function exchangeIdentity(
         identity.id,
       ]);
     }
+    const family =
+      current && current.identity_id === identity.id && current.identity_family
+        ? current.identity_family
+        : randomUUID();
     const token = randomBytes(32).toString("hex"),
       expiresAt = new Date(
         Math.min(claims.exp! * 1000, Date.now() + 15 * 60 * 1000),
       );
     await tx.query(
-      "INSERT INTO sessions(token_hash,participant_id,artist_id,kind,expires_at,identity_id) VALUES($1,$2,$3,$4,$5,$6)",
+      "INSERT INTO sessions(token_hash,participant_id,artist_id,kind,expires_at,identity_id,identity_family) VALUES($1,$2,$3,$4,$5,$6,$7)",
       [
         digest(token),
         kind === "guest" ? participantId : null,
@@ -178,12 +182,16 @@ export async function exchangeIdentity(
         kind,
         expiresAt,
         identity.id,
+        family,
       ],
     );
+    // Keep in-flight requests valid briefly while cookies rotate. Every token
+    // in this browser family is revoked together on sign-out.
     if (current)
-      await tx.query("DELETE FROM sessions WHERE token_hash=$1", [
-        current.token_hash,
-      ]);
+      await tx.query(
+        "UPDATE sessions SET identity_id=$1,identity_family=$2,expires_at=LEAST(expires_at,$3,now()+interval '30 seconds') WHERE token_hash=$4",
+        [identity.id, family, expiresAt, current.token_hash],
+      );
     return {
       token,
       kind,
@@ -193,6 +201,20 @@ export async function exchangeIdentity(
       ),
     };
   });
+}
+export async function revokeBrowserSession(db: Database, raw: string) {
+  if (!/^[a-f0-9]{64}$/.test(raw)) return;
+  const row = (
+    await db.query("SELECT identity_family FROM sessions WHERE token_hash=$1", [
+      digest(raw),
+    ])
+  ).rows[0];
+  if (row?.identity_family)
+    await db.query("DELETE FROM sessions WHERE identity_family=$1", [
+      row.identity_family,
+    ]);
+  else
+    await db.query("DELETE FROM sessions WHERE token_hash=$1", [digest(raw)]);
 }
 export async function registerIdentity(
   app: FastifyInstance,
@@ -261,9 +283,7 @@ export async function registerIdentity(
     for (const name of ["oj_guest", "oj_operator"]) {
       const raw = req.cookies[name];
       if (typeof raw === "string" && /^[a-f0-9]{64}$/.test(raw))
-        await db.query("DELETE FROM sessions WHERE token_hash=$1", [
-          digest(raw),
-        ]);
+        await revokeBrowserSession(db, raw);
       reply.clearCookie(name, { path: "/" });
     }
     return { ok: true };

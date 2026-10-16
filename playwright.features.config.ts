@@ -3,7 +3,7 @@ export default defineConfig({
   testDir: "tests/features-browser",
   fullyParallel: false,
   workers: 1,
-  retries: process.env.CI ? 1 : 0,
+  retries: 0,
   use: {
     baseURL: "http://127.0.0.1:4174",
     trace: "retain-on-failure",
