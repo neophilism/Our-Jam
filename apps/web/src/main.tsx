@@ -1504,7 +1504,7 @@ function Console({ slug }: { slug: string }) {
                       )
                     }
                   >
-                    Hide & return points
+                    Hide & return votes
                   </button>
                 </div>
               ))}

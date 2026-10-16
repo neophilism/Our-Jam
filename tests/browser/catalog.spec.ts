@@ -79,5 +79,5 @@ test("audience voting stops while offline and refreshes before re-enabling after
   await context.setOffline(false);
   await expect(support).toBeEnabled({ timeout: 15000 });
   await support.click();
-  await expect(page.getByLabel("3 of 5 points remaining")).toBeVisible();
+  await expect(page.getByLabel("3 votes remaining in this song")).toBeVisible();
 });

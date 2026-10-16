@@ -29,7 +29,7 @@ test("a phone can join, contribute, reallocate and receive another participantâ€
   await page
     .getByRole("button", { name: "Support " + text, exact: true })
     .click();
-  await expect(page.getByLabel("3 of 5 points remaining")).toBeVisible();
+  await expect(page.getByLabel("3 votes remaining in this song")).toBeVisible();
   const other = await browser.newContext();
   const friend = await other.newPage();
   await friend.goto("/event/" + slug);
@@ -41,11 +41,11 @@ test("a phone can join, contribute, reallocate and receive another participantâ€
     .click();
   await expect(
     page.locator(".wave-row").filter({ hasText: text }),
-  ).toContainText("3 points");
+  ).toContainText("3 votes");
   await page
-    .getByRole("button", { name: "Remove a point from " + text, exact: true })
+    .getByRole("button", { name: "Remove a vote from " + text, exact: true })
     .click();
-  await expect(page.getByLabel("4 of 5 points remaining")).toBeVisible();
+  await expect(page.getByLabel("4 votes remaining in this song")).toBeVisible();
   await expect(page.locator("canvas").first()).toHaveAttribute(
     "data-rendered",
     "true",

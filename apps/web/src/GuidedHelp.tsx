@@ -7,7 +7,7 @@ type Layout = { top: number; left: number; width: number; targetTop: number; tar
 const guides: Record<Surface, Step[]> = {
   home: [
     { selector: ".join-form", title: "Join the jam", description: "Enter the event code shown at the venue or use its QR link. You can take part in your browser without installing an app." },
-    { selector: ".how", title: "Help shape the music", description: "Listen to the song, add a Sound Wave, and use your five points to support ideas. The artist can then release the crowd's new track." },
+    { selector: ".how", title: "Help shape the music", description: "These are the three ways to join in: listen to the song, suggest a Sound Wave, and vote on the crowd's Sound Waves." },
     { selector: ".event-list", title: "Find your room", description: "Choose an event here or enter its code above. Return to hear and download tracks when the artist publishes them." },
   ],
   audience: [

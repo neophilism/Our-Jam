@@ -33,7 +33,7 @@ test("the fan tutorial points to real voting and released-track controls", async
   await dialog.getByRole("button", { name: "Next" }).click();
   await expect(dialog).toContainText("Explore the room");
   await dialog.getByRole("button", { name: "Next" }).click();
-  await expect(dialog).toContainText("Your five points");
+  await expect(dialog).toContainText("Vote on Sound Waves");
   await dialog.getByRole("button", { name: "Skip tutorial" }).click();
   await page.getByRole("button", { name: "I'm in. Let's make music" }).click();
   await expect(page.getByLabel("What would you mix this with?")).toBeVisible();
