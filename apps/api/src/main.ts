@@ -36,6 +36,7 @@ const email = configuredEmail(origin);
 const app = await createApp(db, {
   origin,
   operatorToken: process.env.OPERATOR_TOKEN,
+  adminToken: process.env.ADMIN_TOKEN,
   secureCookies: production,
   serveWeb: true,
   providerReady: Boolean(generation),
