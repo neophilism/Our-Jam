@@ -52,9 +52,8 @@ test("artist sees measured event quote and admin can configure prices without gr
     page.getByRole("heading", { name: "Platform video library", exact: true }),
   ).toBeVisible();
   const video = await (await page.request.get("/__test__/video")).body();
-  await page
-    .getByLabel("Sponsor name", { exact: true })
-    .fill("My actual test sponsor");
+  const sponsorName = "My test sponsor " + crypto.randomUUID();
+  await page.getByLabel("Sponsor name", { exact: true }).fill(sponsorName);
   await page
     .getByLabel("Silent video ad (MP4)", { exact: true })
     .setInputFiles({
@@ -67,7 +66,7 @@ test("artist sees measured event quote and admin can configure prices without gr
     .click();
   const row = page
     .locator(".sponsor-video-row")
-    .filter({ hasText: "My actual test sponsor" });
+    .filter({ hasText: sponsorName });
   await expect(row).toBeVisible();
   await row.getByRole("button", { name: "Publish video", exact: true }).click();
   await expect(
