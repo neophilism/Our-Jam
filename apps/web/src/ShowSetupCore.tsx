@@ -89,9 +89,9 @@ export function ShowSetup({
       >
         <summary>Event, screen & participation settings</summary>
         <p className="muted">
-          Screen size and album links update immediately. Generation limits,
-          release timing and participation time apply to newly opened rounds; an
-          active round keeps its original rules.
+          Change what fans see, where they find your music, and how new
+          crowd-created tracks are released. Participation and generation
+          settings take effect when the next song begins.
         </p>
         <button
           className="ghost small"
@@ -179,10 +179,10 @@ export function ShowSetup({
                     0,
                     300,
                   ],
-                  ["maxWaves", "Maximum Sound Waves in a generation", 1, 12],
+                  ["maxWaves", "Top Sound Waves considered for each new track", 1, 12],
                   [
                     "maxGenerations",
-                    "Maximum generations for this event",
+                    "Maximum crowd-created tracks for this event",
                     0,
                     100,
                   ],
@@ -211,10 +211,11 @@ export function ShowSetup({
           if (e.currentTarget.open && !album) void action(loadAlbum);
         }}
       >
-        <summary>Album files & private signature prompts</summary>
+        <summary>Review your songs and musical descriptions</summary>
         <p className="muted">
-          You can edit a track until its first round starts. Earlier rounds and
-          signature prompts remain fixed.
+          Fix song titles or descriptions before the song starts.
+          Your uploaded audio stays attached. To replace a recording,
+          use Upload album audio in the performer console.
         </p>
         <button
           className="ghost small"
@@ -236,7 +237,6 @@ export function ShowSetup({
                   expectedRevision: inputRevision.current,
                   title: source.title,
                   corePrompt: source.core_prompt,
-                  audioUrl: source.audio_url || undefined,
                   durationSeconds: Number(source.duration_seconds),
                 });
                 setAlbum(null);
@@ -250,9 +250,8 @@ export function ShowSetup({
             {(
               [
                 ["title", "Track title"],
-                ["audio_url", "Track audio URL (HTTPS)"],
                 ["duration_seconds", "Track duration in seconds"],
-                ["core_prompt", "Private signature prompt"],
+                ["core_prompt", "Describe this song’s signature sound"],
               ] as const
             ).map(([key, label]) => (
               <label key={key}>
@@ -275,13 +274,11 @@ export function ShowSetup({
                 ) : (
                   <input
                     disabled={s.played || busy}
-                    required={key !== "audio_url"}
+                    required
                     type={
                       key === "duration_seconds"
                         ? "number"
-                        : key === "audio_url"
-                          ? "url"
-                          : "text"
+                        : "text"
                     }
                     min={key === "duration_seconds" ? 15 : undefined}
                     max={key === "duration_seconds" ? 1200 : undefined}
@@ -302,7 +299,7 @@ export function ShowSetup({
         ))}
       </details>
       <div className="section-heading">
-        <h3>Check linked audio</h3>
+        <h3>Check that your songs will play</h3>
         <button className="ghost small" onClick={() => void checkAudio()}>
           Check this device’s audio links
         </button>

@@ -32,6 +32,8 @@ export const settingsInput = eventInput
     preferredPurchaseProvider: z.string().max(40).nullable().optional(),
   });
 export const sourceEditInput = sourceInput.extend({
+  // Omission preserves uploaded/private audio; explicit null clears the link.
+  audioUrl: httpsUrl.nullable().optional(),
   commandId: id,
   expectedRevision: revision,
 });
@@ -167,7 +169,7 @@ export async function updateSource(
 ) {
   return db.transaction(async (tx) => {
     const source = (
-      await tx.query("SELECT event_id FROM source_tracks WHERE id=$1", [
+      await tx.query("SELECT event_id,audio_url FROM source_tracks WHERE id=$1", [
         sourceId,
       ])
     ).rows[0];
@@ -200,7 +202,7 @@ export async function updateSource(
       [
         input.title,
         input.corePrompt,
-        input.audioUrl ?? null,
+        input.audioUrl === undefined ? source.audio_url : input.audioUrl,
         input.durationSeconds,
         sourceId,
       ],
