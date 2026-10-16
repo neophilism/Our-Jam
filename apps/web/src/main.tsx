@@ -36,6 +36,7 @@ import { ReleaseEmail, EmailAction, EmailStatus } from "./ReleaseEmail";
 import { ReleaseNotice } from "./ReleaseNotice";
 import { Recorder } from "./Recorder";
 import { AlbumBackup } from "./AlbumBackup";
+import { GuidedHelp } from "./GuidedHelp";
 
 function Mark() {
   return (
@@ -69,6 +70,7 @@ function Header({ children }: { children?: React.ReactNode }) {
             </a>
           </>
         )}
+        <GuidedHelp />
         <VisualPreferences />
       </div>
     </header>
