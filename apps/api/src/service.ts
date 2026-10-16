@@ -10,6 +10,8 @@ import {
   requireThat,
   validateAllocations,
   VOTE_BUDGET,
+  MAX_VOTE_CHOICES,
+  type VotePolicy,
   type RankedWave,
 } from "../../../packages/domain/src/index.js";
 import {
@@ -169,8 +171,9 @@ async function saveAllocation(
   roundId: string,
   participantId: string,
   allocation: Record<string, number>,
+  policy: VotePolicy,
 ) {
-  validateAllocations(allocation);
+  validateAllocations(allocation, policy);
   for (const waveId of Object.keys(allocation)) {
     const wave = (
       await tx.query(
@@ -232,6 +235,14 @@ export async function ranked(
     seed,
   );
 }
+function votePolicy(round: { settings?: Record<string, any> }): VotePolicy {
+  if (round.settings?.voteMode !== "single")
+    return { mode: "weighted", limit: VOTE_BUDGET };
+  const proposed = round.settings.votesPerListener ?? VOTE_BUDGET;
+  const limit = Number.isSafeInteger(proposed) && proposed >= 1 && proposed <= MAX_VOTE_CHOICES
+    ? proposed : VOTE_BUDGET;
+  return { mode: "single", limit };
+}
 export async function allocate(
   db: Database,
   actor: Actor,
@@ -248,7 +259,7 @@ export async function allocate(
     if (cache.response) return cache.response;
     open(r);
     await ballot(tx, roundId, actor.participantId, input.expectedRevision);
-    await saveAllocation(tx, roundId, actor.participantId, input.allocations);
+    await saveAllocation(tx, roundId, actor.participantId, input.allocations, votePolicy(r));
     const result = { revision: input.expectedRevision + 1 };
     await remember(
       tx,
@@ -295,7 +306,7 @@ export async function submitWave(
       if (--allocation[input.moveFrom] === 0) delete allocation[input.moveFrom];
     }
     requireThat(
-      Object.values(allocation).reduce((a, b) => a + b, 0) < VOTE_BUDGET,
+      Object.values(allocation).reduce((a, b) => a + b, 0) < votePolicy(r).limit,
       "vote_budget_exceeded",
       "All your votes are in use. Take one back from another Sound Wave to share your idea.",
     );
@@ -342,7 +353,7 @@ export async function submitWave(
       );
     }
     allocation[wave.id] = (allocation[wave.id] ?? 0) + 1;
-    await saveAllocation(tx, roundId, actor.participantId, allocation);
+    await saveAllocation(tx, roundId, actor.participantId, allocation, votePolicy(r));
     const result = { revision: input.expectedRevision + 1, waveId: wave.id };
     await remember(
       tx,
@@ -360,6 +371,11 @@ export async function createEvent(
   artistId: string,
   input: z.infer<typeof eventInput>,
 ) {
+  requireThat(
+    input.voteMode !== "weighted" || input.votesPerListener === undefined || input.votesPerListener === VOTE_BUDGET,
+    "invalid_vote_policy",
+    "Legacy weighted voting uses the existing event limit; choose one vote per Sound Wave for a different limit.",
+  );
   requireThat(input.purchaseMode !== "direct" || Boolean(preferredPurchaseUrl(input.purchaseLinks ?? (input.purchaseUrl ? [{ provider: "other", url: input.purchaseUrl }] : []), input.purchaseMode, input.preferredPurchaseProvider)), "invalid_purchase_destination", "Choose a listed provider for direct purchase.", 400);
   return db.transaction(async (tx) => {
     const eventId = randomUUID();
@@ -368,6 +384,8 @@ export async function createEvent(
       minimumRoundSeconds: input.minimumRoundSeconds,
       maxWaves: input.maxWaves,
       maxGenerations: input.maxGenerations,
+      voteMode: input.voteMode ?? "weighted",
+      votesPerListener: input.voteMode === "single" ? input.votesPerListener ?? VOTE_BUDGET : VOTE_BUDGET,
       promptLimit: 3500,
       releaseMode: input.releaseMode,
       admissionMode: input.admissionMode,
@@ -662,7 +680,8 @@ export async function snapshot(
   const publicRound = round
     ? {
         id: round.id,
-        voteLimit: VOTE_BUDGET,
+        voteLimit: votePolicy(round).limit,
+        voteMode: votePolicy(round).mode,
         sourceTitle: round.source_title,
         state: round.state,
         openedAt: round.opened_at,
