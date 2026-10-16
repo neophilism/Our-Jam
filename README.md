@@ -29,7 +29,7 @@ Data persist under `~/.our-jam-local`. First dependency installation needs inter
 
 ## Boundaries
 
-The local server is reachable by this Mac and its Simulator, not separate audience phones over Wi-Fi. Its localhost QR cannot onboard a remote crowd. A free-tier HTTPS rehearsal API is live at https://our-jam-rehearsal.onrender.com; external health/readiness checks have passed, but actual private media round-trip and real phone/venue acceptance are separate gates. See [deployment](docs/deployment.md).
+The local server is reachable by this Mac and its Simulator, not separate audience phones over Wi-Fi. Its localhost QR cannot onboard a remote crowd. A free-tier HTTPS rehearsal API is live at https://our-jam-rehearsal.onrender.com; external health/readiness and actual private diagnostic S3 round-trip, signed delivery and unsigned denial have passed on the test deployment. Real owner-song upload/playback and physical phone/venue acceptance remain separate gates. See [deployment](docs/deployment.md).
 
 Both adapters generate from the saved core prompt plus selected Sound Waves, not the uploaded waveform. Both local spending limits are hardcoded to $0 and ignore outside provider configuration. Funded comparison requires a new explicit allowance, API credits and verified server-side pricing/rights configuration. `MUREKA_API_KEY` and `STABLE_AUDIO_KEY` are supported secret names; GitHub secrets are not automatically Render environment variables. There is no automatic Thursday activation.
 
