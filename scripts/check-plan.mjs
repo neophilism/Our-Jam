@@ -11,8 +11,8 @@ assert.equal(
 );
 assert.equal(
   registry.plannedPrCount,
-  54,
-  "Approved roadmap has 54 work packages, not 54 merged PRs",
+  66,
+  "Canonical roadmap contains 54 original plus 12 comparison work packages",
 );
 const plan = JSON.parse(
   readFileSync(new URL("../backlog.json", import.meta.url)),
@@ -33,6 +33,8 @@ function visit(id) {
   visited.add(id);
 }
 for (const id of ids) visit(id);
-console.log(
-  "54 canonical work packages; historical dependencies valid and acyclic",
-);
+assert.equal(registry.units.filter((u) => u.origin === "original").length, 54);
+const allIds = new Set(registry.units.map((u) => u.id));
+for (const unit of registry.units) for (const dependency of unit.dependsOn ?? [])
+  assert(allIds.has(dependency), `Missing canonical registry dependency ${dependency}`);
+console.log("66 canonical work packages (54 original + 12 comparison); historical dependencies valid and acyclic");
