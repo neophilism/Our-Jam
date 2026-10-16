@@ -2,11 +2,11 @@ import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 // Canonical work-package registry. Historical dependency graph stays validated separately.
 const registry = JSON.parse(
-  readFileSync(new URL("../registry/roadmap.json", import.meta.url)),
+  readFileSync(new URL("../registry/prs.json", import.meta.url)),
 );
-assert.equal(registry.milestones.length, registry.plannedPrCount);
+assert.equal(registry.units.length, registry.plannedPrCount);
 assert.equal(
-  new Set(registry.milestones.map((p) => p.id)).size,
+  new Set(registry.units.map((p) => p.id)).size,
   registry.plannedPrCount,
 );
 assert.equal(
