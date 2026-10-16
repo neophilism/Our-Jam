@@ -2,6 +2,10 @@
 
 Live music made together. Fans contribute **Sound Waves**, move five votes among them, and help shape the crowd's next release.
 
+## Hosted rehearsal: run the existing free test server
+
+The dedicated HTTPS test site **https://our-jam-rehearsal.onrender.com** uses the isolated Neon rehearsal database and has passed live S3 diagnostic PUT/HEAD/GET/DELETE with clean deletion, external readiness checks and negative hosted authorization/Origin checks. Open `/performer` and use the `OPERATOR_TOKEN` from this Render service's private Environment settings (never paste it into chat or commit it). See **[the real-phone hosted rehearsal runbook](docs/hosted-first-rehearsal.md)** to create an event, upload your own songs, open the public monitor and admit real iPhones/Android browsers. No app-store account is required for browser participation. Full owner-file and venue acceptance is still pending and billable AI generation remains off.
+
 ## Run the real zero-budget rehearsal
 
 The native iOS Simulator app and persistent local API have passed native-to-public-screen acceptance. The accepted artifacts and exact test runs are in [PROGRESS.md](PROGRESS.md). This is real user data, not a seeded demonstration, TestFlight distribution or a hosted public event.
