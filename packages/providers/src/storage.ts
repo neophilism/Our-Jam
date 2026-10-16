@@ -62,9 +62,35 @@ export function s3Store(config: {
         await put(key, expected, sha);
         stored = true;
         const response = await client.send(new GetObjectCommand({ Bucket: config.bucket, Key: key }));
+        if (response.ContentLength !== expected.byteLength)
+          throw new Error("Private media S3 download declared an unexpected size.");
         const actual = await response.Body?.transformToByteArray();
         if (!actual || !Buffer.from(actual).equals(expected))
-          throw new Error("Private media round-trip returned unexpected bytes.");
+          throw new Error("Private media S3 round-trip returned unexpected bytes.");
+
+        // Exercise the same five-minute signed GET URL used by the artist
+        // playback redirect; S3 SDK GET alone cannot certify browser delivery.
+        const signed = new URL(await this.url(key, false));
+        if (signed.protocol !== "https:" ||
+            (config.endpoint && signed.host !== new URL(config.endpoint).host))
+          throw new Error("Private media download URL left its approved HTTPS host.");
+        const authorized = await fetch(signed, {
+          redirect: "error", signal: AbortSignal.timeout(30000),
+        });
+        if (!authorized.ok || Number(authorized.headers.get("content-length") || 0) > 8192)
+          throw new Error("Signed private media download failed validation.");
+        const signedBytes = Buffer.from(await authorized.arrayBuffer());
+        if (!signedBytes.equals(expected))
+          throw new Error("Signed private media download returned unexpected bytes.");
+
+        // A private bucket must deny the same object without the signature.
+        // Never log the signed URL, token, signature or returned bytes.
+        signed.search = "";
+        const unsigned = await fetch(signed, {
+          redirect: "error", signal: AbortSignal.timeout(20000),
+        });
+        if (unsigned.ok)
+          throw new Error("Private media object was anonymously readable.");
       } finally {
         // Delete even when a PUT succeeded but its HEAD verification failed.
         // Do not remove anything outside this randomly generated diagnostic key.
