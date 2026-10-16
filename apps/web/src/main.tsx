@@ -409,8 +409,9 @@ function Audience({ slug }: { slug: string }) {
   const round = data.round;
   const waves = round?.waves ?? [];
   const used = waves.reduce((n, w) => n + w.mine, 0);
-  const voteLimit = round?.voteLimit ?? 5;
-  const singleVote = round?.voteMode === "single";
+  const voteLimit = round?.voteLimit ??
+    (data.event.settings.voteMode === "single" ? data.event.settings.votesPerListener ?? 5 : 5);
+  const singleVote = (round?.voteMode ?? data.event.settings.voteMode) === "single";
   const votesLeft = Math.max(0, voteLimit - used);
   const open =
     fresh &&
