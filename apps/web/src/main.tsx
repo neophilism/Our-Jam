@@ -1213,11 +1213,13 @@ function CreateEvent() {
           const catalog = await api("/operator/events/" + created.id + "/sources");
           if (catalog.sources.length !== sources.length) throw new Error("Saved album track count changed; inspect the session before retrying.");
           for (let i = 0; i < sources.length; i++) {
-            if (catalog.sources[i].audio_url) continue;
+            const current = await api("/operator/events/" + created.id + "/sources");
+            if (current.sources.length !== sources.length) throw new Error("The album changed while uploading. Refresh and inspect it before retrying.");
+            if (current.sources[i].audio_url) continue;
             const file = sources[i].file!;
             if (!/\.(mp3|wav)$/i.test(file.name) || file.size < 128 || file.size > 128 * 1024 * 1024) throw new Error("Choose MP3/WAV files no larger than 128 MiB.");
             setUploadMessage("Uploading and validating track " + (i + 1) + " of " + sources.length);
-            const response = await fetch("/api/operator/sources/" + catalog.sources[i].id + "/upload", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/octet-stream", "X-Command-Id": crypto.randomUUID(), "X-Event-Revision": String(catalog.revision) }, body: file });
+            const response = await fetch("/api/operator/sources/" + current.sources[i].id + "/upload", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/octet-stream", "X-Command-Id": crypto.randomUUID(), "X-Event-Revision": String(current.revision) }, body: file });
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || result.error || "Audio upload failed.");
           }
