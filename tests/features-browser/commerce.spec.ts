@@ -51,6 +51,15 @@ test("artist sees measured event quote and admin can configure prices without gr
   await expect(
     page.getByRole("heading", { name: "Platform video library", exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Integration setup" }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("Webhook endpoint", { exact: true }),
+  ).toHaveValue(origin + "/api/webhooks/stripe");
+  await expect(
+    page.getByLabel("google authorized redirect URI", { exact: true }),
+  ).toHaveValue("https://auth.example.test/neondb/auth/callback/google");
   const video = await (await page.request.get("/__test__/video")).body();
   const sponsorName = "My test sponsor " + crypto.randomUUID();
   await page.getByLabel("Sponsor name", { exact: true }).fill(sponsorName);

@@ -429,3 +429,71 @@ test("Stripe SDK verifies exact raw webhook bytes, rejects tampering and stale s
   });
   assert.throws(() => gateway.verify(Buffer.from(body), stale));
 });
+
+test("admin setup reports exact integration targets without leaking credentials and accepts restricted sandbox keys", async (t) => {
+  const f = await fixture();
+  t.after(() => f.db.close());
+  const adminToken = "setup-test-only-platform-secret-123456";
+  const config = configuredCommerce({
+    COMMERCE_ENABLED: "1",
+    PLATFORM_ADMIN_TOKEN: adminToken,
+    STRIPE_SECRET_KEY: "rk_test_fixture_limited_key",
+  })!;
+  assert.equal(config.gateway, undefined);
+  assert.deepEqual(config.stripeCredentials, { key: true, webhook: false });
+  assert.ok(
+    configuredCommerce({
+      COMMERCE_ENABLED: "1",
+      STRIPE_SECRET_KEY: "rk_test_fixture_limited_key",
+      STRIPE_WEBHOOK_SECRET: "whsec_fixture_setup",
+    })!.gateway,
+  );
+  assert.throws(
+    () =>
+      configuredCommerce({
+        COMMERCE_ENABLED: "1",
+        STRIPE_SECRET_KEY: "rk_live_fixture",
+      }),
+    /test keys/,
+  );
+  const app = await createApp(f.db, {
+    origin,
+    secureCookies: false,
+    commerce: config,
+    identity: {
+      authUrl: "https://auth.example.test/neondb/auth",
+      providers: ["google"],
+      verify: async () => {
+        throw Error("unused");
+      },
+    },
+  });
+  t.after(() => app.close());
+  assert.equal(
+    (await app.inject({ url: "/api/admin/commerce" })).statusCode,
+    401,
+  );
+  const login = await app.inject({
+    method: "POST",
+    url: "/api/admin/login",
+    headers: { origin },
+    payload: { token: adminToken },
+  });
+  const cookie = login.headers["set-cookie"]!.toString().split(";")[0];
+  const response = await app.inject({
+    url: "/api/admin/commerce",
+    headers: { cookie },
+  });
+  assert.equal(response.statusCode, 200);
+  const setup = response.json().setup;
+  assert.equal(setup.stripe.webhookUrl, origin + "/api/webhooks/stripe");
+  assert.deepEqual(setup.stripe.missingEnvironment, ["STRIPE_WEBHOOK_SECRET"]);
+  assert.equal(
+    setup.identity.callbacks.google,
+    "https://auth.example.test/neondb/auth/callback/google",
+  );
+  assert.equal(setup.identity.trustedOrigin, origin);
+  assert.equal(response.body.includes(adminToken), false);
+  assert.equal(response.body.includes("rk_test_fixture"), false);
+  assert.equal(response.body.includes("whsec_"), false);
+});

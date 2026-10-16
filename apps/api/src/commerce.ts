@@ -18,6 +18,14 @@ import { id } from "../../../packages/contracts/src/index.js";
 import { ownedEvent, logEvent } from "./service.js";
 import { eventAccess, setlist, type Tier } from "./commerce-policy.js";
 import { prepareSponsorVideo, MAX_VIDEO_BYTES } from "./sponsor-media.js";
+import type { IdentityConfig } from "./identity.js";
+export const paymentWebhookEvents = [
+  "checkout.session.completed",
+  "checkout.session.async_payment_succeeded",
+  "checkout.session.expired",
+  "charge.refunded",
+  "charge.dispute.created",
+];
 export type PaymentGateway = {
   checkout(
     purchase: any,
@@ -33,6 +41,7 @@ export type CommerceConfig = {
   adminToken?: string;
   gateway?: PaymentGateway;
   live?: boolean;
+  stripeCredentials?: { key: boolean; webhook: boolean };
 };
 export function configuredCommerce(
   env: NodeJS.ProcessEnv = process.env,
@@ -42,7 +51,7 @@ export function configuredCommerce(
     env.COMMERCE_LIVE_PAYMENTS_ACK === "our-jam-live-charges-approved";
   const key = env.STRIPE_SECRET_KEY,
     secret = env.STRIPE_WEBHOOK_SECRET;
-  if (key && !live && !key.startsWith("sk_test_"))
+  if (key && !live && !/^(sk|rk)_test_/.test(key))
     throw new Error(
       "Use Stripe test keys until live charges are explicitly enabled.",
     );
@@ -54,6 +63,7 @@ export function configuredCommerce(
     enabled: true,
     adminToken: env.PLATFORM_ADMIN_TOKEN,
     live,
+    stripeCredentials: { key: Boolean(key), webhook: Boolean(secret) },
     gateway: stripe
       ? {
           checkout: async (p, returnUrl) => {
@@ -394,6 +404,7 @@ export async function registerCommerce(
   origin: string,
   config: CommerceConfig,
   store?: MediaStore,
+  identity?: IdentityConfig,
 ) {
   if (!config.enabled) return;
   async function artist(req: any) {
@@ -489,6 +500,35 @@ export async function registerCommerce(
       ).rows,
       storageConfigured: Boolean(store),
       paymentsConfigured: Boolean(config.gateway),
+      setup: {
+        stripe: {
+          mode: config.live ? "live" : "test",
+          webhookUrl: origin + "/api/webhooks/stripe",
+          events: paymentWebhookEvents,
+          missingEnvironment: config.gateway
+            ? []
+            : [
+                ...(!config.stripeCredentials?.key
+                  ? ["STRIPE_SECRET_KEY"]
+                  : []),
+                ...(!config.stripeCredentials?.webhook
+                  ? ["STRIPE_WEBHOOK_SECRET"]
+                  : []),
+              ],
+        },
+        identity: {
+          enabled: Boolean(identity),
+          trustedOrigin: origin,
+          callbacks: identity
+            ? Object.fromEntries(
+                identity.providers.map((p) => [
+                  p,
+                  identity.authUrl + "/callback/" + p,
+                ]),
+              )
+            : {},
+        },
+      },
     };
   });
   app.put("/api/admin/commerce", async (req) => {

@@ -411,6 +411,125 @@ export function CommerceAdmin() {
               >
                 Sign out
               </button>
+              {state.setup && (
+                <section
+                  aria-label="Integration setup"
+                  className="integration-setup"
+                >
+                  <h2>Integration setup</h2>
+                  <p>
+                    Payments:{" "}
+                    {state.paymentsConfigured
+                      ? "configured"
+                      : "needs credentials"}{" "}
+                    · {state.setup.stripe.mode} mode. Video storage:{" "}
+                    {state.storageConfigured
+                      ? "configured"
+                      : "needs configuration"}
+                    .
+                  </p>
+                  <p>
+                    Keep secrets in your hosting environment and Neon Auth
+                    settings. This page shows setup details without revealing
+                    credentials.
+                  </p>
+                  <p>
+                    <a
+                      href="https://dashboard.stripe.com/apikeys"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Stripe API keys
+                    </a>{" "}
+                    ·{" "}
+                    <a
+                      href="https://dashboard.stripe.com/webhooks"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Stripe webhook destinations
+                    </a>
+                  </p>
+                  {state.setup.stripe.missingEnvironment.length > 0 && (
+                    <p>
+                      Missing environment variables:{" "}
+                      {state.setup.stripe.missingEnvironment.join(", ")}. Use
+                      sandbox keys for testing.
+                    </p>
+                  )}
+                  <label>
+                    Webhook endpoint
+                    <input
+                      readOnly
+                      value={state.setup.stripe.webhookUrl}
+                      onFocus={(e) => e.currentTarget.select()}
+                    />
+                  </label>
+                  <details>
+                    <summary>Webhook events to enable</summary>
+                    <ul>
+                      {state.setup.stripe.events.map((e: string) => (
+                        <li key={e}>
+                          <code>{e}</code>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                  <p>
+                    Account sign-in:{" "}
+                    {state.setup.identity.enabled
+                      ? "configured"
+                      : "needs Neon Auth configuration"}
+                    .{" "}
+                    <a
+                      href="https://console.neon.tech"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Open Neon
+                    </a>{" "}
+                    → Our Jam → select this environment’s branch → Settings →
+                    Auth.
+                  </p>
+                  <label>
+                    Trusted application origin
+                    <input
+                      readOnly
+                      value={state.setup.identity.trustedOrigin}
+                      onFocus={(e) => e.currentTarget.select()}
+                    />
+                  </label>
+                  {Object.entries(state.setup.identity.callbacks).map(
+                    ([provider, callback]) => (
+                      <label key={provider}>
+                        {provider} authorized redirect URI
+                        <input
+                          readOnly
+                          value={String(callback)}
+                          onFocus={(e) => e.currentTarget.select()}
+                        />
+                      </label>
+                    ),
+                  )}
+                  <p>
+                    <a
+                      href="https://console.cloud.google.com/auth/clients"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Create Google OAuth client
+                    </a>{" "}
+                    ·{" "}
+                    <a
+                      href="https://github.com/settings/developers"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Create GitHub OAuth app
+                    </a>
+                  </p>
+                </section>
+              )}
               <form
                 key={state.settings.revision}
                 onSubmit={(e) => {
