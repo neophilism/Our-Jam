@@ -8,6 +8,7 @@ import { generationTick } from "./generation.js";
 import { tickRounds } from "./playback.js";
 import { createApp } from "./app.js";
 import { configuredEmail } from "./email-config.js";
+import { verifyStartupMedia } from "./media-readiness.js";
 import { emailTick } from "./email.js";
 const production = process.env.NODE_ENV === "production";
 const url = process.env.DATABASE_URL;
@@ -29,6 +30,7 @@ if (process.env.RUN_MIGRATIONS === "1") {
   }
 }
 const mediaStore = configuredStorage();
+const mediaStatus = await verifyStartupMedia(mediaStore, process.env.MEDIA_PROBE_ON_START);
 const generation = configuredGeneration(mediaStore);
 const email = configuredEmail(origin);
 const app = await createApp(db, {
@@ -38,6 +40,7 @@ const app = await createApp(db, {
   serveWeb: true,
   providerReady: Boolean(generation),
   mediaStore,
+  mediaVerified: mediaStatus === "verified",
   email,
 });
 await app.listen({ port: Number(process.env.PORT ?? 3001), host: "0.0.0.0" });
@@ -46,6 +49,7 @@ console.log(
     application: "Our Jam",
     status: "listening",
     generation: generation ? "configured" : "not_configured",
+    media: mediaStatus,
   }),
 );
 let ticking = false;
