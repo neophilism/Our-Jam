@@ -1333,7 +1333,7 @@ function CreateEvent() {
         <span className="tiny muted">Choose from {platformVotes.minVotes} to {platformVotes.maxVotes} votes. Each Sound Wave a fan submits uses one vote; fans can vote once per idea.</span>
       </label> : <p className="tiny muted vote-cap-setting" role="status">
         {platformVotes?.mode === "fixed" ? `Each listener gets ${platformVotes.fixedVotes} votes per song, set by the platform.` : "Loading the platform's voting rules…"}
-      </p>
+      </p>}
       <PurchaseEditor links={purchaseLinks} onChange={setPurchaseLinks} disabled={busy} mode={purchaseMode} onModeChange={setPurchaseMode} preferredProvider={preferredPurchaseProvider} onPreferredChange={setPreferredPurchaseProvider}/>
       <div className="section-heading">
         <h3>The album, in order</h3>
