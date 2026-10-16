@@ -1,3 +1,4 @@
+import { fixtureIdentityToken } from "../fixtures/identity-token";
 import { test, expect } from "@playwright/test";
 test("performers and audience receive standard signup choices and email verification without exposing an admin role", async ({
   page,
@@ -13,12 +14,16 @@ test("performers and audience receive standard signup choices and email verifica
   await page.route("https://auth.example.test/**", async (route) => {
     const request = route.request(),
       url = new URL(request.url());
-    const headers = {
+    const headers: Record<string, string> = {
       "access-control-allow-origin": "http://127.0.0.1:4174",
       "access-control-allow-credentials": "true",
       "access-control-allow-headers": "content-type,authorization",
       "access-control-allow-methods": "GET,POST,OPTIONS",
     };
+    if (signedIn && url.pathname.endsWith("/get-session")) {
+      headers["set-auth-jwt"] = fixtureIdentityToken;
+      headers["access-control-expose-headers"] = "set-auth-jwt";
+    }
     let body: any = { status: true };
     if (request.method() === "OPTIONS") {
       await route.fulfill({ status: 204, headers });
@@ -46,7 +51,7 @@ test("performers and audience receive standard signup choices and email verifica
       signedIn = true;
       body = { user: user(), token: "managed-fixture" };
     } else if (url.pathname.endsWith("/token"))
-      body = { token: "fixture-valid" };
+      body = { token: fixtureIdentityToken };
     else if (url.pathname.endsWith("/sign-out")) signedIn = false;
     await route.fulfill({
       status: 200,
@@ -65,6 +70,10 @@ test("performers and audience receive standard signup choices and email verifica
   await expect(page.getByLabel("I’m here as", { exact: true })).toHaveValue(
     "performer",
   );
+  await page.screenshot({
+    path: test.info().outputPath("standard-signin.png"),
+    fullPage: true,
+  });
   await page
     .getByRole("button", { name: "Create an account", exact: true })
     .click();
@@ -93,4 +102,70 @@ test("performers and audience receive standard signup choices and email verifica
   const account = await (await page.request.get("/api/operator/events")).json();
   expect(account.events).toHaveLength(0);
   expect((await page.request.get("/api/admin/commerce")).status()).toBe(401);
+  await page.goto("/signin?role=performer&next=%2Fperformer");
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("Signed out.");
+  expect((await page.request.get("/api/operator/events")).status()).toBe(401);
+});
+
+test("password reset stays on the app origin and removes the reset token after use", async ({
+  page,
+}) => {
+  const calls: { path: string; body: any }[] = [];
+  await page.route("https://auth.example.test/**", async (route) => {
+    const req = route.request(),
+      path = new URL(req.url()).pathname;
+    const headers = {
+      "access-control-allow-origin": "http://127.0.0.1:4174",
+      "access-control-allow-credentials": "true",
+      "access-control-allow-headers":
+        req.headers()["access-control-request-headers"] ??
+        "content-type,authorization",
+      "access-control-allow-methods": "GET,POST,OPTIONS",
+    };
+    if (req.method() === "OPTIONS") {
+      await route.fulfill({ status: 204, headers });
+      return;
+    }
+    if (req.method() === "POST") calls.push({ path, body: req.postDataJSON() });
+    await route.fulfill({
+      status: 200,
+      headers,
+      contentType: "application/json",
+      body: JSON.stringify(
+        path.endsWith("/get-session") ? null : { status: true },
+      ),
+    });
+  });
+  await page.goto("/signin?role=audience&next=https%3A%2F%2Fevil.example");
+  await page
+    .getByRole("button", { name: "Forgot password?", exact: true })
+    .click();
+  await page
+    .getByLabel("Email address", { exact: true })
+    .fill("fixture@example.test");
+  await page
+    .getByRole("button", { name: "Send reset email", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText(
+    "If this address has an account",
+  );
+  const reset = calls.find((c) => c.path.endsWith("/request-password-reset"));
+  expect(reset?.body.redirectTo).toBe(
+    "http://127.0.0.1:4174/signin?role=audience&next=%2Faccount",
+  );
+  await page.goto(
+    "/signin?role=audience&token=fixture-reset-token&next=%2Faccount",
+  );
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill("new-test-only-password-12345");
+  await page
+    .getByRole("button", { name: "Save new password", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("Password updated");
+  await expect(page).not.toHaveURL(/token=/);
+  expect(
+    calls.find((c) => c.path.endsWith("/reset-password"))?.body.token,
+  ).toBe("fixture-reset-token");
 });

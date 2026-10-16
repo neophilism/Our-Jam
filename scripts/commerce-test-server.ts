@@ -1,3 +1,4 @@
+import { fixtureIdentityToken } from "../tests/fixtures/identity-token.js";
 // Loopback-only integration fixture. Never imported by the production entry point.
 import { testDatabase } from "../tests/database.js";
 import { createApp } from "../apps/api/src/app.js";
@@ -58,7 +59,7 @@ const app = await createApp(db, {
     authUrl: "https://auth.example.test/neondb/auth",
     providers: ["google", "github"],
     verify: async (token) => {
-      if (token !== "fixture-valid") throw Error("invalid fixture token");
+      if (token !== fixtureIdentityToken) throw Error("invalid fixture token");
       return {
         iss: "https://auth.example.test",
         sub: "browser-identity",

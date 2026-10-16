@@ -369,7 +369,7 @@ export function CommerceAdmin() {
     }
   }
   return (
-    <main className="performer-home">
+    <main className="performer">
       <section className="card">
         <span className="eyebrow">PLATFORM ADMINISTRATION</span>
         <h1>Event prices & sponsor videos</h1>

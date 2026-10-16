@@ -18,7 +18,7 @@ async function setup() {
     clientUrl = c.authUrl;
     client = createAuthClient(c.authUrl, {
       adapter: BetterAuthVanillaAdapter({
-        fetchOptions: { credentials: "include" },
+        fetchOptions: { credentials: "include", timeout: 15000 },
       }),
     });
   }
@@ -39,30 +39,71 @@ export function localReturn(value: string | null, fallback = "/account") {
     ? value
     : fallback;
 }
+let identityEpoch = 0;
+const pendingBridges = new Set<Promise<any>>();
+let lastBridge:
+  { token: string; role: string; epoch: number; value: any } | undefined;
 async function connect(
   role: "audience" | "performer",
   auth: VanillaBetterAuthClient,
 ) {
-  const r = checked(await auth.token());
-  if (!r.data?.token)
-    throw new Error(
-      "Sign in and verify your email first. If cookies are blocked, open sign-in in your browser rather than an embedded app.",
-    );
-  const response = await fetch("/api/identity/session", {
-    method: "POST",
-    credentials: "same-origin",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${r.data.token}`,
-    },
-    body: JSON.stringify({ role, linkCurrent: true }),
-  });
-  const v = await response.json();
-  if (!response.ok)
-    throw new Error(v.message ?? "Could not restore your Our Jam account.");
-  localStorage.setItem("ourjam.identity.role", role);
-  window.dispatchEvent(new Event("ourjam:identity-session"));
-  return v;
+  const epoch = identityEpoch;
+  const task = (async () => {
+    const r = checked(await auth.token());
+    // The managed wrapper can serve cached session data for /token. Only a
+    // JWT from its token result or documented session response may cross the bridge.
+    const token =
+      r.data?.token ?? checked(await auth.getSession()).data?.session?.token;
+    if (epoch !== identityEpoch) throw new Error("Sign-in was cancelled.");
+    if (
+      !token ||
+      !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token)
+    )
+      throw new Error(
+        "Sign in and verify your email first. If cookies are blocked, open sign-in in your browser rather than an embedded app.",
+      );
+    if (
+      lastBridge?.token === token &&
+      lastBridge.role === role &&
+      lastBridge.epoch === epoch
+    )
+      return lastBridge.value;
+    const response = await fetch("/api/identity/session", {
+      method: "POST",
+      credentials: "same-origin",
+      signal: AbortSignal.timeout(15000),
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ role, linkCurrent: true }),
+    });
+    const value = await response.json();
+    if (!response.ok)
+      throw new Error(
+        value.message ?? "Could not restore your Our Jam account.",
+      );
+    if (epoch === identityEpoch) {
+      lastBridge = { token, role, epoch, value };
+      localStorage.setItem("ourjam.identity.role", role);
+      window.dispatchEvent(new Event("ourjam:identity-session"));
+    }
+    return value;
+  })();
+  pendingBridges.add(task);
+  try {
+    return await task;
+  } finally {
+    pendingBridges.delete(task);
+  }
+}
+async function signOut(auth: VanillaBetterAuthClient) {
+  identityEpoch++;
+  lastBridge = undefined;
+  localStorage.removeItem("ourjam.identity.role");
+  await Promise.allSettled([...pendingBridges]);
+  await api("/identity/logout", "POST", {});
+  checked(await auth.signOut());
 }
 export function IdentityLink({
   role = "audience",
@@ -89,31 +130,54 @@ export function IdentityLink({
 }
 export function IdentitySession() {
   useEffect(() => {
-    let active = true;
+    let active = true,
+      running = false,
+      timer: ReturnType<typeof setTimeout> | undefined;
     const refresh = async () => {
-      const role = localStorage.getItem("ourjam.identity.role");
-      if (
-        !active ||
-        document.hidden ||
-        !["audience", "performer"].includes(role ?? "")
-      )
-        return;
+      if (running || !active) return;
+      running = true;
+      let delay = 60000;
       try {
-        const { config, auth } = await setup();
-        if (config.enabled && auth && active) {
-          const s = await auth.getSession();
-          if (s.data?.user?.emailVerified)
-            await connect(role as "audience" | "performer", auth);
+        const role = localStorage.getItem("ourjam.identity.role");
+        if (!document.hidden && (role === "audience" || role === "performer")) {
+          const { config, auth } = await setup();
+          if (config.enabled && auth && active) {
+            const s = await auth.getSession();
+            if (
+              active &&
+              s.data?.user?.emailVerified &&
+              localStorage.getItem("ourjam.identity.role") === role
+            ) {
+              const value = await connect(role, auth);
+              delay = Math.max(
+                3000,
+                Math.min(
+                  4 * 60 * 1000,
+                  new Date(value.expiresAt).getTime() - Date.now() - 30000,
+                ),
+              );
+            }
+          }
         }
       } catch {
-        /* Protected routes enforce expiry; the sign-in page provides recovery. */
+        delay = 15000; /* Protected routes enforce expiry; sign-in provides recovery. */
+      } finally {
+        running = false;
+        if (active) timer = setTimeout(() => void refresh(), delay);
+      }
+    };
+    const visible = () => {
+      if (!document.hidden && !running) {
+        clearTimeout(timer);
+        void refresh();
       }
     };
     void refresh();
-    const timer = setInterval(() => void refresh(), 4 * 60 * 1000);
+    document.addEventListener("visibilitychange", visible);
     return () => {
       active = false;
-      clearInterval(timer);
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", visible);
     };
   }, []);
   return null;
@@ -241,9 +305,7 @@ export function SignIn() {
                   disabled={busy}
                   onClick={() =>
                     void action(async (auth) => {
-                      await api("/identity/logout", "POST", {});
-                      localStorage.removeItem("ourjam.identity.role");
-                      checked(await auth.signOut());
+                      await signOut(auth);
                       setSignedIn(false);
                       setMessage("Signed out.");
                     })

@@ -73,6 +73,10 @@ test("artist sees measured event quote and admin can configure prices without gr
   await expect(
     row.getByRole("button", { name: "Unpublish", exact: true }),
   ).toBeVisible();
+  await page.screenshot({
+    path: test.info().outputPath("sponsor-admin.png"),
+    fullPage: true,
+  });
 });
 test("silent sponsor video and countdown pause with music and the server prevents premature participation", async ({
   page,
@@ -114,6 +118,10 @@ test("silent sponsor video and countdown pause with music and the server prevent
   await expect(sponsor).toContainText("Countdown paused with the music");
   await expect(sponsor.locator("video")).toHaveJSProperty("muted", true);
   await expect(sponsor.locator("video")).toHaveJSProperty("paused", true);
+  await page.screenshot({
+    path: test.info().outputPath("sponsor-countdown.png"),
+    fullPage: true,
+  });
   await post(`/api/operator/events/${event.id}/playback/pause`, {
     ...lease,
     sequence: 3,
