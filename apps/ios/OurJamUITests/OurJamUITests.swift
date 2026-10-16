@@ -152,4 +152,26 @@ final class OurJamUITests: XCTestCase {
         waitForExpectations(timeout: 10)
     }
 
+    @MainActor func testZNativeAccountBrowserHandoff() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ourjam.origin", "http://127.0.0.1:4173", "-ourjam.event", "native-integration"]
+        app.launch(); XCTAssertTrue(app.buttons["connectButton"].waitForExistence(timeout: 15)); app.buttons["connectButton"].tap()
+        XCTAssertTrue(app.tabBars.buttons["You"].waitForExistence(timeout: 20)); app.tabBars.buttons["You"].tap()
+        let login = app.buttons["accountSignIn"]; reveal(login, in: app); login.tap()
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        if springboard.buttons["Continue"].waitForExistence(timeout: 3) { springboard.buttons["Continue"].tap() }
+        if app.alerts.buttons["Continue"].waitForExistence(timeout: 2) { app.alerts.buttons["Continue"].tap() }
+        let browser = app.webViews.firstMatch
+        let confirm = browser.buttons["Return to iOS with this account"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 25), app.debugDescription)
+        confirm.tap()
+        let name = app.textFields["profileName"]
+        XCTAssertTrue(name.waitForExistence(timeout: 20), app.debugDescription)
+        reveal(name, in: app, towardTop: true)
+        expectation(for: NSPredicate(format: "value == %@", "Native account fan"), evaluatedWith: name)
+        waitForExpectations(timeout: 15)
+        let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "OurJam-native-account-restored"; screenshot.lifetime = .keepAlways; add(screenshot)
+    }
+
 }

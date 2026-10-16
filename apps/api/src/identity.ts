@@ -1,3 +1,4 @@
+import { registerNativeIdentity } from "./native-identity.js";
 import { randomBytes, randomUUID } from "node:crypto";
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import { z } from "zod";
@@ -228,6 +229,7 @@ export async function registerIdentity(
     providers: config?.providers ?? [],
   }));
   if (!config) return;
+  await registerNativeIdentity(app, db, origin);
   app.post(
     "/api/identity/session",
     { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } },

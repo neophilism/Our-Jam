@@ -284,11 +284,11 @@ export async function createApp(db: Database, config: AppConfig) {
   app.get("/api/ready", async () => {
     const rows = (
       await db.query(
-        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql','005_artist_profiles.sql','006_release_controls.sql','007_audience_admission.sql','008_profile_recovery.sql','009_event_commerce_sponsors.sql','010_identity_signin.sql')",
+        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql','005_artist_profiles.sql','006_release_controls.sql','007_audience_admission.sql','008_profile_recovery.sql','009_event_commerce_sponsors.sql','010_identity_signin.sql','011_native_identity_handoff.sql')",
       )
     ).rows;
     requireThat(
-      rows.length === 10,
+      rows.length === 11,
       "schema_not_ready",
       "Required database migrations have not been applied.",
       503,
