@@ -410,6 +410,7 @@ function Audience({ slug }: { slug: string }) {
   const waves = round?.waves ?? [];
   const used = waves.reduce((n, w) => n + w.mine, 0);
   const voteLimit = round?.voteLimit ?? 5;
+  const singleVote = round?.voteMode === "single";
   const votesLeft = Math.max(0, voteLimit - used);
   const open =
     fresh &&
@@ -535,9 +536,9 @@ function Audience({ slug }: { slug: string }) {
                 <span style={{ width: `${(votesLeft / voteLimit) * 100}%` }} />
               </div>
               <p className="tiny muted vote-explanation">
-                Tap + to vote for a musical idea and − to take a vote back.
-                You can vote more than once for an idea, and change your mind
-                until this song ends.
+                {singleVote
+                  ? "Tap + to vote for a Sound Wave and − to take it back. You can vote for different ideas, once each, until the song ends."
+                  : "Tap + to vote for an idea and − to take one back. You can vote more than once for an idea in this older show."}
               </p>
               {!data.canContribute ? (
                 <div className="join-panel">
@@ -704,7 +705,7 @@ function Audience({ slug }: { slug: string }) {
                           <b>{w.mine || "·"}</b>
                           <button
                             aria-label={`Vote for ${w.text}`}
-                            disabled={!open || used >= voteLimit || busy}
+                            disabled={!open || used >= voteLimit || (singleVote && w.mine > 0) || busy}
                             onClick={() => vote(w, 1)}
                           >
                             +
@@ -1228,6 +1229,8 @@ function CreateEvent() {
             artistName: form.get("artistName"),
             slug: form.get("slug"),
             purchaseLinks,
+            voteMode: "single",
+            votesPerListener: Number(form.get("votesPerListener")),
             purchaseMode,
             preferredPurchaseProvider: purchaseMode === "direct" ? preferredPurchaseProvider : undefined,
             screenLimit: Number(form.get("screenLimit")),
@@ -1306,7 +1309,7 @@ function CreateEvent() {
           </p>
         </div>
         <label>
-          Waves visible on the big screen
+          Sound Waves visible on the big screen
           <select name="screenLimit" defaultValue="16">
             {[8, 12, 16, 24, 40, 60].map((n) => (
               <option key={n}>{n}</option>
@@ -1314,6 +1317,11 @@ function CreateEvent() {
           </select>
         </label>
       </div>
+      <label className="vote-cap-setting">
+        How many different Sound Waves can each fan vote for per song?
+        <input name="votesPerListener" type="number" required min={1} max={1000} defaultValue={5} />
+        <span className="tiny muted">Each fan gets one vote per Sound Wave and can change their choices until the song ends.</span>
+      </label>
       <PurchaseEditor links={purchaseLinks} onChange={setPurchaseLinks} disabled={busy} mode={purchaseMode} onModeChange={setPurchaseMode} preferredProvider={preferredPurchaseProvider} onPreferredChange={setPreferredPurchaseProvider}/>
       <div className="section-heading">
         <h3>The album, in order</h3>

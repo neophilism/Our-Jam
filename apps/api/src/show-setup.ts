@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { VOTE_BUDGET } from "../../../packages/domain/src/index.js";
 import { purchaseLinksInput, publicPurchaseLinks, preferredPurchaseUrl, purchaseModeInput } from "../../../packages/contracts/src/purchase-providers.js";
 import type { Database } from "./db.js";
 import { ownedEvent, replay, remember, logEvent } from "./service.js";
@@ -115,11 +116,18 @@ export async function updateSettings(
       minimumRoundSeconds: input.minimumRoundSeconds,
       maxWaves: input.maxWaves,
       maxGenerations: input.maxGenerations,
+      voteMode: input.voteMode ?? event.settings.voteMode ?? "weighted",
+      votesPerListener: input.votesPerListener ?? event.settings.votesPerListener ?? VOTE_BUDGET,
       releaseMode: input.releaseMode,
       purchaseLinks: input.purchaseLinks ?? publicPurchaseLinks(event.settings.purchaseLinks, event.purchase_url),
       purchaseMode: input.purchaseMode ?? event.settings.purchaseMode ?? "menu",
       preferredPurchaseProvider: input.preferredPurchaseProvider === undefined ? event.settings.preferredPurchaseProvider ?? null : input.preferredPurchaseProvider,
     };
+    requireThat(
+      settings.voteMode !== "weighted" || settings.votesPerListener === VOTE_BUDGET,
+      "invalid_vote_policy",
+      "Legacy weighted voting keeps its original limit. Select one vote per Sound Wave to allow more choices.",
+    );
     requireThat(settings.purchaseMode !== "direct" || Boolean(preferredPurchaseUrl(settings.purchaseLinks, settings.purchaseMode, settings.preferredPurchaseProvider)), "invalid_purchase_destination", "Choose a listed provider for direct purchase.", 400);
     await tx.query(
       "UPDATE events SET title=$1,artist_name=$2,purchase_url=$3,settings=$4 WHERE id=$5",
