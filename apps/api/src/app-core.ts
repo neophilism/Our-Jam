@@ -642,7 +642,10 @@ export async function createApp(db: Database, config: AppConfig) {
   registerPlatformAdmin(app, db, {adminToken:config.adminToken, secureCookies:config.secureCookies});
   app.post("/api/operator/events", async (req) => {
     const op = await session(req, "operator");
-    return createEvent(db, op.artist_id, eventInput.parse(req.body));
+    const input = eventInput.parse(req.body);
+    requireThat(input.voteMode !== "weighted", "legacy_voting_unavailable",
+      "New shows use one vote per Sound Wave. Older weighted voting is available only for existing legacy events.");
+    return createEvent(db, op.artist_id, { ...input, voteMode: "single" });
   });
   app.get("/api/operator/vote-policy", async (req) => {
     await session(req, "operator");
