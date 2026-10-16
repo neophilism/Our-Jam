@@ -36,7 +36,7 @@ struct GenerationJob: Decodable, Identifiable {
 }
 struct EventState: Decodable {
     struct Event: Decodable { let id: String; let slug: String; let title: String; let artistName: String; let artistId: String; let state: String; let revision: Int }
-    struct Round: Decodable { let id: String; let sourceTitle: String; let state: String; let deadlineAt: String; let remainingMs: Double?; let revision: Int; let voteLimit: Int?; let waves: [Wave] }
+    struct Round: Decodable { let id: String; let sourceTitle: String; let state: String; let deadlineAt: String; let remainingMs: Double?; let revision: Int; let voteLimit: Int?; let voteMode: String?; let waves: [Wave] }
     struct Admission: Decodable { let mode: String; let limit: Int; let contributors: Int }
     let serverTime: String
     let event: Event

@@ -1920,3 +1920,7 @@ summary {
 @media (prefers-reduced-motion: reduce) {
   .vote-progress span { transition: none; }
 }
+
+.vote-cap-setting { display: block; max-width: 580px; padding: 18px; border: 1px solid var(--line); border-radius: 8px; margin: 20px 0; }
+.vote-cap-setting input { max-width: 170px; margin: 8px 0; }
+.vote-cap-setting .tiny { display: block; line-height: 1.6; }

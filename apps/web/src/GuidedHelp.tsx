@@ -56,7 +56,7 @@ const guides: Record<Surface, Step[]> = {
     {
       selector: ".audience .vote-controls",
       title: "Vote on Sound Waves",
-      description: "Select + next to an idea you like. Select − to take back a vote. You can vote for different ideas or vote more than once for one idea.",
+      description: "Select + to vote for a Sound Wave and − to remove a vote. You can change which musical ideas you support until the song ends.",
     },
     {
       selector: ".audience .tabs button:nth-child(2)",

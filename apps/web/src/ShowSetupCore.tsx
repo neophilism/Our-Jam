@@ -117,6 +117,8 @@ export function ShowSetup({
                     artistName: form.get("artistName"),
                     purchaseUrl: null,
                     purchaseLinks,
+                    voteMode: form.get("voteMode"),
+                    votesPerListener: Number(form.get("votesPerListener")),
                     purchaseMode,
                     preferredPurchaseProvider: purchaseMode === "direct" ? preferredPurchaseProvider : null,
                     releaseMode: form.get("releaseMode"),
@@ -169,6 +171,18 @@ export function ShowSetup({
                   <option value="review">Hold for my approval</option>
                 </select>
               </div>
+              <label>
+                How should people vote on Sound Waves?
+                <select name="voteMode" defaultValue={settings.settings.voteMode ?? "weighted"}>
+                  <option value="single">One vote per Sound Wave (recommended)</option>
+                  <option value="weighted">Older-show voting (allow multiple votes on one idea)</option>
+                </select>
+              </label>
+              <label>
+                Number of different Sound Waves each fan can vote for per song
+                <input name="votesPerListener" type="number" min={1} max={1000} required defaultValue={settings.settings.votesPerListener ?? 5} />
+                <small className="muted">A higher limit applies only to one-vote-per-Sound-Wave shows, starting with the next song.</small>
+              </label>
               <PurchaseEditor links={purchaseLinks} onChange={setPurchaseLinks} disabled={busy} mode={purchaseMode} onModeChange={setPurchaseMode} preferredProvider={preferredPurchaseProvider} onPreferredChange={setPreferredPurchaseProvider}/>
               {(
                 [

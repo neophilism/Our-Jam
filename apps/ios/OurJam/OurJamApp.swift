@@ -99,7 +99,7 @@ struct LiveView: View {
                                 TextField("Instrument, rhythm, mood...", text: $text).textFieldStyle(.roundedBorder).onChange(of: text) { _, value in if value.count > 48 { text = String(value.prefix(48)) } }.focused($waveInputFocused).accessibilityIdentifier("waveText")
                                 Button("Contribute Sound Wave") { waveInputFocused = false; Task { if await model.submit(text) { text = "" } } }.buttonStyle(.borderedProminent).disabled(!model.canVote || model.used >= model.voteLimit || text.trimmingCharacters(in: .whitespacesAndNewlines).count < 2).accessibilityIdentifier("submitWave")
                                 Text("\(max(0, model.voteLimit - model.used)) of \(model.voteLimit) votes remaining").font(.headline).accessibilityIdentifier("voteBudget")
-                                Text(model.used >= model.voteLimit ? "You have used all your votes. Take one back from a Sound Wave to submit another idea." : "Submitting a Sound Wave uses one vote. Tap + to vote for other ideas and − to change your mind.").font(.caption).foregroundStyle(.secondary)
+                                Text(model.used >= model.voteLimit ? "You have used all your votes. Take one back from a Sound Wave to submit another idea." : model.singleVoteMode ? "Submitting a Sound Wave uses one vote. Tap + once for each idea you like and − to change your mind." : "Submitting a Sound Wave uses one vote. Tap + to vote for other ideas and − to change your mind.").font(.caption).foregroundStyle(.secondary)
                             }
                         }
                         Text("Sound Waves fans are voting for").font(.title2.bold())
@@ -112,7 +112,7 @@ struct LiveView: View {
                                     Spacer()
                                     Button { Task { await model.vote(wave, change: -1) } } label: { Image(systemName: "minus") }.accessibilityLabel("Take back a vote from " + wave.text).disabled(!model.canVote || wave.mine == 0)
                                     Text("\(wave.mine)").monospacedDigit().frame(minWidth: 25)
-                                    Button { Task { await model.vote(wave, change: 1) } } label: { Image(systemName: "plus") }.accessibilityLabel("Vote for " + wave.text).disabled(!model.canVote || model.used >= model.voteLimit)
+                                    Button { Task { await model.vote(wave, change: 1) } } label: { Image(systemName: "plus") }.accessibilityLabel("Vote for " + wave.text).disabled(!model.canVote || model.used >= model.voteLimit || (model.singleVoteMode && wave.mine > 0))
                                 }.buttonStyle(.bordered).controlSize(.large)
                             }.padding().background(Color.white.opacity(0.06)).clipShape(RoundedRectangle(cornerRadius: 16))
                         }
