@@ -97,6 +97,7 @@ export type AppConfig = {
   providerReady?: boolean;
   serveWeb?: boolean;
   mediaStore?: MediaStore;
+  mediaVerified?: boolean;
   email?: EmailConfig;
 };
 // Native guest credentials are deliberately distinguishable from browser and
@@ -280,6 +281,7 @@ export async function createApp(db: Database, config: AppConfig) {
     );
     return {
       database: "ready",
+      media: config.mediaVerified ? "verified" : config.mediaStore ? "configured" : "not_configured",
       generation: config.providerReady ? "configured" : "not_configured",
       operator: config.operatorToken ? "configured" : "not_configured",
       email: config.email ? "configured" : "not_configured",
