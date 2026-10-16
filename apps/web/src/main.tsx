@@ -1,5 +1,5 @@
 import { PurchaseEditor, PurchaseChoices, PurchaseLanding } from "./PurchaseLinks";
-import { type PurchaseLink } from "../../../packages/contracts/src/purchase-providers";
+import { preferredPurchaseUrl, type PurchaseLink, type PurchaseMode } from "../../../packages/contracts/src/purchase-providers";
 import "./purchase-links.css";
 import {
   AudioRouting,
@@ -727,7 +727,7 @@ function Audience({ slug }: { slug: string }) {
             <span className="eyebrow">IT STARTED WITH THE ALBUM</span>
             <strong>Take the original sound home.</strong>
           </div>
-          {(data.event.purchaseLinks?.length || data.event.purchaseUrl) ? <PurchaseChoices links={data.event.purchaseLinks?.length ? data.event.purchaseLinks as PurchaseLink[] : [{provider:"other", url:data.event.purchaseUrl!}]} label="Get the album" /> : <span className="muted">Album links coming soon</span>}
+          {(data.event.purchaseLinks?.length || data.event.purchaseUrl) ? <PurchaseChoices links={data.event.purchaseLinks?.length ? data.event.purchaseLinks as PurchaseLink[] : [{provider:"other", url:data.event.purchaseUrl!}]} label="Get the album" mode={data.event.purchaseMode} preferredProvider={data.event.preferredPurchaseProvider} /> : <span className="muted">Album links coming soon</span>}
         </div>
       </main>
       {profile && (
@@ -1080,7 +1080,7 @@ function Screen({ slug }: { slug: string }) {
             label="FREE · JOIN & DOWNLOAD"
           />
           {(data.event.purchaseLinks?.length || data.event.purchaseUrl) && (
-            <QR url={location.origin + "/buy/" + encodeURIComponent(slug)} label="GET THE ALBUM" />
+            <QR url={preferredPurchaseUrl(data.event.purchaseLinks as PurchaseLink[] ?? (data.event.purchaseUrl ? [{ provider: "other", url: data.event.purchaseUrl }] : []), data.event.purchaseMode, data.event.preferredPurchaseProvider) ?? location.origin + "/buy/" + encodeURIComponent(slug)} label="GET THE ALBUM" />
           )}
         </div>
       </div>
@@ -1172,6 +1172,8 @@ function Performer({ slug }: { slug?: string }) {
 }
 function CreateEvent() {
   const [purchaseLinks, setPurchaseLinks] = useState<PurchaseLink[]>([]);
+  const [purchaseMode, setPurchaseMode] = useState<PurchaseMode>("menu");
+  const [preferredPurchaseProvider, setPreferredPurchaseProvider] = useState("");
   const [sources, setSources] = useState([
       { title: "", corePrompt: "", audioUrl: "", durationSeconds: 180 },
     ]),
@@ -1190,6 +1192,8 @@ function CreateEvent() {
             artistName: form.get("artistName"),
             slug: form.get("slug"),
             purchaseLinks,
+            purchaseMode,
+            preferredPurchaseProvider: purchaseMode === "direct" ? preferredPurchaseProvider : undefined,
             screenLimit: Number(form.get("screenLimit")),
             admissionMode: form.get("admissionMode"),
             sources: sources.map((s) => ({
@@ -1257,7 +1261,7 @@ function CreateEvent() {
           </select>
         </label>
       </div>
-      <PurchaseEditor links={purchaseLinks} onChange={setPurchaseLinks} disabled={busy}/>
+      <PurchaseEditor links={purchaseLinks} onChange={setPurchaseLinks} disabled={busy} mode={purchaseMode} onModeChange={setPurchaseMode} preferredProvider={preferredPurchaseProvider} onPreferredChange={setPreferredPurchaseProvider}/>
       <div className="section-heading">
         <h3>The album, in order</h3>
         <span className="muted">The core sound stays yours.</span>

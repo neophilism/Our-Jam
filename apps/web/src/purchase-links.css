@@ -9,3 +9,9 @@
 .purchase-landing { max-width: 670px; margin: 45px auto; padding: 20px; }
 .purchase-landing-list { display: grid; gap: 14px; margin: 26px 0; }
 @media (max-width: 650px) { .purchase-editor-row { grid-template-columns: 1fr; } .purchase-menu-options { right: auto; left: 0; } }
+
+.purchase-mode-settings { margin-top: 18px; border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+.purchase-mode-settings legend { font-weight: 700; }
+.purchase-mode-settings > label { margin: 12px 0; display: block; }
+.purchase-mode-settings input[type="radio"] { width: 18px; min-height: 18px; height: 18px; display: inline-block; margin: 0 9px 0 0; vertical-align: middle; accent-color: var(--lime); }
+.purchase-mode-settings select { margin-top: 8px; }

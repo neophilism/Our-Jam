@@ -138,7 +138,7 @@ export function ArtistPage({ id }: { id: string }) {
                 >
                   Listen & explore ↗
                 </a>
-                {(event.purchase_links?.length || event.purchase_url) && <PurchaseChoices links={publicPurchaseLinks(event.purchase_links, event.purchase_url)} label="Get the original album" />}
+                {(event.purchase_links?.length || event.purchase_url) && <PurchaseChoices links={publicPurchaseLinks(event.purchase_links, event.purchase_url)} label="Get the original album" mode={event.purchase_mode} preferredProvider={event.preferred_purchase_provider} />}
               </article>
             ))}
           </div>
