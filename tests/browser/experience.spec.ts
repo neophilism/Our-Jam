@@ -131,7 +131,7 @@ test("performer owns playback, pauses voting, and recovers saved recording chunk
     .click();
   await page.getByRole("button", { name: "Start the first round" }).click();
   await expect(
-    page.getByRole("heading", { name: "Control source" }),
+    page.getByRole("heading", { name: "Control source", exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Pause the round", exact: true })
