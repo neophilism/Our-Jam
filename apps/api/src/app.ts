@@ -27,6 +27,7 @@ export async function createApp(db: Database, config: AppConfig) {
       config.origin,
       config.commerce,
       config.mediaStore,
+      config.identity,
     );
   await registerIdentity(app, db, config.origin, config.identity);
   return app;
