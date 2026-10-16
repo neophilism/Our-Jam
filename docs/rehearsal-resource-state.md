@@ -1,3 +1,5 @@
+> **October 16, 2026 update:** This October 12 snapshot is preserved as historical evidence. The dedicated free Render service now exists and is live at https://our-jam-rehearsal.onrender.com on a restricted **rehearsal** Neon login. Health/readiness GitHub Actions smoke passed on October 16, and branch-bound private Object Storage secrets have been installed on Render. Live storage object round-trip and an owner-file/physical-device rehearsal remain separate acceptance gates. See docs/deployment.md for the newer sequence. No paid generation or email is enabled.
+
 # Resource reconciliation for zero-budget rehearsal
 
 Updated October 12, 2026. This record supersedes earlier external-state claims. The production database schema is now initialized; the hosted application is not deployed.
