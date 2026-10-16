@@ -1,3 +1,6 @@
+import { PurchaseEditor, PurchaseChoices, PurchaseLanding } from "./PurchaseLinks";
+import { purchaseProviders, type PurchaseLink } from "../../../packages/contracts/src/purchase-providers";
+import "./purchase-links.css";
 import {
   AudioRouting,
   useAudioRouting,
@@ -724,18 +727,7 @@ function Audience({ slug }: { slug: string }) {
             <span className="eyebrow">IT STARTED WITH THE ALBUM</span>
             <strong>Take the original sound home.</strong>
           </div>
-          {data.event.purchaseUrl ? (
-            <a
-              className="button"
-              href={data.event.purchaseUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Buy the album ↗
-            </a>
-          ) : (
-            <span className="muted">Album link coming soon</span>
-          )}
+          {(data.event.purchaseLinks?.length || data.event.purchaseUrl) ? <PurchaseChoices links={data.event.purchaseLinks?.length ? data.event.purchaseLinks as PurchaseLink[] : [{provider:"other", url:data.event.purchaseUrl!}]} label="Get the album" /> : <span className="muted">Album links coming soon</span>}
         </div>
       </main>
       {profile && (
@@ -1087,8 +1079,8 @@ function Screen({ slug }: { slug: string }) {
             url={location.origin + "/event/" + slug}
             label="FREE · JOIN & DOWNLOAD"
           />
-          {data.event.purchaseUrl && (
-            <QR url={data.event.purchaseUrl} label="BUY THE ALBUM" />
+          {(data.event.purchaseLinks?.length || data.event.purchaseUrl) && (
+            <QR url={location.origin + "/buy/" + encodeURIComponent(slug)} label="GET THE ALBUM" />
           )}
         </div>
       </div>
@@ -1179,6 +1171,7 @@ function Performer({ slug }: { slug?: string }) {
   );
 }
 function CreateEvent() {
+  const [purchaseLinks, setPurchaseLinks] = useState<PurchaseLink[]>([]);
   const [sources, setSources] = useState([
       { title: "", corePrompt: "", audioUrl: "", durationSeconds: 180 },
     ]),
@@ -1196,9 +1189,7 @@ function CreateEvent() {
             title: form.get("title"),
             artistName: form.get("artistName"),
             slug: form.get("slug"),
-            ...(form.get("purchaseUrl")
-              ? { purchaseUrl: form.get("purchaseUrl") }
-              : {}),
+            purchaseLinks,
             screenLimit: Number(form.get("screenLimit")),
             admissionMode: form.get("admissionMode"),
             sources: sources.map((s) => ({
@@ -1241,10 +1232,7 @@ function CreateEvent() {
             placeholder="your-album-release"
           />
         </label>
-        <label>
-          Album purchase link
-          <input name="purchaseUrl" type="url" placeholder="https://…" />
-        </label>
+
         <div>
           <label htmlFor="new-admission-mode">Who can contribute?</label>
           <select
@@ -1269,6 +1257,7 @@ function CreateEvent() {
           </select>
         </label>
       </div>
+      <PurchaseEditor links={purchaseLinks} onChange={setPurchaseLinks} disabled={busy}/>
       <div className="section-heading">
         <h3>The album, in order</h3>
         <span className="muted">The core sound stays yours.</span>
@@ -1813,6 +1802,7 @@ if (segments[0] === "event" && segments[1])
   screen = <Audience slug={decodeURIComponent(segments[1])} />;
 else if (segments[0] === "screen" && segments[1])
   screen = <Screen slug={decodeURIComponent(segments[1])} />;
+else if (segments[0] === "buy" && segments[1]) screen = <PurchaseLanding slug={decodeURIComponent(segments[1])} />;
 else if (segments[0] === "performer")
   screen = (
     <Performer
