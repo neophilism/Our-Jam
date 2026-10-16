@@ -286,8 +286,9 @@
       "title": "Load monitoring recovery and full show rehearsal",
       "origin": "original",
       "prs": [],
+      "contributingPrs": [39, 40, 41, 42],
       "status": "in_progress",
-      "implementationNotes": "Production migrations 001-008 now succeeded, with an empty schema diff against rehearsal, no user data/jobs, and a restricted NOLOGIN runtime role. The owner-requested fresh free Render create was again tool-safety rejected; no hosted URL exists. PR25/28/30/32 native/local gates and PR31 startup checks passed. Live storage, runtime credential wiring, cloud and physical venue acceptance remain open.",
+      "implementationNotes": "The isolated Neon rehearsal branch now backs the live free-tier HTTPS Render service. PR39 verifies real private S3 PUT/HEAD/GET/DELETE; PR40 exercises remote readiness, denied unauthenticated private routes and Origin protection; PR41 adds performer preflight/runbook; PR42 verifies real presigned HTTPS reads and unsigned denial. Test-server logs report media=verified; production is separate and unchanged. Actual owner-uploaded songs, physical phone/network and venue hardware acceptance remain outstanding. Prior native/local checks PR25/28/30/32 and PR31 remain accepted.",
       "dependsOn": [],
       "externalDependencies": [],
       "externalPrerequisites": []
