@@ -25,7 +25,12 @@ import SwiftUI
     }
     var remaining: Int { max(0, Int((state?.round.flatMap { Self.date($0.deadlineAt) } ?? .distantPast).timeIntervalSince(serverNow))) }
     var used: Int { state?.round?.waves.reduce(0) { $0 + $1.mine } ?? 0 }
-    var canVote: Bool { connected && fresh && !busy && state?.canContribute == true && state?.round?.state == "open" && remaining > 0 }
+    var sponsorElapsed: Double {
+        guard let opening = state?.round?.sponsorBreak else { return 0 }
+        return max(0, opening.elapsedMs / 1000 + (opening.paused ? 0 : max(0, clock.timeIntervalSince(deviceAnchor))))
+    }
+    var sponsorRemaining: Int { max(0, Int(ceil((state?.round?.sponsorBreak?.durationSeconds ?? 0) - sponsorElapsed))) }
+    var canVote: Bool { connected && fresh && !busy && state?.canContribute == true && state?.round?.state == "open" && remaining > 0 && sponsorRemaining == 0 }
     func connect() async {
         guard !busy else { return }; busy = true; error = ""; generation += 1
         do {

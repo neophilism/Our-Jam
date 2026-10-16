@@ -114,4 +114,42 @@ final class OurJamUITests: XCTestCase {
         screenshot.lifetime = .keepAlways
         add(screenshot)
     }
+    @MainActor func testSponsorCountdownSurvivesVideoFailureAndPause() throws {
+        continueAfterFailure = false
+        func configure(ended: Bool) {
+            let saved = expectation(description: "Isolated sponsor phase configured")
+            var request = URLRequest(url: URL(string: "http://127.0.0.1:4173/__test__/native-sponsor")!)
+            request.httpMethod = "POST"
+            request.setValue("http://127.0.0.1:4173", forHTTPHeaderField: "Origin")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try! JSONSerialization.data(withJSONObject: ["ended": ended])
+            URLSession.shared.dataTask(with: request) { _, response, error in
+                XCTAssertNil(error); XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200); saved.fulfill()
+            }.resume()
+            wait(for: [saved], timeout: 15)
+        }
+        configure(ended: false)
+        let app = XCUIApplication()
+        app.launchArguments = ["-ourjam.origin", "http://127.0.0.1:4173", "-ourjam.event", "native-integration"]
+        app.launch(); XCTAssertTrue(app.buttons["connectButton"].waitForExistence(timeout: 15)); app.buttons["connectButton"].tap()
+        let countdown = app.staticTexts["sponsorCountdown"]
+        XCTAssertTrue(countdown.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertEqual(countdown.label, "Our Jam begins in 15s")
+        let advanced = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label != %@", "Our Jam begins in 15s"), object: countdown)
+        advanced.isInverted = true
+        XCTAssertEqual(XCTWaiter.wait(for: [advanced], timeout: 4), .completed, "Paused countdown survives refresh and failed video")
+        if app.buttons["joinButton"].exists { app.buttons["joinButton"].tap() }
+        let field = app.textFields["waveText"]
+        reveal(field, in: app); field.tap(); field.typeText("Native sponsor test")
+        XCTAssertFalse(app.buttons["submitWave"].isEnabled)
+        app.swipeDown()
+        let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "OurJam-native-sponsor-countdown"; screenshot.lifetime = .keepAlways; add(screenshot)
+        configure(ended: true)
+        let hidden = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: countdown)
+        XCTAssertEqual(XCTWaiter.wait(for: [hidden], timeout: 15), .completed)
+        reveal(app.buttons["submitWave"], in: app)
+        expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: app.buttons["submitWave"])
+        waitForExpectations(timeout: 10)
+    }
+
 }
