@@ -169,3 +169,104 @@ test("password reset stays on the app origin and removes the reset token after u
     calls.find((c) => c.path.endsWith("/reset-password"))?.body.token,
   ).toBe("fixture-reset-token");
 });
+
+test("native sign-in requires an explicit return confirmation and redeems only on its initiating device", async ({
+  page,
+}) => {
+  const { createHash } = await import("node:crypto");
+  const origin = "http://127.0.0.1:4174",
+    verifier = "c".repeat(64);
+  const challenge = createHash("sha256").update(verifier).digest("base64url");
+  const mobile = (
+    await (
+      await page.request.post("/api/mobile/session", {
+        headers: { origin },
+        data: {},
+      })
+    ).json()
+  ).token;
+  const started = await (
+    await page.request.post("/api/identity/native/start", {
+      headers: { origin, authorization: "Bearer " + mobile },
+      data: { challenge },
+    })
+  ).json();
+  await page.route("https://auth.example.test/**", async (route) => {
+    const req = route.request(),
+      path = new URL(req.url()).pathname;
+    const headers = {
+      "access-control-allow-origin": origin,
+      "access-control-allow-credentials": "true",
+      "access-control-allow-headers":
+        req.headers()["access-control-request-headers"] ??
+        "content-type,authorization",
+      "access-control-expose-headers": "set-auth-jwt",
+      "set-auth-jwt": fixtureIdentityToken,
+    };
+    if (req.method() === "OPTIONS") {
+      await route.fulfill({ status: 204, headers });
+      return;
+    }
+    const user = {
+      id: "browser-identity",
+      email: "fixture@example.test",
+      emailVerified: true,
+      name: "Fixture account",
+    };
+    const body = path.endsWith("/get-session")
+      ? {
+          user,
+          session: {
+            id: "native-browser-fixture",
+            userId: user.id,
+            token: "managed-fixture",
+            expiresAt: new Date(Date.now() + 900000).toISOString(),
+          },
+        }
+      : { token: fixtureIdentityToken };
+    await route.fulfill({
+      status: 200,
+      headers: { ...headers, "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  });
+  const signIn = new URL(started.signInUrl);
+  signIn.searchParams.set("role", "performer");
+  await page.goto(signIn.href);
+  await expect(page.getByLabel("I’m here as", { exact: true })).toHaveValue(
+    "audience",
+  );
+  await expect(page.getByLabel("I’m here as", { exact: true })).toBeDisabled();
+  const button = page.getByRole("button", {
+    name: "Return to iOS with this account",
+    exact: true,
+  });
+  await expect(button).toBeVisible();
+  const response = page.waitForResponse((r) =>
+    r.url().endsWith("/api/identity/native/approve"),
+  );
+  await button.click();
+  const approved = await response;
+  expect(approved.status()).toBe(200);
+  const callback = new URL((await approved.json()).callback);
+  expect(callback.protocol).toBe("com.neophilism.ourjam:");
+  expect(callback.searchParams.has("token")).toBe(false);
+  const redeemed = await page.request.post("/api/identity/native/redeem", {
+    headers: { origin, authorization: "Bearer " + mobile },
+    data: {
+      requestId: started.requestId,
+      code: callback.searchParams.get("code"),
+      verifier,
+    },
+  });
+  expect(redeemed.status()).toBe(200);
+  const credential = (await redeemed.json()).token;
+  expect(credential).toMatch(/^ojm_[a-f0-9]{64}$/);
+  expect(
+    (
+      await page.request.get("/api/operator/events", {
+        headers: { authorization: "Bearer " + credential },
+      })
+    ).status(),
+  ).toBe(401);
+});

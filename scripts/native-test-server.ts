@@ -1,3 +1,4 @@
+import { fixtureIdentityToken } from "../tests/fixtures/identity-token.js";
 // CI-only live backend for native UI tests. Never used by production or local user startup.
 import { testDatabase } from "../tests/database.js";
 import { createApp } from "../apps/api/src/app.js";
@@ -48,7 +49,43 @@ const app = await createApp(db, {
   secureCookies: false,
   serveWeb: true,
   generation,
+  identity: {
+    authUrl: "http://127.0.0.1:4173/__test__/auth",
+    providers: ["google"],
+    verify: async (token) => {
+      if (token !== fixtureIdentityToken)
+        throw Error("Invalid native fixture identity");
+      return {
+        iss: "http://127.0.0.1:4173",
+        sub: "native-test-account",
+        emailVerified: true,
+        name: "Native account fan",
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 600,
+      };
+    },
+  },
 });
+// Controlled provider fixture for actual ASWebAuthenticationSession UI tests;
+// no email, password, external OAuth provider or real account is contacted.
+app.get("/__test__/auth/get-session", async (_req, reply) => {
+  reply.header("set-auth-jwt", fixtureIdentityToken);
+  return {
+    user: {
+      id: "native-test-account",
+      email: "native@example.test",
+      name: "Native account fan",
+      emailVerified: true,
+    },
+    session: {
+      id: "native-test-session",
+      userId: "native-test-account",
+      token: fixtureIdentityToken,
+      expiresAt: new Date(Date.now() + 600000).toISOString(),
+    },
+  };
+});
+app.get("/__test__/auth/token", async () => ({ token: fixtureIdentityToken }));
 app.get("/__test__/native-evidence", async () => {
   const row = (
     await db.query(

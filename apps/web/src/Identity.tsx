@@ -186,7 +186,16 @@ export function IdentitySession() {
 }
 export function SignIn() {
   const params = new URLSearchParams(location.search),
-    initialRole = params.get("role") === "performer" ? "performer" : "audience";
+    nativeRequest = /^[a-f0-9-]{36}$/i.test(params.get("native") ?? "")
+      ? params.get("native")
+      : null,
+    nativeQuery = nativeRequest
+      ? "&native=" + encodeURIComponent(nativeRequest)
+      : "",
+    initialRole =
+      !nativeRequest && params.get("role") === "performer"
+        ? "performer"
+        : "audience";
   const [role, setRole] = useState<"audience" | "performer">(initialRole),
     [mode, setMode] = useState<
       "signin" | "signup" | "verify" | "forgot" | "reset"
@@ -224,6 +233,13 @@ export function SignIn() {
   }, []);
   async function finish(auth: VanillaBetterAuthClient, who = role) {
     const v = await connect(who, auth);
+    if (nativeRequest) {
+      setSignedIn(true);
+      setMessage(
+        "Signed in. Return to iOS to restore this account there. Separate guest votes stay with their original profile.",
+      );
+      return;
+    }
     if (v.profileChanged) {
       setMessage(
         "Signed in to your existing account. This browser’s separate guest profile has not been merged; its saved votes remain with that profile.",
@@ -255,7 +271,7 @@ export function SignIn() {
   }
   const callback =
     location.origin +
-    `/signin?complete=1&role=${role}&next=${encodeURIComponent(next)}`;
+    `/signin?complete=1&role=${role}&next=${encodeURIComponent(next)}${nativeQuery}`;
   return (
     <main className="performer">
       <section className="card identity-card">
@@ -284,11 +300,18 @@ export function SignIn() {
           </p>
         ) : (
           <>
+            {nativeRequest && (
+              <p>
+                Sign in to return to the iOS device that opened this page. This
+                restores your account profile on that device; separate guest
+                votes are not combined.
+              </p>
+            )}
             <label htmlFor="identity-role">I’m here as</label>
             <select
               id="identity-role"
               value={role}
-              disabled={busy}
+              disabled={busy || Boolean(nativeRequest)}
               onChange={(e) => setRole(e.target.value as typeof role)}
             >
               <option value="audience">Audience member</option>
@@ -296,12 +319,38 @@ export function SignIn() {
             </select>
             {signedIn && (
               <div>
-                <button
-                  disabled={busy}
-                  onClick={() => void action((auth) => finish(auth))}
-                >
-                  Continue to Our Jam
-                </button>
+                {nativeRequest && (
+                  <button
+                    disabled={busy}
+                    onClick={() =>
+                      void action(async (auth) => {
+                        await connect("audience", auth);
+                        const result = await api<{ callback: string }>(
+                          "/identity/native/approve",
+                          "POST",
+                          { requestId: nativeRequest },
+                        );
+                        const target = new URL(result.callback);
+                        if (
+                          target.protocol !== "com.neophilism.ourjam:" ||
+                          target.hostname !== "signin"
+                        )
+                          throw new Error("Invalid app sign-in callback.");
+                        location.assign(result.callback);
+                      })
+                    }
+                  >
+                    Return to iOS with this account
+                  </button>
+                )}
+                {!nativeRequest && (
+                  <button
+                    disabled={busy}
+                    onClick={() => void action((auth) => finish(auth))}
+                  >
+                    Continue to Our Jam
+                  </button>
+                )}
                 <button
                   className="ghost"
                   disabled={busy}
@@ -396,7 +445,7 @@ export function SignIn() {
                         email,
                         redirectTo:
                           location.origin +
-                          `/signin?role=${role}&next=${encodeURIComponent(next)}`,
+                          `/signin?role=${role}&next=${encodeURIComponent(next)}${nativeQuery}`,
                       }),
                     );
                     setMessage(
@@ -412,7 +461,7 @@ export function SignIn() {
                     history.replaceState(
                       null,
                       "",
-                      `/signin?role=${role}&next=${encodeURIComponent(next)}`,
+                      `/signin?role=${role}&next=${encodeURIComponent(next)}${nativeQuery}`,
                     );
                     setMode("signin");
                     setMessage(

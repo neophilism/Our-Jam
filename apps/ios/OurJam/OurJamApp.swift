@@ -185,7 +185,9 @@ struct ProfileView: View {
                     Toggle("Keep my credit anonymous", isOn: $model.anonymous)
                     Button("Save profile") { editingName = false; Task { await model.saveProfile() } }.disabled(model.busy).accessibilityIdentifier("saveProfile")
                 }
+                NativeAccountSignIn(model: model, onSignedIn: eraseDisclosure)
                 NativeAccountControls(model: model, issuedKey: $issuedKey, disclosureEpoch: $disclosureEpoch)
+                    .id(model.accountEpoch)
                 Section("Connected event") {
                     Text(model.state?.event.title ?? model.eventCode)
                     Text(model.origin).font(.caption).textSelection(.enabled)

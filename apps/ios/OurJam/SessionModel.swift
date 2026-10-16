@@ -12,6 +12,7 @@ import SwiftUI
     @Published var profileName = ""
     @Published var anonymous = true
     @Published var clock = Date()
+    @Published var accountEpoch = UUID()
     private(set) var api: JamAPI?
     private var generation = 0
     private var refreshing = false
@@ -63,6 +64,17 @@ import SwiftUI
     }
     func tick() { clock = Date(); if clock.timeIntervalSince(lastSuccess) > 15 { fresh = false } }
     func suspend() { generation += 1; fresh = false }
+    func accountChanged(using client: JamAPI) async throws {
+        guard api === client, connected else { throw APIError(status: 0, code: "account", message: "Reconnect to this event after signing in.") }
+        generation += 1; fresh = false; state = nil; accountEpoch = UUID()
+        let fence = generation
+        let loaded: EventState = try await client.request("/events/" + eventCode)
+        guard fence == generation, api === client else { return }
+        apply(loaded)
+        let profile: SessionResponse = try await client.request("/session")
+        guard fence == generation, api === client else { return }
+        profileName = profile.profile?.name ?? ""; anonymous = profile.profile?.anonymous ?? true
+    }
     func command(_ path: String, method: String = "POST", body: [String: Any]) async -> Bool {
         guard let api, !busy else { return false }; busy = true; error = ""
         do {
