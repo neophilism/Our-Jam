@@ -140,7 +140,7 @@ test("performer owns playback, pauses voting, and recovers saved recording chunk
   await page
     .getByRole("button", { name: "Resume the round", exact: true })
     .click();
-  await expect(page.getByText("UNTIL THE NEXT WAVE")).toBeVisible();
+  await expect(page.getByText("TIME LEFT TO VOTE")).toBeVisible();
   await page
     .getByRole("button", { name: "Release playback control", exact: true })
     .click();
@@ -151,7 +151,7 @@ test("performer owns playback, pauses voting, and recovers saved recording chunk
   await page
     .getByRole("button", { name: "Resume the round", exact: true })
     .click();
-  await expect(page.getByText("UNTIL THE NEXT WAVE")).toBeVisible();
+  await expect(page.getByText("TIME LEFT TO VOTE")).toBeVisible();
   // CI Chromium exposes no usable microphone backend (getUserMedia rejects
   // NotSupportedError). Supply a real synthetic MediaStream while exercising
   // the real MediaRecorder, IndexedDB writes, checksums and recovery unchanged.
@@ -321,7 +321,7 @@ test("released credits and feedback follow real listening across an in-app navig
     "Crowd recording fixture",
   );
   await expect(page.locator(".leaderboard")).toContainText(name);
-  await expect(page.locator(".leaderboard")).toContainText("1 waves included");
+  await expect(page.locator(".leaderboard")).toContainText("1 Sound Waves in released tracks");
   await page.getByRole("button", { name: "Love it", exact: false }).click();
   await expect(page.getByLabel("Track feedback")).toHaveCount(0);
   await page.goto("/library");
