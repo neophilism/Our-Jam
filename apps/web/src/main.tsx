@@ -1198,7 +1198,7 @@ function CreateEvent() {
         try {
           if (storageReady !== true || sources.some(s => !s.file)) throw new Error("Choose an MP3 or WAV for every track. Private album storage must be ready.");
           if (sources.some(s => !s.file || !/\.(mp3|wav)$/i.test(s.file.name) || s.file.size < 128 || s.file.size > 128 * 1024 * 1024)) throw new Error("Choose MP3/WAV files no larger than 128 MiB before creating a session.");
-          const created = saved ?? await api("/operator/events", "POST", {
+          const created: { id: string; slug: string } = saved ?? await api<{ id: string; slug: string }>("/operator/events", "POST", {
             title: form.get("title"),
             artistName: form.get("artistName"),
             slug: form.get("slug"),
