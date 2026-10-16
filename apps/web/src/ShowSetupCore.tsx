@@ -1,3 +1,4 @@
+import { measureTrackDuration } from "./track-duration";
 import { useEffect, useRef, useState } from "react";
 import { api, type EventState } from "./api";
 
@@ -236,7 +237,14 @@ export function ShowSetup({
                   title: source.title,
                   corePrompt: source.core_prompt,
                   audioUrl: source.audio_url || undefined,
-                  durationSeconds: Number(source.duration_seconds),
+                  durationSeconds:
+                    source.audio_url &&
+                    !new URL(
+                      source.audio_url,
+                      location.origin,
+                    ).pathname.startsWith("/api/operator/sources/")
+                      ? await measureTrackDuration(source.audio_url, 15)
+                      : Number(source.duration_seconds),
                 });
                 setAlbum(null);
               });
@@ -250,7 +258,6 @@ export function ShowSetup({
               [
                 ["title", "Track title"],
                 ["audio_url", "Track audio URL (HTTPS)"],
-                ["duration_seconds", "Track duration in seconds"],
                 ["core_prompt", "Private signature prompt"],
               ] as const
             ).map(([key, label]) => (
@@ -275,15 +282,7 @@ export function ShowSetup({
                   <input
                     disabled={s.played || busy}
                     required={key !== "audio_url"}
-                    type={
-                      key === "duration_seconds"
-                        ? "number"
-                        : key === "audio_url"
-                          ? "url"
-                          : "text"
-                    }
-                    min={key === "duration_seconds" ? 15 : undefined}
-                    max={key === "duration_seconds" ? 1200 : undefined}
+                    type={key === "audio_url" ? "url" : "text"}
                     value={s[key] ?? ""}
                     onChange={(e) =>
                       setAlbum((a) =>
@@ -296,6 +295,12 @@ export function ShowSetup({
                 )}
               </label>
             ))}
+            <p className="tiny">
+              Duration:{" "}
+              {s.audio_url
+                ? `${s.duration_seconds} seconds · measured from audio when saved or uploaded`
+                : "Waiting for audio upload; upload before opening this track’s round."}
+            </p>
             <button disabled={s.played || busy}>Save album track</button>
           </form>
         ))}

@@ -1,3 +1,4 @@
+import { measureTrackDuration } from "./track-duration";
 import {
   AudioRouting,
   useAudioRouting,
@@ -1192,6 +1193,16 @@ function CreateEvent() {
         setBusy(true);
         const form = new FormData(e.currentTarget);
         try {
+          const measuredSources = [];
+          for (const source of sources) {
+            measuredSources.push({
+              ...source,
+              audioUrl: source.audioUrl || undefined,
+              durationSeconds: source.audioUrl
+                ? await measureTrackDuration(source.audioUrl, 15)
+                : source.durationSeconds,
+            });
+          }
           const created = await api("/operator/events", "POST", {
             title: form.get("title"),
             artistName: form.get("artistName"),
@@ -1201,10 +1212,7 @@ function CreateEvent() {
               : {}),
             screenLimit: Number(form.get("screenLimit")),
             admissionMode: form.get("admissionMode"),
-            sources: sources.map((s) => ({
-              ...s,
-              audioUrl: s.audioUrl || undefined,
-            })),
+            sources: measuredSources,
           });
           location.href = "/performer/" + created.slug;
         } catch (e) {
@@ -1273,19 +1281,21 @@ function CreateEvent() {
         <h3>The album, in order</h3>
         <span className="muted">The core sound stays yours.</span>
       </div>
+      <p className="muted">
+        Track duration is measured automatically. Leave the audio URL blank to
+        upload your MP3/WAV after creating the session; upload it before opening
+        that track’s round.
+      </p>
       {sources.map((source, i) => (
         <fieldset className="source-form" key={i}>
           <legend>TRACK {String(i + 1).padStart(2, "0")}</legend>
-          {(
-            ["title", "corePrompt", "audioUrl", "durationSeconds"] as const
-          ).map((key) => (
+          {(["title", "corePrompt", "audioUrl"] as const).map((key) => (
             <label key={key}>
               {
                 {
                   title: "Track title",
                   corePrompt: "Signature sound / core prompt",
                   audioUrl: "Track audio URL (HTTPS)",
-                  durationSeconds: "Track duration in seconds",
                 }[key]
               }
               {key === "corePrompt" ? (
@@ -1304,15 +1314,8 @@ function CreateEvent() {
                 />
               ) : (
                 <input
-                  type={
-                    key === "durationSeconds"
-                      ? "number"
-                      : key === "audioUrl"
-                        ? "url"
-                        : "text"
-                  }
-                  min={key === "durationSeconds" ? 15 : undefined}
-                  max={key === "durationSeconds" ? 1200 : undefined}
+                  disabled={busy}
+                  type={key === "audioUrl" ? "url" : "text"}
                   required={key !== "audioUrl"}
                   value={source[key]}
                   onChange={(e) =>
@@ -1321,10 +1324,7 @@ function CreateEvent() {
                         j === i
                           ? {
                               ...v,
-                              [key]:
-                                key === "durationSeconds"
-                                  ? Number(e.target.value)
-                                  : e.target.value,
+                              [key]: e.target.value,
                             }
                           : v,
                       ),
@@ -1339,6 +1339,7 @@ function CreateEvent() {
       <button
         type="button"
         className="ghost"
+        disabled={busy}
         onClick={() =>
           setSources((s) => [
             ...s,
@@ -1723,12 +1724,14 @@ function Console({ slug }: { slug: string }) {
                     onSubmit={(e) => {
                       e.preventDefault();
                       const form = new FormData(e.currentTarget);
-                      void action(() =>
+                      void action(async () =>
                         api(`/operator/jobs/${j.id}/asset`, "POST", {
                           title: form.get("title"),
                           audioUrl: form.get("audio"),
                           downloadUrl: form.get("download"),
-                          durationSeconds: Number(form.get("duration")),
+                          durationSeconds: await measureTrackDuration(
+                            String(form.get("audio")),
+                          ),
                           rightsConfirmed: true,
                         }),
                       );
@@ -1752,16 +1755,9 @@ function Console({ slug }: { slug: string }) {
                         Download URL
                         <input name="download" type="url" required />
                       </label>
-                      <label>
-                        Duration (seconds)
-                        <input
-                          name="duration"
-                          type="number"
-                          min="1"
-                          max="1200"
-                          required
-                        />
-                      </label>
+                      <p className="tiny">
+                        Duration is measured automatically from the audio URL.
+                      </p>
                     </div>
                     <label className="check">
                       <input type="checkbox" required />I verified this track
