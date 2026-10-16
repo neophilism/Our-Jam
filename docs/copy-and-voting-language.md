@@ -27,7 +27,7 @@ There is no requirement to play an instrument or produce music. People join with
 
 Don't call audience votes “points”, “credits”, “tokens”, “scores” or a currency. Don't say “five points” or repeat the technical allocation rule in marketing copy. Explain voting in context: **“Tap + to vote for an idea and − to take a vote back. You can change your votes until the song ends.”** Only show actual vote counts where users make decisions.
 
-A listener can currently cast multiple votes for one Sound Wave and can redistribute those votes. Posting their own idea uses one vote. Live voting and reactions to completed crowd-created tracks are distinct features.
+New artist-created shows use **one vote per Sound Wave**: a fan can choose as many different musical ideas as the artist allows, up to 1,000 choices per song. Fans may change their choices before the cutoff. A new Sound Wave uses one of the fan's votes. Existing shows and previously opened rounds preserve their legacy weighted voting behavior, where a fan may place more than one vote on one idea. Live Sound Wave votes and reactions to crowd-created tracks are separate.
 
 ## Control-specific guided tours
 
@@ -43,16 +43,12 @@ Each coachmark highlights the exact visible input or action it teaches. A tutori
 - Always distinguish audience controls from artist-only audio/output/publishing controls.
 - New text must work on mobile, be screen-reader understandable, and use plain-language error messages.
 
-## Vote-limit implementation debt (not changed in this copy release)
+## Vote limits, compatibility and honest marketing
 
-The actual current voting allowance is **five votes per listener, per song**. This is not just marketing text; the server's domain constant, Zod input upper bound, and the database's \`allocations_points_check\` constraint currently enforce five. This release **does not silently relax those safety checks**. The public snapshot now exposes the authoritative \`round.voteLimit\` so web and iOS displays derive their “votes remaining” count rather than hard-code promotional numbers.
+**New shows:** Artists can select how many **different** Sound Waves each fan may vote for on each song (1–1,000). The artist console defaults to five choices but never promotes a fixed five-point game. Each choice carries **one vote**. Once a song starts, its voting rules are frozen until the next song. The system's server-side allocation checks enforce both one-per-wave and the configured total; neither setting is trusted from a fan's browser.
 
-To support artist-selected limits such as 5, 10, 100, or 1,000 in a future release:
-1. Add a reviewed, staged schema migration relaxing the legacy \`allocations.points\` constraint while preserving all existing votes and history.
-2. Add an artist-owned \`votesPerListener\` setting with bounded validation, snapshotted into each new round so an active song never changes mid-vote.
-3. Enforce the immutable per-round allowance in the server allocation and contribution transactions; do not trust client-supplied limits.
-4. Update the contract upper bound, native/web displays, performer setup, accessibility strings, and the one-vote automatic contribution rule.
-5. Test the full range, simultaneous voters, 1,000-wave capacity, reversals, multi-tab conflicts, and realistic attendance/performance. Keep all existing event settings backward compatible.
-6. Rehearse migration on the isolated staging database, separately review any operational permissions, then deploy when the exact-head checks pass.
+**Previous shows:** Pre-existing rounds use their prior five-vote weighted model. A fan may allocate several votes to one Sound Wave only in those legacy rounds. Changing an old event to the one-vote-per-wave model takes effect only on its next round. The public snapshot includes the **actual** voting mode and count, and web/native clients render the right instructions.
 
-There are no new purchases, accounts, database changes, or paid generation actions in this copy rewrite.
+**Database compatibility:** The existing `allocations.points` smallint column and check constraint (1–5 *per Sound Wave row*) remain safe for the new single-vote mode because every new-mode allocation row has value exactly **1**. The vote *total* can be larger since it is distributed across multiple rows. Do not loosen the existing constraint or silently reinterpret stored weighted votes. The existing 1,000-wave contribution capacity constrains high-choice shows; verify realistic crowd load before promoting a 1,000-choice event.
+
+**Acceptance:** Tests must cover both modes and the legacy default, per-wave uniqueness, a ten-choice round, upper range of 1,000 distinct waves, wrong limits, atomic submission and transfer, competing tabs, paused/closed rounds, frozen rules, public round metadata, and mobile/desktop copy. This work does not authorize paid generation or new music licenses.
