@@ -25,7 +25,7 @@ Data persist under `~/.our-jam-local`. First dependency installation needs inter
 
 ## Boundaries
 
-The local server is reachable by this Mac and its Simulator, not separate audience phones over Wi-Fi. Its localhost QR cannot onboard a remote crowd. Hosted deployment and actual Neon S3 media delivery remain unverified; see [resource reconciliation](docs/rehearsal-resource-state.md).
+The local server is reachable by this Mac and its Simulator, not separate audience phones over Wi-Fi. Its localhost QR cannot onboard a remote crowd. A free-tier HTTPS rehearsal API is live at https://our-jam-rehearsal.onrender.com; external health/readiness checks have passed, but actual private media round-trip and real phone/venue acceptance are separate gates. See [deployment](docs/deployment.md).
 
 Both adapters generate from the saved core prompt plus selected Sound Waves, not the uploaded waveform. Both local spending limits are hardcoded to $0 and ignore outside provider configuration. Funded comparison requires a new explicit allowance, API credits and verified server-side pricing/rights configuration. `MUREKA_API_KEY` and `STABLE_AUDIO_KEY` are supported secret names; GitHub secrets are not automatically Render environment variables. There is no automatic Thursday activation.
 
@@ -33,7 +33,7 @@ A Simulator `.app` is not a TestFlight `.ipa`. TestFlight requires membership, a
 
 ## Development
 
-Read [AGENTS.md](AGENTS.md), [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md), [PROGRESS.md](PROGRESS.md) and the [54-work-package roadmap](registry/roadmap.json). Original dependencies and acceptance remain in [backlog.json](backlog.json). DJ V2 and the secondary demonstration have separate plans. Use `npm ci` and `npm run check`, plus applicable browser/native checks before merging.
+Read [AGENTS.md](AGENTS.md), [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md), [PROGRESS.md](PROGRESS.md) and the [54-work-package canonical register](registry/prs.json). Original dependencies and acceptance remain in [backlog.json](backlog.json). DJ V2 and the secondary demonstration have separate plans. Use `npm ci` and `npm run check`, plus applicable browser/native checks before merging.
 
 After all application checks, audit, production builds and Docker pass, CI preserves a source-only release with its commit and checksum. Native artifacts have their own Simulator gate. See [release packaging](docs/release-packaging.md); a source ZIP never claims to be an installable iOS binary.
 
