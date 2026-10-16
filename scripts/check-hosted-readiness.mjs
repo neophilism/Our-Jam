@@ -21,6 +21,10 @@ try {
       throw new Error("Database or operator authentication is not ready");
     if (data.generation !== "not_configured" || data.email !== "not_configured")
       throw new Error("Zero-spend rehearsal expects generation and email disabled");
+    if (data.media !== undefined && !["configured", "verified"].includes(data.media))
+      throw new Error("Private media storage is not configured");
+    if (process.env.OUR_JAM_REQUIRE_MEDIA_VERIFIED === "1" && data.media !== "verified")
+      throw new Error("Live private media round-trip has not been verified");
   });
 } catch (error) {
   console.error("Hosted rehearsal smoke FAIL:", error instanceof Error ? error.message : "unknown");
