@@ -135,15 +135,14 @@ function Home() {
         <section className="hero">
           <div className="hero-copy">
             <h1>
-              Your sound.
+              Jam with the music
               <br />
-              Our <em>next track.</em>
+              <em>you love.</em>
             </h1>
             <p>
-              The artist brings the signature sound.
-              <br />
-              You bring the unexpected. Make something
-              <br className="hide-mobile" /> the room has never heard before.
+              Hear a song. Imagine a new direction. Add your own
+              musical idea—a Sound Wave—and vote on the crowd's favorites.
+              Together, shape what the music becomes next.
             </p>
             <form
               className="join-form"
@@ -167,7 +166,7 @@ function Home() {
               <button>Join the jam ↗</button>
             </form>
             <div className="tiny muted">
-              No download needed. Five points. Endless possibilities.
+              No instrument needed. No app to download. Just bring an idea.
             </div>
           </div>
           <div className="hero-art">
@@ -177,29 +176,50 @@ function Home() {
             </span>
           </div>
         </section>
-        <section className="how">
+        <section className="ourjam-explainer" aria-labelledby="what-is-ourjam">
+          <span className="eyebrow">WHAT IS OURJAM?</span>
+          <h2 id="what-is-ourjam">The song you know. A sound no one has heard.</h2>
+          <p>
+            OurJam lets you jam with an artist's <strong>music itself</strong>.
+            While a song plays, everyone listening can share a musical idea
+            in the same creative space. We call each idea a <strong>Sound Wave</strong>:
+            a new beat, an unexpected instrument, a different groove, or a whole new mood.
+          </p>
+          <p>
+            Add your Sound Wave and vote for the ideas you love. When the song
+            ends, the most popular Sound Waves can guide our music-generation
+            technology in creating a new track inspired by the music you just heard.
+            Listen to the crowd's creation in OurJam, vote for your favorite new tracks,
+            and discover what happens when an artist brings one into the live mix.
+          </p>
+          <p className="explainer-invitation">
+            You don't need to be a musician. You just need to hear a possibility.
+          </p>
+        </section>
+        <section className="how" aria-label="How OurJam works">
           <div>
             <b>01</b>
-            <h3>Catch the sound</h3>
-            <p>Listen to the album. Imagine what belongs in the mix.</p>
+            <h3>Listen. Imagine.</h3>
+            <p>Hear the song the artist is playing. What would you love to add?</p>
           </div>
           <div>
             <b>02</b>
-            <h3>Make a wave</h3>
-            <p>Add an instrument, a genre, a feeling. Move your five points.</p>
+            <h3>Share a Sound Wave.</h3>
+            <p>Suggest a rhythm, instrument, or mood. Vote on the crowd's ideas.</p>
           </div>
           <div>
             <b>03</b>
-            <h3>Keep what we make</h3>
+            <h3>Hear what happens next.</h3>
             <p>
-              Hear the crowd's creation. Download it. You were part of this.
+              Play the new tracks inspired by the crowd's favorite ideas.
+              Vote for the ones you'd love to hear again.
             </p>
           </div>
         </section>
         <section className="event-list">
           <div className="section-heading">
             <h2>Find your room</h2>
-            <span className="muted">Live sessions & event releases</span>
+            <span className="muted">Live jams, upcoming shows, and music created together</span>
           </div>
           <Notice error={error} />
           {events.length ? (
@@ -221,14 +241,14 @@ function Home() {
             ))
           ) : (
             <div className="empty">
-              <h3>The next jam starts with a room.</h3>
-              <p>Scan the QR at the show, or enter the event code above.</p>
+              <h3>Ready when your favorite artist is.</h3>
+              <p>Scan the QR code at a show or enter an event code to start jamming with the music.</p>
             </div>
           )}
         </section>
       </main>
       <footer>
-        OUR JAM <span>Every show leaves a new sound behind.</span>
+        OUR JAM <span>Listen. Imagine. Make something new together.</span>
         <a href="/performer">Start a session ↗</a>
       </footer>
     </>
