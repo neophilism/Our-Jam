@@ -364,7 +364,7 @@ function Countdown({ data }: { data: EventState }) {
         {r?.state === "paused"
           ? "VOTING PAUSED"
           : r?.state === "open"
-            ? "UNTIL THE NEXT WAVE"
+            ? "TIME LEFT TO VOTE"
             : "ROUND CLOSED"}
       </small>
     </span>
@@ -409,6 +409,8 @@ function Audience({ slug }: { slug: string }) {
   const round = data.round;
   const waves = round?.waves ?? [];
   const used = waves.reduce((n, w) => n + w.mine, 0);
+  const voteLimit = round?.voteLimit ?? 5;
+  const votesLeft = Math.max(0, voteLimit - used);
   const open =
     fresh &&
     round?.state === "open" &&
@@ -457,12 +459,16 @@ function Audience({ slug }: { slug: string }) {
                   Now playing <strong>{data.current.title}</strong>
                 </>
               ) : (
-                "Every new track starts with the people in the room."
+                "The next song is waiting. When it starts, you can help shape what comes after."
               )}
             </p>
           </div>
           <Countdown data={data} />
         </div>
+        <p className="audience-intro">
+          You're not just listening to this song—you're helping imagine its next version.
+          Share a musical idea (a Sound Wave), or vote for the ideas you want to hear.
+        </p>
         <nav className="tabs" aria-label="Event sections">
           {[
             ["waves", "Sound Waves"],
@@ -482,8 +488,8 @@ function Audience({ slug }: { slug: string }) {
         <Notice error={error} />
         <p className="muted admission-rule" role="status">
           {data.admission.mode === "open"
-            ? "Remote voting is open: anyone with this event link can contribute."
-            : "Room-code voting: ask the artist for the code. Everyone can listen, download and give feedback."}
+            ? "Anyone with the event link can share Sound Waves and vote."
+            : "To share Sound Waves or vote, enter the show’s room code. Listening is open to everyone."}
           {` ${data.admission.contributors} / ${data.admission.limit} contributor places filled.`}
         </p>
         {!fresh && (
@@ -507,41 +513,43 @@ function Audience({ slug }: { slug: string }) {
               />
               <div className="scene-footer">
                 {open
-                  ? "The crowd chooses the mix. You can move your points until the track ends."
+                  ? "These are the ideas people are voting for. The top Sound Waves can help shape the next track."
                   : round?.state === "paused"
-                    ? "The artist has paused the round. Your points are saved."
+                    ? "The music is paused. Your votes are saved."
                     : data.event.state === "waiting"
                       ? "The artist will open the first round when the music starts."
-                      : "This round is closed. Your next five points arrive with the next album track."}
+                      : "Voting for this song is closed. Follow along for the next round."}
               </div>
             </section>
             <aside className="vote-panel">
               <div className="section-heading">
-                <h2>Your five points</h2>
+                <h2>Vote on Sound Waves</h2>
                 <span className="point-count">
-                  {5 - used}
-                  <small>LEFT</small>
+                  {votesLeft}
+                  <small>VOTES LEFT</small>
                 </span>
               </div>
-              <div
-                className="points"
-                aria-label={`${5 - used} of 5 points remaining`}
-              >
-                {Array.from({ length: 5 }, (_, i) => (
-                  <i key={i} className={i < 5 - used ? "available" : ""} />
-                ))}
+              <div className="vote-progress" role="progressbar"
+                aria-label={`${votesLeft} of ${voteLimit} votes remaining`}
+                aria-valuemin={0} aria-valuemax={voteLimit} aria-valuenow={votesLeft}>
+                <span style={{ width: `${(votesLeft / voteLimit) * 100}%` }} />
               </div>
+              <p className="tiny muted vote-explanation">
+                Tap + to vote for a musical idea and − to take a vote back.
+                You can vote more than once for an idea, and change your mind
+                until this song ends.
+              </p>
               {!data.canContribute ? (
                 <div className="join-panel">
                   <h3>
-                    Don't just listen.
+                    Your ideas belong
                     <br />
-                    Leave your sound.
+                    in the music.
                   </h3>
                   <p>
                     {data.admission.mode === "room_code"
-                      ? "Enter the code announced at the show to unlock your five votes. A shared code does not verify physical attendance."
-                      : "Join the room to contribute a Sound Wave and support the ideas you want to hear."}
+                      ? "Enter the room code announced by the artist to suggest Sound Waves and vote on other ideas."
+                      : "Join the room to share a musical idea and vote for the Sound Waves you want to hear."}
                   </p>
                   {data.admission.mode === "room_code" && (
                     <label htmlFor="room-code">
@@ -575,7 +583,7 @@ function Audience({ slug }: { slug: string }) {
                     }
                   >
                     {data.admission.mode === "room_code"
-                      ? "Unlock my five votes ↗"
+                      ? "Join and vote ↗"
                       : "I'm in. Let's make music ↗"}
                   </button>
                   {!data.joined && data.admission.mode === "room_code" && (
@@ -612,7 +620,7 @@ function Audience({ slug }: { slug: string }) {
                           commandId: crypto.randomUUID(),
                           expectedRevision: round.revision,
                           text,
-                          ...(used === 5 ? { moveFrom } : {}),
+                          ...(used >= voteLimit ? { moveFrom } : {}),
                         });
                         setText("");
                         setMoveFrom("");
@@ -636,22 +644,22 @@ function Audience({ slug }: { slug: string }) {
                           !open ||
                           busy ||
                           text.trim().length < 2 ||
-                          (used === 5 && !moveFrom)
+                          (used >= voteLimit && !moveFrom)
                         }
                         aria-label="Contribute Sound Wave"
                       >
                         ↑
                       </button>
                     </div>
-                    {used === 5 && (
+                    {used >= voteLimit && (
                       <label>
-                        Move one point from
+                        Move one vote from
                         <select
                           value={moveFrom}
                           onChange={(e) => setMoveFrom(e.target.value)}
                           required
                         >
-                          <option value="">Choose your point</option>
+                          <option value="">Choose a Sound Wave</option>
                           {waves
                             .filter((w) => w.mine)
                             .map((w) => (
@@ -663,7 +671,7 @@ function Audience({ slug }: { slug: string }) {
                       </label>
                     )}
                     <p className="tiny muted">
-                      One Sound Wave of your own. It uses one point.
+                      Share one musical idea for this song. Submitting it uses one vote; you can still vote for other ideas.
                     </p>
                   </form>
                   <div className="wave-list">
@@ -681,13 +689,13 @@ function Audience({ slug }: { slug: string }) {
                             {w.own && <i className="yours">YOURS</i>}
                           </strong>
                           <small>
-                            {w.votes} points · {w.supporters} supporters
+                            {w.votes} {w.votes === 1 ? "vote" : "votes"} · {w.supporters} {w.supporters === 1 ? "listener" : "listeners"}
                           </small>
                         </div>
                         <div className="vote-controls">
                           <button
                             className="ghost"
-                            aria-label={`Remove a point from ${w.text}`}
+                            aria-label={`Take back a vote from ${w.text}`}
                             disabled={!open || !w.mine || busy}
                             onClick={() => vote(w, -1)}
                           >
@@ -695,8 +703,8 @@ function Audience({ slug }: { slug: string }) {
                           </button>
                           <b>{w.mine || "·"}</b>
                           <button
-                            aria-label={`Support ${w.text}`}
-                            disabled={!open || used >= 5 || busy}
+                            aria-label={`Vote for ${w.text}`}
+                            disabled={!open || used >= voteLimit || busy}
                             onClick={() => vote(w, 1)}
                           >
                             +
@@ -706,7 +714,7 @@ function Audience({ slug }: { slug: string }) {
                     ))}
                     {!waves.length && (
                       <p className="muted empty-inline">
-                        The room is listening. Start the first wave.
+                        No Sound Waves yet. Be the first to suggest a musical idea.
                       </p>
                     )}
                   </div>
