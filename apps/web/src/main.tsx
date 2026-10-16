@@ -1,5 +1,5 @@
 import { PurchaseEditor, PurchaseChoices, PurchaseLanding } from "./PurchaseLinks";
-import { purchaseProviders, type PurchaseLink } from "../../../packages/contracts/src/purchase-providers";
+import { type PurchaseLink } from "../../../packages/contracts/src/purchase-providers";
 import "./purchase-links.css";
 import {
   AudioRouting,
