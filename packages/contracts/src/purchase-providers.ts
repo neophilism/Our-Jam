@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { httpsUrl } from "./index.js";
+const httpsUrl = z.url().refine((value) => { const parsed = new URL(value); return parsed.protocol === "https:" && !parsed.username && !parsed.password; }, "Use a valid HTTPS URL without credentials.");
 export const purchaseProviders = [
   { id: "bandcamp", label: "Bandcamp", hosts: ["bandcamp.com"] },
   { id: "itunes", label: "Apple Music / iTunes", hosts: ["music.apple.com", "itunes.apple.com", "apps.apple.com"] },
