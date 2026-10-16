@@ -1,4 +1,9 @@
-import { createApp as createCoreApp, type AppConfig as CoreAppConfig } from "./app-core.js";
+import { registerIdentity } from "./identity.js";
+import { registerCommerce } from "./commerce.js";
+import {
+  createApp as createCoreApp,
+  type AppConfig as CoreAppConfig,
+} from "./app-core.js";
 import type { Database } from "./db.js";
 import type { GenerationConfig } from "./generation.js";
 import { configuredGeneration } from "./generation-config.js";
@@ -9,7 +14,20 @@ export type AppConfig = CoreAppConfig & { generation?: GenerationConfig };
 export async function createApp(db: Database, config: AppConfig) {
   const app = await createCoreApp(db, config);
   registerEventStreamShutdown(app);
-  registerGenerationControls(app, db, config.generation ?? configuredGeneration(config.mediaStore));
+  registerGenerationControls(
+    app,
+    db,
+    config.generation ?? configuredGeneration(config.mediaStore),
+  );
   await registerAlbumUploads(app, db, config.origin, config.mediaStore);
+  if (config.commerce)
+    await registerCommerce(
+      app,
+      db,
+      config.origin,
+      config.commerce,
+      config.mediaStore,
+    );
+  await registerIdentity(app, db, config.origin, config.identity);
   return app;
 }

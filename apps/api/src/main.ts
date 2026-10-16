@@ -1,3 +1,5 @@
+import { configuredIdentity } from "./identity.js";
+import { configuredCommerce } from "./commerce.js";
 import { publicOrigin } from "./runtime-config.js";
 import { postgres, migrate } from "./db.js";
 import {
@@ -30,11 +32,16 @@ if (process.env.RUN_MIGRATIONS === "1") {
   }
 }
 const mediaStore = configuredStorage();
-const mediaStatus = await verifyStartupMedia(mediaStore, process.env.MEDIA_PROBE_ON_START);
+const mediaStatus = await verifyStartupMedia(
+  mediaStore,
+  process.env.MEDIA_PROBE_ON_START,
+);
 const generation = configuredGeneration(mediaStore);
 const email = configuredEmail(origin);
 const app = await createApp(db, {
   origin,
+  commerce: configuredCommerce(),
+  identity: configuredIdentity(),
   operatorToken: process.env.OPERATOR_TOKEN,
   secureCookies: production,
   serveWeb: true,

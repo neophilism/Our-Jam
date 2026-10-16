@@ -1,3 +1,6 @@
+import { IdentityLink, IdentitySession, SignIn } from "./Identity";
+import { EventCommerce, CommerceAdmin } from "./Commerce";
+import { SponsorBreak, sponsorRemaining } from "./SponsorBreak";
 import { measureTrackDuration } from "./track-duration";
 import {
   AudioRouting,
@@ -62,6 +65,7 @@ function Header({ children }: { children?: React.ReactNode }) {
       <div className="header-right">
         {children ?? (
           <>
+            <IdentityLink />
             <a className="small text-button" href="/library">
               Your likes
             </a>
@@ -388,6 +392,10 @@ function Audience({ slug }: { slug: string }) {
   const open =
     fresh &&
     round?.state === "open" &&
+    sponsorRemaining(
+      data,
+      Math.max(0, now - new Date(data.serverTime).getTime()),
+    ) === 0 &&
     new Date(round.deadlineAt).getTime() > now;
   const vote = (wave: Wave, delta: number) =>
     action(async () => {
@@ -438,6 +446,7 @@ function Audience({ slug }: { slug: string }) {
             </p>
           </div>
           <Countdown data={data} />
+          <SponsorBreak data={data} />
         </div>
         <nav className="tabs" aria-label="Event sections">
           {[
@@ -1070,6 +1079,7 @@ function Screen({ slug }: { slug: string }) {
         </div>
         <Countdown data={data} />
       </div>
+      <SponsorBreak data={data} />
       <WaveField
         stage
         beat={pulse.beat}
@@ -1138,6 +1148,7 @@ function Performer({ slug }: { slug?: string }) {
             }}
           >
             <h2>Performer access</h2>
+            <IdentityLink role="performer" next={location.pathname} />
             <p>Your private console controls the music and the room.</p>
             <label>
               Performer credential
@@ -1770,6 +1781,7 @@ function Console({ slug }: { slug: string }) {
           ))}
         </section>
         <AdmissionSettings data={data} refresh={refresh} />
+        <EventCommerce data={data} />
         <ShowSetup data={data} refresh={refresh} />
         <AlbumBackup
           outputAvailable={!routes.mainUnavailable}
@@ -1805,7 +1817,21 @@ function Console({ slug }: { slug: string }) {
 }
 const segments = location.pathname.split("/").filter(Boolean);
 let screen: React.ReactNode;
-if (segments[0] === "event" && segments[1])
+if (segments[0] === "signin")
+  screen = (
+    <>
+      <Header />
+      <SignIn />
+    </>
+  );
+else if (segments[0] === "admin")
+  screen = (
+    <>
+      <Header />
+      <CommerceAdmin />
+    </>
+  );
+else if (segments[0] === "event" && segments[1])
   screen = <Audience slug={decodeURIComponent(segments[1])} />;
 else if (segments[0] === "screen" && segments[1])
   screen = <Screen slug={decodeURIComponent(segments[1])} />;

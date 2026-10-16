@@ -188,7 +188,7 @@ export async function updateSource(
       409,
     );
     await tx.query(
-      "UPDATE source_tracks SET title=$1,core_prompt=$2,audio_url=$3,duration_seconds=$4 WHERE id=$5",
+      "UPDATE source_tracks SET duration_verified=CASE WHEN audio_url IS NOT DISTINCT FROM $3::text AND duration_seconds=$4 THEN duration_verified ELSE false END,title=$1,core_prompt=$2,audio_url=$3,duration_seconds=$4 WHERE id=$5",
       [
         input.title,
         input.corePrompt,

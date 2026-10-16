@@ -1,3 +1,9 @@
+import {
+  freezeSponsorPlan,
+  requireEventAccess,
+  requireParticipationStarted,
+  sponsorElapsed,
+} from "./commerce-policy.js";
 import { randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Database, Sql } from "./db.js";
@@ -95,6 +101,7 @@ async function lockedRound(tx: Sql, id: string, actor: Actor) {
   return r;
 }
 function open(r: Record<string, any>) {
+  requireParticipationStarted(r);
   requireThat(
     r.state === "open" &&
       r.controllerAlive &&
@@ -437,7 +444,12 @@ export async function closeRound(
   ).rows[0].n;
   let reason: string | null = !providerReady ? "provider_not_configured" : null;
   if (!compiled.selected.length) reason = "no_supported_waves";
-  if (elapsed < r.settings.minimumRoundSeconds)
+  if (
+    Math.max(
+      0,
+      elapsed - Number(r.settings.sponsorBreak?.durationSeconds ?? 0),
+    ) < r.settings.minimumRoundSeconds
+  )
     reason = "participation_window_too_short";
   if (count >= r.settings.maxGenerations) reason = "event_generation_limit";
   await tx.query(
@@ -475,6 +487,7 @@ export async function advance(
   expectedRevision: number,
   command: PlaybackCommand,
   providerReady = false,
+  commerceEnabled = false,
 ) {
   return db.transaction(async (tx) => {
     const event = await ownedEvent(tx, eventId, artistId, true);
@@ -486,6 +499,7 @@ export async function advance(
     });
     if (cache.response) return cache.response;
     await verifyLease(tx, eventId, command);
+    if (commerceEnabled) await requireEventAccess(tx, eventId);
     requireThat(
       event.revision === expectedRevision,
       "revision_conflict",
@@ -548,7 +562,18 @@ export async function advance(
             seed,
             digest(seed),
             source.core_prompt,
-            JSON.stringify(event.settings),
+            JSON.stringify({
+              ...event.settings,
+              ...(commerceEnabled
+                ? {
+                    sponsorBreak: await freezeSponsorPlan(
+                      tx,
+                      eventId,
+                      Number(source.duration_seconds),
+                    ),
+                  }
+                : {}),
+            }),
           ],
         );
       }
@@ -662,6 +687,15 @@ export async function snapshot(
         deadlineAt: round.deadline_at,
         remainingMs: round.remaining_ms,
         pauseReason: round.pause_reason,
+        ...(round.settings?.sponsorBreak
+          ? {
+              sponsorBreak: {
+                ...round.settings.sponsorBreak,
+                elapsedMs: sponsorElapsed(round),
+                paused: round.state === "paused",
+              },
+            }
+          : {}),
         seedCommitment: round.seed_commitment,
         ...(round.state === "closed" ? { seed: round.seed } : {}),
         revision,
