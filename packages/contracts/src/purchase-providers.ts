@@ -39,3 +39,11 @@ export function publicPurchaseLinks(value: unknown, legacy: unknown): PurchaseLi
   const fallback = httpsUrl.safeParse(legacy);
   return fallback.success ? [{ provider: "other", url: fallback.data }] : [];
 }
+
+export const purchaseModeInput = z.enum(["menu", "direct"]);
+export const purchaseProviderInput = z.enum(ids as [typeof ids[number], ...typeof ids[number][]]);
+export type PurchaseMode = "menu" | "direct";
+export function preferredPurchaseUrl(links: PurchaseLink[], mode?: string | null, provider?: string | null): string | null {
+  if (mode !== "direct") return null;
+  return links.find(link => link.provider === provider)?.url ?? null;
+}

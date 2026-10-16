@@ -1,4 +1,4 @@
-import { publicPurchaseLinks } from "../../../packages/contracts/src/purchase-providers.js";
+import { publicPurchaseLinks, preferredPurchaseUrl } from "../../../packages/contracts/src/purchase-providers.js";
 import { z } from "zod";
 import type { Database } from "./db.js";
 import { requireThat } from "../../../packages/domain/src/index.js";
@@ -54,7 +54,19 @@ export async function publicArtist(
   ).rows;
   return {
     artist,
-    events: rows.slice(0, input.limit).map((row: Record<string, any>) => ({ ...row, purchase_links: publicPurchaseLinks(row.settings?.purchaseLinks, row.purchase_url), settings: undefined })),
+    events: rows.slice(0, input.limit).map((row: Record<string, any>) => ({
+      id: row.id,
+      slug: row.slug,
+      title: row.title,
+      artist_name: row.artist_name,
+      state: row.state,
+      purchase_url: row.purchase_url,
+      created_at: row.created_at,
+      releases: row.releases,
+      purchase_links: publicPurchaseLinks(row.settings?.purchaseLinks, row.purchase_url),
+      purchase_mode: row.settings?.purchaseMode === "direct" && preferredPurchaseUrl(publicPurchaseLinks(row.settings?.purchaseLinks, row.purchase_url), row.settings?.purchaseMode, row.settings?.preferredPurchaseProvider) ? "direct" : "menu",
+      preferred_purchase_provider: row.settings?.preferredPurchaseProvider ?? null,
+    })),
     nextOffset: rows.length > input.limit ? input.offset + input.limit : null,
     participation:
       "Each show explains whether voting is open remotely or needs the artist’s room code.",

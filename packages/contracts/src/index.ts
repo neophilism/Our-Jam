@@ -35,6 +35,8 @@ export const eventInput = z.object({
   artistName: z.string().trim().min(1).max(100),
   purchaseUrl: httpsUrl.optional(),
   purchaseLinks: purchaseLinksInput.optional(),
+  purchaseMode: z.enum(["menu", "direct"]).optional(),
+  preferredPurchaseProvider: z.string().max(40).optional(),
   screenLimit: z.number().int().min(4).max(60).default(16),
   minimumRoundSeconds: z.number().int().min(0).max(300).default(60),
   maxWaves: z.number().int().min(1).max(12).default(8),

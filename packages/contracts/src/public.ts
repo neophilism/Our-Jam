@@ -30,6 +30,8 @@ export type EventState = {
     artistId: string;
     purchaseUrl?: string;
     purchaseLinks?: { provider: string; url: string }[];
+    purchaseMode?: "menu" | "direct";
+    preferredPurchaseProvider?: string | null;
     state: string;
     settings: {
       screenLimit: number;
