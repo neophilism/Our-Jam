@@ -1,4 +1,9 @@
 import { measureTrackDuration } from "./track-duration";
+import { PurchaseEditor } from "./PurchaseLinks";
+import type {
+  PurchaseLink,
+  PurchaseMode,
+} from "../../../packages/contracts/src/purchase-providers";
 import { useEffect, useRef, useState } from "react";
 import { api, type EventState } from "./api";
 
@@ -13,6 +18,9 @@ export function ShowSetup({
     [busy, setBusy] = useState(false),
     [album, setAlbum] = useState<any[] | null>(null),
     [settings, setSettings] = useState<EventState["event"] | null>(null),
+    [purchaseLinks, setPurchaseLinks] = useState<PurchaseLink[]>([]),
+    [purchaseMode, setPurchaseMode] = useState<PurchaseMode>("menu"),
+    [preferredPurchaseProvider, setPreferredPurchaseProvider] = useState(""),
     [checks, setChecks] = useState<Record<string, string>>({});
   const checking = useRef<AbortController | null>(null),
     inputRevision = useRef(data.event.revision);
@@ -79,8 +87,19 @@ export function ShowSetup({
       )}
       <details
         onToggle={(e) => {
-          if (e.currentTarget.open && !settings)
+          if (e.currentTarget.open && !settings) {
             setSettings(structuredClone(data.event));
+            setPurchaseLinks(
+              (data.event.purchaseLinks as PurchaseLink[]) ??
+                (data.event.purchaseUrl
+                  ? [{ provider: "other", url: data.event.purchaseUrl }]
+                  : []),
+            );
+            setPurchaseMode(data.event.purchaseMode ?? "menu");
+            setPreferredPurchaseProvider(
+              data.event.preferredPurchaseProvider ?? "",
+            );
+          }
         }}
       >
         <summary>Event, screen & participation settings</summary>
@@ -92,7 +111,19 @@ export function ShowSetup({
         <button
           className="ghost small"
           disabled={busy}
-          onClick={() => setSettings(structuredClone(data.event))}
+          onClick={() => {
+            setSettings(structuredClone(data.event));
+            setPurchaseLinks(
+              (data.event.purchaseLinks as PurchaseLink[]) ??
+                (data.event.purchaseUrl
+                  ? [{ provider: "other", url: data.event.purchaseUrl }]
+                  : []),
+            );
+            setPurchaseMode(data.event.purchaseMode ?? "menu");
+            setPreferredPurchaseProvider(
+              data.event.preferredPurchaseProvider ?? "",
+            );
+          }}
         >
           Reload settings fields
         </button>
@@ -111,7 +142,13 @@ export function ShowSetup({
                     expectedRevision: settings.revision,
                     title: form.get("title"),
                     artistName: form.get("artistName"),
-                    purchaseUrl: form.get("purchaseUrl") || null,
+                    purchaseUrl: null,
+                    purchaseLinks,
+                    purchaseMode,
+                    preferredPurchaseProvider:
+                      purchaseMode === "direct"
+                        ? preferredPurchaseProvider
+                        : null,
                     releaseMode: form.get("releaseMode"),
                     ...Object.fromEntries(
                       [
@@ -162,14 +199,15 @@ export function ShowSetup({
                   <option value="review">Hold for my approval</option>
                 </select>
               </div>
-              <label>
-                Album purchase link
-                <input
-                  name="purchaseUrl"
-                  type="url"
-                  defaultValue={settings.purchaseUrl ?? ""}
-                />
-              </label>
+              <PurchaseEditor
+                links={purchaseLinks}
+                onChange={setPurchaseLinks}
+                disabled={busy}
+                mode={purchaseMode}
+                onModeChange={setPurchaseMode}
+                preferredProvider={preferredPurchaseProvider}
+                onPreferredChange={setPreferredPurchaseProvider}
+              />
               {(
                 [
                   ["screenLimit", "Waves visible on screen", 4, 60],

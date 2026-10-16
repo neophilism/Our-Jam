@@ -1,3 +1,5 @@
+import { PurchaseChoices } from "./PurchaseLinks";
+import { publicPurchaseLinks } from "../../../packages/contracts/src/purchase-providers";
 import { FollowArtist, FollowingFeed } from "./Account";
 import { useEffect, useState } from "react";
 import { api } from "./api";
@@ -136,16 +138,7 @@ export function ArtistPage({ id }: { id: string }) {
                 >
                   Listen & explore ↗
                 </a>
-                {event.purchase_url && (
-                  <a
-                    className="text-button"
-                    href={event.purchase_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Buy the original album ↗
-                  </a>
-                )}
+                {(event.purchase_links?.length || event.purchase_url) && <PurchaseChoices links={publicPurchaseLinks(event.purchase_links, event.purchase_url)} label="Get the original album" mode={event.purchase_mode} preferredProvider={event.preferred_purchase_provider} />}
               </article>
             ))}
           </div>

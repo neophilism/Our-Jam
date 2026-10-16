@@ -3,6 +3,17 @@ import { EventCommerce, CommerceAdmin } from "./Commerce";
 import { SponsorBreak, sponsorRemaining } from "./SponsorBreak";
 import { measureTrackDuration } from "./track-duration";
 import {
+  PurchaseEditor,
+  PurchaseChoices,
+  PurchaseLanding,
+} from "./PurchaseLinks";
+import {
+  preferredPurchaseUrl,
+  type PurchaseLink,
+  type PurchaseMode,
+} from "../../../packages/contracts/src/purchase-providers";
+import "./purchase-links.css";
+import {
   AudioRouting,
   useAudioRouting,
   HeadphonePreview,
@@ -40,6 +51,7 @@ import { ReleaseEmail, EmailAction, EmailStatus } from "./ReleaseEmail";
 import { ReleaseNotice } from "./ReleaseNotice";
 import { Recorder } from "./Recorder";
 import { AlbumBackup } from "./AlbumBackup";
+import { GuidedHelp } from "./GuidedHelp";
 
 function Mark() {
   return (
@@ -74,6 +86,7 @@ function Header({ children }: { children?: React.ReactNode }) {
             </a>
           </>
         )}
+        <GuidedHelp />
         <VisualPreferences />
       </div>
     </header>
@@ -734,17 +747,19 @@ function Audience({ slug }: { slug: string }) {
             <span className="eyebrow">IT STARTED WITH THE ALBUM</span>
             <strong>Take the original sound home.</strong>
           </div>
-          {data.event.purchaseUrl ? (
-            <a
-              className="button"
-              href={data.event.purchaseUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Buy the album ↗
-            </a>
+          {data.event.purchaseLinks?.length || data.event.purchaseUrl ? (
+            <PurchaseChoices
+              links={
+                data.event.purchaseLinks?.length
+                  ? (data.event.purchaseLinks as PurchaseLink[])
+                  : [{ provider: "other", url: data.event.purchaseUrl! }]
+              }
+              label="Get the album"
+              mode={data.event.purchaseMode}
+              preferredProvider={data.event.preferredPurchaseProvider}
+            />
           ) : (
-            <span className="muted">Album link coming soon</span>
+            <span className="muted">Album links coming soon</span>
           )}
         </div>
       </main>
@@ -1098,8 +1113,20 @@ function Screen({ slug }: { slug: string }) {
             url={location.origin + "/event/" + slug}
             label="FREE · JOIN & DOWNLOAD"
           />
-          {data.event.purchaseUrl && (
-            <QR url={data.event.purchaseUrl} label="BUY THE ALBUM" />
+          {(data.event.purchaseLinks?.length || data.event.purchaseUrl) && (
+            <QR
+              url={
+                preferredPurchaseUrl(
+                  (data.event.purchaseLinks as PurchaseLink[]) ??
+                    (data.event.purchaseUrl
+                      ? [{ provider: "other", url: data.event.purchaseUrl }]
+                      : []),
+                  data.event.purchaseMode,
+                  data.event.preferredPurchaseProvider,
+                ) ?? location.origin + "/buy/" + encodeURIComponent(slug)
+              }
+              label="GET THE ALBUM"
+            />
           )}
         </div>
       </div>
@@ -1196,11 +1223,31 @@ function Performer({ slug }: { slug?: string }) {
   );
 }
 function CreateEvent() {
+  const [purchaseLinks, setPurchaseLinks] = useState<PurchaseLink[]>([]);
+  const [purchaseMode, setPurchaseMode] = useState<PurchaseMode>("menu");
+  const [preferredPurchaseProvider, setPreferredPurchaseProvider] =
+    useState("");
   const [sources, setSources] = useState([
-      { title: "", corePrompt: "", audioUrl: "", durationSeconds: 180 },
+      { title: "", corePrompt: "", file: null as File | null },
     ]),
     [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [storageReady, setStorageReady] = useState<boolean | null>(null),
+    [saved, setSaved] = useState<{ id: string; slug: string } | null>(null),
+    [uploadMessage, setUploadMessage] = useState("");
+  useEffect(() => {
+    let alive = true;
+    api("/operator/album-upload-capabilities")
+      .then((r) => {
+        if (alive) setStorageReady(Boolean(r.available));
+      })
+      .catch(() => {
+        if (alive) setStorageReady(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
   return (
     <form
       className="create-event card"
@@ -1209,27 +1256,95 @@ function CreateEvent() {
         setBusy(true);
         const form = new FormData(e.currentTarget);
         try {
-          const measuredSources = [];
-          for (const source of sources) {
-            measuredSources.push({
-              ...source,
-              audioUrl: source.audioUrl || undefined,
-              durationSeconds: source.audioUrl
-                ? await measureTrackDuration(source.audioUrl, 15)
-                : source.durationSeconds,
-            });
+          if (storageReady !== true || sources.some((s) => !s.file))
+            throw new Error(
+              "Choose an MP3 or WAV for every track. Private album storage must be ready.",
+            );
+          if (
+            sources.some(
+              (s) =>
+                !s.file ||
+                !/\.(mp3|wav)$/i.test(s.file.name) ||
+                s.file.size < 128 ||
+                s.file.size > 128 * 1024 * 1024,
+            )
+          )
+            throw new Error(
+              "Choose MP3/WAV files no larger than 128 MiB before creating a session.",
+            );
+          const created: { id: string; slug: string } =
+            saved ??
+            (await api<{ id: string; slug: string }>(
+              "/operator/events",
+              "POST",
+              {
+                title: form.get("title"),
+                artistName: form.get("artistName"),
+                slug: form.get("slug"),
+                purchaseLinks,
+                purchaseMode,
+                preferredPurchaseProvider:
+                  purchaseMode === "direct"
+                    ? preferredPurchaseProvider
+                    : undefined,
+                screenLimit: Number(form.get("screenLimit")),
+                admissionMode: form.get("admissionMode"),
+                sources: sources.map((s) => ({
+                  title: s.title,
+                  corePrompt: s.corePrompt,
+                  durationSeconds: 180,
+                })),
+              },
+            ));
+          setSaved(created);
+          const catalog = await api(
+            "/operator/events/" + created.id + "/sources",
+          );
+          if (catalog.sources.length !== sources.length)
+            throw new Error(
+              "Saved album track count changed; inspect the session before retrying.",
+            );
+          for (let i = 0; i < sources.length; i++) {
+            const current = await api(
+              "/operator/events/" + created.id + "/sources",
+            );
+            if (current.sources.length !== sources.length)
+              throw new Error(
+                "The album changed while uploading. Refresh and inspect it before retrying.",
+              );
+            if (current.sources[i].audio_url) continue;
+            const file = sources[i].file!;
+            if (
+              !/\.(mp3|wav)$/i.test(file.name) ||
+              file.size < 128 ||
+              file.size > 128 * 1024 * 1024
+            )
+              throw new Error("Choose MP3/WAV files no larger than 128 MiB.");
+            setUploadMessage(
+              "Uploading and validating track " +
+                (i + 1) +
+                " of " +
+                sources.length,
+            );
+            const response = await fetch(
+              "/api/operator/sources/" + current.sources[i].id + "/upload",
+              {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                  "Content-Type": "application/octet-stream",
+                  "X-Command-Id": crypto.randomUUID(),
+                  "X-Event-Revision": String(current.revision),
+                },
+                body: file,
+              },
+            );
+            const result = await response.json();
+            if (!response.ok)
+              throw new Error(
+                result.message || result.error || "Audio upload failed.",
+              );
           }
-          const created = await api("/operator/events", "POST", {
-            title: form.get("title"),
-            artistName: form.get("artistName"),
-            slug: form.get("slug"),
-            ...(form.get("purchaseUrl")
-              ? { purchaseUrl: form.get("purchaseUrl") }
-              : {}),
-            screenLimit: Number(form.get("screenLimit")),
-            admissionMode: form.get("admissionMode"),
-            sources: measuredSources,
-          });
           location.href = "/performer/" + created.slug;
         } catch (e) {
           setError((e as Error).message);
@@ -1240,6 +1355,17 @@ function CreateEvent() {
     >
       <span className="eyebrow">START SOMETHING NEW</span>
       <h2>Set up your album session.</h2>
+      <p className="muted">
+        Upload your own MP3 or WAV tracks directly. No separate audio hosting
+        required. Keep your original masters; the server validates files and
+        prepares private playback copies.
+      </p>
+      {storageReady === false && (
+        <p role="alert" className="notice">
+          Private album storage is not available. New sessions are disabled
+          until it is configured.
+        </p>
+      )}
       <div className="form-grid">
         <label>
           Event title
@@ -1265,10 +1391,7 @@ function CreateEvent() {
             placeholder="your-album-release"
           />
         </label>
-        <label>
-          Album purchase link
-          <input name="purchaseUrl" type="url" placeholder="https://…" />
-        </label>
+
         <div>
           <label htmlFor="new-admission-mode">Who can contribute?</label>
           <select
@@ -1293,81 +1416,107 @@ function CreateEvent() {
           </select>
         </label>
       </div>
+      <PurchaseEditor
+        links={purchaseLinks}
+        onChange={setPurchaseLinks}
+        disabled={busy}
+        mode={purchaseMode}
+        onModeChange={setPurchaseMode}
+        preferredProvider={preferredPurchaseProvider}
+        onPreferredChange={setPreferredPurchaseProvider}
+      />
       <div className="section-heading">
         <h3>The album, in order</h3>
         <span className="muted">The core sound stays yours.</span>
       </div>
-      <p className="muted">
-        Track duration is measured automatically. Leave the audio URL blank to
-        upload your MP3/WAV after creating the session; upload it before opening
-        that track’s round.
-      </p>
       {sources.map((source, i) => (
         <fieldset className="source-form" key={i}>
           <legend>TRACK {String(i + 1).padStart(2, "0")}</legend>
-          {(["title", "corePrompt", "audioUrl"] as const).map((key) => (
-            <label key={key}>
-              {
-                {
-                  title: "Track title",
-                  corePrompt: "Signature sound / core prompt",
-                  audioUrl: "Track audio URL (HTTPS)",
-                }[key]
+          <label>
+            Track title
+            <input
+              required
+              maxLength={120}
+              disabled={busy}
+              value={source.title}
+              onChange={(e) =>
+                setSources((list) =>
+                  list.map((s, j) =>
+                    j === i ? { ...s, title: e.target.value } : s,
+                  ),
+                )
               }
-              {key === "corePrompt" ? (
-                <textarea
-                  value={source[key]}
-                  required
-                  maxLength={3000}
-                  rows={3}
-                  onChange={(e) =>
-                    setSources((s) =>
-                      s.map((v, j) =>
-                        j === i ? { ...v, [key]: e.target.value } : v,
-                      ),
-                    )
-                  }
-                />
-              ) : (
-                <input
-                  disabled={busy}
-                  type={key === "audioUrl" ? "url" : "text"}
-                  required={key !== "audioUrl"}
-                  value={source[key]}
-                  onChange={(e) =>
-                    setSources((s) =>
-                      s.map((v, j) =>
-                        j === i
-                          ? {
-                              ...v,
-                              [key]: e.target.value,
-                            }
-                          : v,
-                      ),
-                    )
-                  }
-                />
-              )}
-            </label>
-          ))}
+            />
+          </label>
+          <label>
+            Signature sound / core prompt
+            <textarea
+              required
+              rows={3}
+              maxLength={3000}
+              disabled={busy}
+              value={source.corePrompt}
+              onChange={(e) =>
+                setSources((list) =>
+                  list.map((s, j) =>
+                    j === i ? { ...s, corePrompt: e.target.value } : s,
+                  ),
+                )
+              }
+            />
+          </label>
+          <label>
+            Upload track (MP3 or WAV)
+            <input
+              type="file"
+              accept=".mp3,.wav,audio/mpeg,audio/wav"
+              required
+              disabled={busy}
+              onChange={(e) =>
+                setSources((list) =>
+                  list.map((s, j) =>
+                    j === i ? { ...s, file: e.target.files?.[0] ?? null } : s,
+                  ),
+                )
+              }
+            />
+          </label>
+          <p className="tiny muted">
+            15 seconds to 10 minutes; up to 128 MiB. Track duration is measured
+            from the actual upload.
+          </p>
         </fieldset>
       ))}
       <button
         type="button"
         className="ghost"
-        disabled={busy}
+        disabled={busy || !!saved}
         onClick={() =>
           setSources((s) => [
             ...s,
-            { title: "", corePrompt: "", audioUrl: "", durationSeconds: 180 },
+            { title: "", corePrompt: "", file: null as File | null },
           ])
         }
       >
         + Add album track
       </button>
       <Notice error={error} />
-      <button disabled={busy}>
-        {busy ? "Creating…" : "Create the room ↗"}
+      {uploadMessage && <p role="status">{uploadMessage}</p>}
+      {saved && (
+        <p role="status">
+          Your session was saved. Retry remaining uploads here, or{" "}
+          <a href={"/performer/" + saved.slug}>
+            open it in the performer console
+          </a>
+          .
+        </p>
+      )}
+      <button disabled={busy || storageReady !== true}>
+        {busy
+          ? "Uploading your album…"
+          : saved
+            ? "Retry remaining uploads ↗"
+            : "Create and upload album ↗"}
       </button>
     </form>
   );
@@ -1840,6 +1989,8 @@ else if (segments[0] === "event" && segments[1])
   screen = <Audience slug={decodeURIComponent(segments[1])} />;
 else if (segments[0] === "screen" && segments[1])
   screen = <Screen slug={decodeURIComponent(segments[1])} />;
+else if (segments[0] === "buy" && segments[1])
+  screen = <PurchaseLanding slug={decodeURIComponent(segments[1])} />;
 else if (segments[0] === "performer")
   screen = (
     <Performer
