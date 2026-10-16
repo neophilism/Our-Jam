@@ -186,27 +186,24 @@ async function saveAllocation(
       requireThat(allocation[wave.id] === 1, "submission_vote_required",
         "Each Sound Wave you submit uses one of your votes until the song ends.");
   }
-  for (const waveId of Object.keys(allocation)) {
-    const wave = (
-      await tx.query(
-        "SELECT id FROM sound_waves WHERE round_id=$1 AND id=$2 AND NOT moderated",
-        [roundId, waveId],
-      )
-    ).rows[0];
-    requireThat(
-      wave,
-      "invalid_wave",
-      "That Sound Wave is not available in this round.",
-    );
+  const choices = Object.entries(allocation);
+  const waveIds = choices.map(([waveId]) => waveId);
+  if (waveIds.length) {
+    const valid = (await tx.query(
+      "SELECT count(*)::integer n FROM sound_waves WHERE round_id=$1 AND id=ANY($2::uuid[]) AND NOT moderated",
+      [roundId, waveIds],
+    )).rows[0].n;
+    requireThat(valid === waveIds.length, "invalid_wave",
+      "One or more Sound Waves are no longer available in this round.");
   }
   await tx.query(
     "DELETE FROM allocations WHERE round_id=$1 AND participant_id=$2",
     [roundId, participantId],
   );
-  for (const [waveId, points] of Object.entries(allocation))
+  if (choices.length)
     await tx.query(
-      "INSERT INTO allocations(round_id,participant_id,wave_id,points) VALUES($1,$2,$3,$4)",
-      [roundId, participantId, waveId, points],
+      "INSERT INTO allocations(round_id,participant_id,wave_id,points) SELECT $1::uuid,$2::uuid,v.wave_id,v.points FROM unnest($3::uuid[],$4::smallint[]) AS v(wave_id,points)",
+      [roundId, participantId, waveIds, choices.map(([,points]) => points)],
     );
   await tx.query(
     "UPDATE ballots SET revision=revision+1 WHERE round_id=$1 AND participant_id=$2",
