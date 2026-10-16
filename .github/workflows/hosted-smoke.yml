@@ -1,6 +1,7 @@
 name: Hosted rehearsal read-only smoke
 on:
   workflow_dispatch:
+  pull_request:
   push:
     branches: [main]
 permissions:
@@ -14,5 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Verify hosted rehearsal health and readiness (no credentials or spending)
+      - name: Verify hosted rehearsal security and media readiness (no credentials or spending)
+        env:
+          OUR_JAM_REQUIRE_MEDIA_VERIFIED: "1"
         run: node scripts/check-hosted-readiness.mjs https://our-jam-rehearsal.onrender.com
