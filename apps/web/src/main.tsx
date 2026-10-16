@@ -140,10 +140,7 @@ function Home() {
               Our <em>next track.</em>
             </h1>
             <p>
-              The artist brings the signature sound.
-              <br />
-              You bring the unexpected. Make something
-              <br className="hide-mobile" /> the room has never heard before.
+              Jam with the music you love. Add your own musical ideas, vote on the crowd’s favorites, and hear what happens when your imaginations meet the song.
             </p>
             <form
               className="join-form"
@@ -167,7 +164,7 @@ function Home() {
               <button>Join the jam ↗</button>
             </form>
             <div className="tiny muted">
-              No download needed. Five points. Endless possibilities.
+              Play with the music. Shape the next track. No app required.
             </div>
           </div>
           <div className="hero-art">
@@ -177,22 +174,29 @@ function Home() {
             </span>
           </div>
         </section>
+        <section className="ourjam-explainer" aria-labelledby="about-ourjam">
+          <span className="eyebrow">NOT JUST A LISTENING PARTY</span>
+          <h2 id="about-ourjam">Jam with the music itself.</h2>
+          <p>What if your favorite song could take a new direction—and you could help choose where it goes? OurJam brings everyone listening into a shared musical space. While a song plays, you can suggest sounds, instruments, rhythms, moods, or styles. We call these ideas <strong>Sound Waves</strong>.</p>
+          <p>Vote on the Sound Waves you love, and discover what other listeners are imagining. When the song ends, the leading ideas can be combined with the artist’s original sound to create an entirely new collaboration between the song and the crowd.</p>
+          <p>Hear released crowd-created tracks in the OurJam player, find your favorites, and vote on the new music too. Some artists may even bring a crowd creation into the live set. Every song is another chance to join in.</p>
+        </section>
         <section className="how">
           <div>
             <b>01</b>
-            <h3>Catch the sound</h3>
-            <p>Listen to the album. Imagine what belongs in the mix.</p>
+            <h3>Start with the song</h3>
+            <p>Listen together as the artist’s original track plays. What would make it sound completely new?</p>
           </div>
           <div>
             <b>02</b>
-            <h3>Make a wave</h3>
-            <p>Add an instrument, a genre, a feeling. Move your five points.</p>
+            <h3>Suggest it. Vote on it.</h3>
+            <p>Send a Sound Wave—a short musical idea such as jazz trumpet or a funk bassline. Vote on Sound Waves from the crowd.</p>
           </div>
           <div>
             <b>03</b>
-            <h3>Keep what we make</h3>
+            <h3>Hear the new creation</h3>
             <p>
-              Hear the crowd's creation. Download it. You were part of this.
+              The most popular ideas can help shape a new track. Listen to released collaborations in the OurJam player—and vote on the ones you love.
             </p>
           </div>
         </section>
@@ -487,25 +491,25 @@ function Audience({ slug }: { slug: string }) {
               />
               <div className="scene-footer">
                 {open
-                  ? "The crowd chooses the mix. You can move your points until the track ends."
+                  ? "Vote for the Sound Waves you want in the new music. You can change your votes while this song plays."
                   : round?.state === "paused"
-                    ? "The artist has paused the round. Your points are saved."
+                    ? "The artist has paused this song. Your votes are saved."
                     : data.event.state === "waiting"
                       ? "The artist will open the first round when the music starts."
-                      : "This round is closed. Your next five points arrive with the next album track."}
+                      : "Voting has closed for this song. Join in again when the next one begins."}
               </div>
             </section>
             <aside className="vote-panel">
               <div className="section-heading">
-                <h2>Your five points</h2>
+                <h2>Your votes</h2>
                 <span className="point-count">
                   {5 - used}
-                  <small>LEFT</small>
+                  <small>REMAINING</small>
                 </span>
               </div>
               <div
                 className="points"
-                aria-label={`${5 - used} of 5 points remaining`}
+                aria-label={`${5 - used} votes remaining in this song`}
               >
                 {Array.from({ length: 5 }, (_, i) => (
                   <i key={i} className={i < 5 - used ? "available" : ""} />
@@ -520,8 +524,8 @@ function Audience({ slug }: { slug: string }) {
                   </h3>
                   <p>
                     {data.admission.mode === "room_code"
-                      ? "Enter the code announced at the show to unlock your five votes. A shared code does not verify physical attendance."
-                      : "Join the room to contribute a Sound Wave and support the ideas you want to hear."}
+                      ? "Enter the room code announced by the artist to vote on Sound Waves and share musical ideas."
+                      : "Join this song to suggest a Sound Wave and vote on the ideas you want to hear."}
                   </p>
                   {data.admission.mode === "room_code" && (
                     <label htmlFor="room-code">
@@ -555,7 +559,7 @@ function Audience({ slug }: { slug: string }) {
                     }
                   >
                     {data.admission.mode === "room_code"
-                      ? "Unlock my five votes ↗"
+                      ? "Join the music ↗"
                       : "I'm in. Let's make music ↗"}
                   </button>
                   {!data.joined && data.admission.mode === "room_code" && (
@@ -600,7 +604,7 @@ function Audience({ slug }: { slug: string }) {
                     }}
                   >
                     <label htmlFor="wave-input">
-                      What would you mix this with?
+                      What would you add to this song?
                     </label>
                     <div className="input-action">
                       <input
@@ -625,13 +629,13 @@ function Audience({ slug }: { slug: string }) {
                     </div>
                     {used === 5 && (
                       <label>
-                        Move one point from
+                        Move a vote from
                         <select
                           value={moveFrom}
                           onChange={(e) => setMoveFrom(e.target.value)}
                           required
                         >
-                          <option value="">Choose your point</option>
+                          <option value="">Choose a Sound Wave</option>
                           {waves
                             .filter((w) => w.mine)
                             .map((w) => (
@@ -643,7 +647,7 @@ function Audience({ slug }: { slug: string }) {
                       </label>
                     )}
                     <p className="tiny muted">
-                      One Sound Wave of your own. It uses one point.
+                      You can suggest one Sound Wave per song. Suggesting an idea uses one of your available votes.
                     </p>
                   </form>
                   <div className="wave-list">
@@ -661,13 +665,13 @@ function Audience({ slug }: { slug: string }) {
                             {w.own && <i className="yours">YOURS</i>}
                           </strong>
                           <small>
-                            {w.votes} points · {w.supporters} supporters
+                            {w.votes} votes · {w.supporters} listeners voting
                           </small>
                         </div>
                         <div className="vote-controls">
                           <button
                             className="ghost"
-                            aria-label={`Remove a point from ${w.text}`}
+                            aria-label={`Remove a vote from ${w.text}`}
                             disabled={!open || !w.mine || busy}
                             onClick={() => vote(w, -1)}
                           >
@@ -712,7 +716,7 @@ function Audience({ slug }: { slug: string }) {
                   <strong>{w.name}</strong>
                   <small>{w.text}</small>
                 </div>
-                <span>{w.votes} points</span>
+                <span>{w.votes} votes</span>
               </div>
             ))}
             {!waves.length && (
@@ -1001,7 +1005,7 @@ function Listener({
           <summary>Made together · {credits.length} Sound Waves</summary>
           {credits.map((c, i) => (
             <p key={i}>
-              <strong>{c.text}</strong> · {c.name} · {c.points} points
+              <strong>{c.text}</strong> · {c.name} · {c.points} votes
             </p>
           ))}
         </details>
@@ -1059,7 +1063,7 @@ function Screen({ slug }: { slug: string }) {
         <div>
           <span className="eyebrow">{data.event.artistName} PRESENTS</span>
           <h1>{data.current?.title ?? data.event.title}</h1>
-          <p>What would you mix this with?</p>
+          <p>What would you add to this song?</p>
         </div>
         <Countdown data={data} />
       </div>
@@ -1073,7 +1077,7 @@ function Screen({ slug }: { slug: string }) {
         <div>
           <h2>Your phone is part of the instrument.</h2>
           <p>
-            Contribute a Sound Wave. Move your five points. Keep what we make.
+            Contribute a Sound Wave. Change your votes. Hear the new creation.
           </p>
         </div>
         <div className="qr-pair">
@@ -1481,7 +1485,7 @@ function Console({ slug }: { slug: string }) {
             <div className="section-heading">
               <h2>The room right now</h2>
               <span>
-                {data.round?.waves.reduce((n, w) => n + w.votes, 0) ?? 0} points
+                {data.round?.waves.reduce((n, w) => n + w.votes, 0) ?? 0} votes
               </span>
             </div>
             <WaveField waves={data.round?.waves ?? []} limit={6} beat={beat} />
@@ -1489,7 +1493,7 @@ function Console({ slug }: { slug: string }) {
               {data.round?.waves.map((w) => (
                 <div key={w.id}>
                   <span>
-                    {w.text} <small>{w.votes} points</small>
+                    {w.text} <small>{w.votes} votes</small>
                   </span>
                   <button
                     className="text-button"

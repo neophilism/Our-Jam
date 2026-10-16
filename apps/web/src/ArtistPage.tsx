@@ -64,7 +64,7 @@ export function ArtistPage({ id }: { id: string }) {
               <h1>{data.artist.name}</h1>
               <p>
                 {data.artist.bio ||
-                  "Every show starts with a signature sound and becomes something we make together."}
+                  "Every song is a starting point. Share musical ideas, vote on Sound Waves, and listen to the crowd’s new creations."}
               </p>
               <FollowArtist artistId={id} />
               <div className="artist-links">

@@ -7,19 +7,19 @@ type Layout = { top: number; left: number; width: number; targetTop: number; tar
 const guides: Record<Surface, Step[]> = {
   home: [
     { selector: ".join-form", title: "Join the jam", description: "Enter the event code shown at the venue or use its QR link. You can take part in your browser without installing an app." },
-    { selector: ".how", title: "Help shape the music", description: "Listen to the artist, add a Sound Wave, and use your five points to support ideas. The artist can then release the crowd's new track." },
+    { selector: ".how", title: "Help shape the music", description: "Listen to the song, add a Sound Wave, and use your five points to support ideas. The artist can then release the crowd's new track." },
     { selector: ".event-list", title: "Find your room", description: "Choose an event here or enter its code above. Return to hear and download tracks when the artist publishes them." },
   ],
   audience: [
     { selector: ".audience .event-heading", title: "The music playing now", description: "This tells you what the artist is performing. Watch the time left to submit ideas and move votes for this round." },
     { selector: ".audience .tabs", title: "Explore the room", description: "Sound Waves is where you contribute. Our tracks has released music, and The room shows the people behind the sound." },
-    { selector: ".audience .vote-panel", title: "Your five points", description: "Join the collaboration to receive five points per album track. Put them behind musical ideas you want the crowd and artist to hear." },
-    { selector: ".audience .join-panel, .audience .wave-form", title: "Make a Sound Wave", description: "Join first if prompted. Then type a short idea, such as smoky jazz trumpet. Making your own Sound Wave uses one point." },
-    { selector: ".audience .wave-list, .audience .crowd-scene", title: "Support other ideas", description: "Use plus and minus on the wave list to move points between ideas while the round is open. Nothing is submitted on your behalf." },
+    { selector: ".audience .vote-panel", title: "Vote on Sound Waves", description: "Use the plus button to vote for a Sound Wave. Remove a vote with minus if you change your mind. Your available votes are shown here." },
+    { selector: ".audience .join-panel, .audience .wave-form", title: "Make a Sound Wave", description: "Join first if prompted. Then type a short idea, such as smoky jazz trumpet. Submitting an idea uses one of your available votes." },
+    { selector: ".audience .wave-list, .audience .crowd-scene", title: "Support other ideas", description: "Use plus and minus on the wave list to change your votes while the round is open. Nothing is submitted on your behalf." },
     { selector: ".audience .tabs button:nth-child(2)", title: "Hear the results", description: "Choose Our tracks to listen privately or download tracks after the artist publishes them. Joining never turns on phone audio automatically." },
   ],
   performer: [
-    { selector: ".performer .login", title: "Private performer access", description: "Enter your performer credential to manage your show. Never share this private access with the audience." },
+    { selector: ".performer .login", title: "Private performer access", description: "Sign in here to open the controls for your show. Keep this access private." },
     { selector: ".performer .event-list", title: "Open a prepared show", description: "Select a session to control playback, crowd participation, audio and publishing, or open the public audience view separately." },
     { selector: ".performer .create-event", title: "Create your show", description: "Set an event code and title, add your own album tracks and private core prompts, and choose who may contribute before inviting fans." },
   ],
