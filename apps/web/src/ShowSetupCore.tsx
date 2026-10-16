@@ -1,4 +1,5 @@
 import { PurchaseEditor } from "./PurchaseLinks";
+import { measureTrackDuration } from "./track-duration";
 import type {
   PurchaseLink,
   PurchaseMode,
@@ -310,7 +311,10 @@ export function ShowSetup({
                   expectedRevision: inputRevision.current,
                   title: source.title,
                   corePrompt: source.core_prompt,
-                  durationSeconds: Number(source.duration_seconds),
+                  durationSeconds:
+                    !source.duration_verified && source.audio_url
+                      ? await measureTrackDuration(source.audio_url)
+                      : Number(source.duration_seconds),
                 });
                 setAlbum(null);
               });
@@ -322,7 +326,11 @@ export function ShowSetup({
             </h3>
             <p className="tiny muted">
               Track length: {Number(s.duration_seconds).toFixed(1)} seconds.
-              Measured automatically from the uploaded audio.
+              {s.duration_verified
+                ? " Measured automatically from the uploaded audio."
+                : s.audio_url
+                  ? " Detected again when you save this linked track. Upload the file to verify its length for payment."
+                  : " Upload this track to detect and verify its length."}
             </p>
             {(
               [

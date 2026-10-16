@@ -168,3 +168,93 @@ test("ad-free paid event has immediate participation with no sponsor video", asy
     page.getByRole("region", { name: "Sponsor video break", exact: true }),
   ).toHaveCount(0);
 });
+
+test("uploaded album detects duration on the server and retries an invalid recording without duplicating the event", async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto("/performer");
+  const form = page.locator(".create-event");
+  await form
+    .getByLabel("Event title", { exact: true })
+    .fill("Automatic duration");
+  await form.getByLabel("Artist name", { exact: true }).fill("Test artist");
+  const slug = "auto-duration-" + crypto.randomUUID();
+  await form.getByLabel("Event code", { exact: true }).fill(slug);
+  await form.getByLabel("Track title", { exact: true }).fill("Measured song");
+  await form
+    .getByLabel("Describe this song's signature sound", { exact: true })
+    .fill("Test signature");
+  await expect(
+    form.getByLabel("Track duration in seconds", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    form.getByLabel("Track audio URL (HTTPS)", { exact: true }),
+  ).toHaveCount(0);
+  const file = form.getByLabel("Upload track (MP3 or WAV)", { exact: true });
+  await file.setInputFiles({
+    name: "invalid.wav",
+    mimeType: "audio/wav",
+    buffer: Buffer.alloc(1024, 120),
+  });
+  await form
+    .getByRole("button", { name: "Create and upload album ↗", exact: true })
+    .click();
+  await expect(form.getByRole("alert")).toBeVisible();
+  await expect(form).toContainText(
+    "Your session was saved. Retry remaining uploads",
+  );
+  await expect(page).toHaveURL(/\/performer$/);
+  const saved = await (
+    await page.request.get("/api/operator/events/" + slug)
+  ).json();
+  const bytes = Buffer.alloc(44 + 8000 * 23 * 2);
+  bytes.write("RIFF");
+  bytes.writeUInt32LE(bytes.length - 8, 4);
+  bytes.write("WAVEfmt ", 8);
+  bytes.writeUInt32LE(16, 16);
+  bytes.writeUInt16LE(1, 20);
+  bytes.writeUInt16LE(1, 22);
+  bytes.writeUInt32LE(8000, 24);
+  bytes.writeUInt32LE(16000, 28);
+  bytes.writeUInt16LE(2, 32);
+  bytes.writeUInt16LE(16, 34);
+  bytes.write("data", 36);
+  bytes.writeUInt32LE(bytes.length - 44, 40);
+  for (let i = 0; i < 8000 * 23; i++)
+    bytes.writeInt16LE(
+      Math.round(10000 * Math.sin((2 * Math.PI * 220 * i) / 8000)),
+      44 + i * 2,
+    );
+  await file.setInputFiles({
+    name: "measured.wav",
+    mimeType: "audio/wav",
+    buffer: bytes,
+  });
+  await form
+    .getByRole("button", { name: "Retry remaining uploads ↗", exact: true })
+    .click();
+  await expect(page).toHaveURL(new RegExp("/performer/" + slug + "$"));
+  const catalog = await (
+    await page.request.get(
+      "/api/operator/events/" + saved.event.id + "/sources",
+    )
+  ).json();
+  expect(catalog.sources).toHaveLength(1);
+  expect(catalog.sources[0].duration_verified).toBe(true);
+  // MP3 framing can add a fraction of a second; the stored duration rounds up.
+  expect(Number(catalog.sources[0].duration_seconds)).toBeGreaterThanOrEqual(23);
+  expect(Number(catalog.sources[0].duration_seconds)).toBeLessThanOrEqual(24);
+  const state = await (
+    await page.request.get("/api/operator/events/" + slug)
+  ).json();
+  expect(state.event.id).toBe(saved.event.id);
+  expect(state.event.settings.voteMode).toBe("single");
+  const quote = await (
+    await page.request.get(
+      "/api/operator/events/" + saved.event.id + "/commerce",
+    )
+  ).json();
+  expect(quote.quote.verified).toBe(true);
+  expect(quote.quote.billableMinutes).toBe(1);
+});
