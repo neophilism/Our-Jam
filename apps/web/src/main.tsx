@@ -1197,6 +1197,7 @@ function CreateEvent() {
         const form = new FormData(e.currentTarget);
         try {
           if (storageReady !== true || sources.some(s => !s.file)) throw new Error("Choose an MP3 or WAV for every track. Private album storage must be ready.");
+          if (sources.some(s => !s.file || !/\.(mp3|wav)$/i.test(s.file.name) || s.file.size < 128 || s.file.size > 128 * 1024 * 1024)) throw new Error("Choose MP3/WAV files no larger than 128 MiB before creating a session.");
           const created = saved ?? await api("/operator/events", "POST", {
             title: form.get("title"),
             artistName: form.get("artistName"),
@@ -1292,9 +1293,9 @@ function CreateEvent() {
       {sources.map((source, i) => (
         <fieldset className="source-form" key={i}>
           <legend>TRACK {String(i + 1).padStart(2, "0")}</legend>
-          <label>Track title<input required maxLength={120} disabled={busy || !!saved} value={source.title} onChange={(e) => setSources(list => list.map((s,j) => j === i ? { ...s, title: e.target.value } : s))}/></label>
-          <label>Signature sound / core prompt<textarea required rows={3} maxLength={3000} disabled={busy || !!saved} value={source.corePrompt} onChange={(e) => setSources(list => list.map((s,j) => j === i ? { ...s, corePrompt: e.target.value } : s))}/></label>
-          <label>Upload track (MP3 or WAV)<input type="file" accept=".mp3,.wav,audio/mpeg,audio/wav" required disabled={busy || !!saved} onChange={(e) => setSources(list => list.map((s,j) => j === i ? { ...s, file: e.target.files?.[0] ?? null } : s))}/></label>
+          <label>Track title<input required maxLength={120} disabled={busy} value={source.title} onChange={(e) => setSources(list => list.map((s,j) => j === i ? { ...s, title: e.target.value } : s))}/></label>
+          <label>Signature sound / core prompt<textarea required rows={3} maxLength={3000} disabled={busy} value={source.corePrompt} onChange={(e) => setSources(list => list.map((s,j) => j === i ? { ...s, corePrompt: e.target.value } : s))}/></label>
+          <label>Upload track (MP3 or WAV)<input type="file" accept=".mp3,.wav,audio/mpeg,audio/wav" required disabled={busy} onChange={(e) => setSources(list => list.map((s,j) => j === i ? { ...s, file: e.target.files?.[0] ?? null } : s))}/></label>
           <p className="tiny muted">15 seconds to 10 minutes; up to 128 MiB. Track duration is measured from the actual upload.</p>
         </fieldset>
       ))}
