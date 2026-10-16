@@ -1,3 +1,4 @@
+import { publicPurchaseLinks, preferredPurchaseUrl } from "../../../packages/contracts/src/purchase-providers.js";
 import { randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Database, Sql } from "./db.js";
@@ -358,6 +359,7 @@ export async function createEvent(
   artistId: string,
   input: z.infer<typeof eventInput>,
 ) {
+  requireThat(input.purchaseMode !== "direct" || Boolean(preferredPurchaseUrl(input.purchaseLinks ?? (input.purchaseUrl ? [{ provider: "other", url: input.purchaseUrl }] : []), input.purchaseMode, input.preferredPurchaseProvider)), "invalid_purchase_destination", "Choose a listed provider for direct purchase.", 400);
   return db.transaction(async (tx) => {
     const eventId = randomUUID();
     const settings = {
@@ -368,6 +370,9 @@ export async function createEvent(
       promptLimit: 3500,
       releaseMode: input.releaseMode,
       admissionMode: input.admissionMode,
+      purchaseLinks: input.purchaseLinks ?? (input.purchaseUrl ? [{ provider: "other", url: input.purchaseUrl }] : []),
+      purchaseMode: input.purchaseMode ?? "menu",
+      preferredPurchaseProvider: input.preferredPurchaseProvider ?? null,
       participantLimit: input.participantLimit,
     };
     await tx.query(
@@ -689,6 +694,9 @@ export async function snapshot(
       artistName: event.artist_name,
       artistId: event.artist_id,
       purchaseUrl: event.purchase_url,
+      purchaseLinks: publicPurchaseLinks(event.settings.purchaseLinks, event.purchase_url),
+      purchaseMode: preferredPurchaseUrl(publicPurchaseLinks(event.settings.purchaseLinks, event.purchase_url), event.settings.purchaseMode, event.settings.preferredPurchaseProvider) ? "direct" : "menu",
+      preferredPurchaseProvider: event.settings.preferredPurchaseProvider ?? null,
       state: event.state,
       settings: event.settings,
       revision: event.revision,
