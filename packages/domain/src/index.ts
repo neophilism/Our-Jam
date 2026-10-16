@@ -57,8 +57,7 @@ export function validateAllocations(
   const votes = Object.values(values);
   const perIdeaLimit = policy.mode === "single" ? 1 : VOTE_BUDGET;
   requireThat(
-    votes.length <= policy.limit &&
-      votes.every((count) => Number.isSafeInteger(count) && count > 0 && count <= perIdeaLimit),
+    votes.every((count) => Number.isSafeInteger(count) && count > 0 && count <= perIdeaLimit),
     "invalid_allocation",
     policy.mode === "single"
       ? "You can cast one vote per Sound Wave."
