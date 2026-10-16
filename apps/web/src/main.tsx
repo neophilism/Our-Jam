@@ -29,6 +29,7 @@ import {
 } from "./FeedbackNudge";
 import { ShowPlayer } from "./ShowPlayer";
 import { ShowSetup } from "./ShowSetup";
+import { RehearsalReadiness } from "./RehearsalReadiness";
 import { useEvent } from "./useEvent";
 import { ArtistPage, ArtistEditor, LikedLibrary } from "./ArtistPage";
 import { ReleaseEmail, EmailAction, EmailStatus } from "./ReleaseEmail";
@@ -1151,6 +1152,7 @@ function Performer({ slug }: { slug?: string }) {
           </form>
         ) : signed ? (
           <>
+            <RehearsalReadiness />
             <div className="event-list">
               {events.map((e) => (
                 <a
@@ -1443,6 +1445,7 @@ function Console({ slug }: { slug: string }) {
           <Countdown data={data} />
         </div>
         <Notice error={error} />
+        <RehearsalReadiness />
         <AudioRouting routing={routes} showActive={showActive} />
         <div className="console-grid">
           <section className="card show-player">
