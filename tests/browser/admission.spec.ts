@@ -53,27 +53,27 @@ test("a listener joins without votes, then enters the artist's code to contribut
   );
   expect(started.ok(), await started.text()).toBeTruthy();
   await page.goto("/event/" + slug);
-  await expect(page.getByText(/Room-code voting:/)).toBeVisible();
+  await expect(page.getByText(/To share Sound Waves or vote/)).toBeVisible();
   await page
     .getByRole("button", { name: "Join as a listener", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "The room has a sound.", exact: true }),
+    page.getByRole("heading", { name: "Listen to the tracks your crowd created.", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Sound Waves", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "Unlock my five votes", exact: false }),
+    page.getByRole("button", { name: "Join and vote", exact: false }),
   ).toBeDisabled();
   await page.getByLabel("Room code", { exact: true }).fill("WRONGCODE");
   await page
-    .getByRole("button", { name: "Unlock my five votes", exact: false })
+    .getByRole("button", { name: "Join and vote", exact: false })
     .click();
   await expect(page.getByRole("alert")).toContainText(
     "room code did not match",
   );
   await page.getByLabel("Room code", { exact: true }).fill("room-2026");
   await page
-    .getByRole("button", { name: "Unlock my five votes", exact: false })
+    .getByRole("button", { name: "Join and vote", exact: false })
     .click();
   await expect(
     page.getByLabel("What would you mix this with?", { exact: true }),
