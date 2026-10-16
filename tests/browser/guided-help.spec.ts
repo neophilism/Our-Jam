@@ -4,6 +4,7 @@ import { operatorSession } from "./helpers";
 test("new and returning visitors can navigate, dismiss and replay tutorials", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByLabel("Guided tour invitation")).toBeVisible();
+  await expect(page.locator(".event-list a.event-card").first()).toBeVisible();
   await page.getByRole("button", { name: "Take a tour" }).click();
   const dialog = page.getByRole("dialog", { name: "Our Jam guided tutorial" });
   await expect(dialog).toContainText("Enter your event code");

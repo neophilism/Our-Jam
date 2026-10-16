@@ -24,4 +24,5 @@ test("the audience sees votes with clear, control-specific explanations", async 
   await expect(page.locator(".vote-explanation")).toContainText("take a vote back");
   await expect(page.getByRole("progressbar", { name: /votes remaining/ })).toHaveAttribute("aria-valuemax", "5");
   await expect(page.locator(".audience")).not.toContainText(/five points|points left|move your points/i);
+  await expect(page.getByRole("progressbar", { name: /votes remaining/ })).toHaveAttribute("aria-valuenow","5");
 });
