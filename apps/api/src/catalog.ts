@@ -54,7 +54,7 @@ export async function publicArtist(
   ).rows;
   return {
     artist,
-    events: rows.slice(0, input.limit).map((row) => ({ ...row, purchase_links: publicPurchaseLinks(row.settings?.purchaseLinks, row.purchase_url), settings: undefined })),
+    events: rows.slice(0, input.limit).map((row: Record<string, any>) => ({ ...row, purchase_links: publicPurchaseLinks(row.settings?.purchaseLinks, row.purchase_url), settings: undefined })),
     nextOffset: rows.length > input.limit ? input.offset + input.limit : null,
     participation:
       "Each show explains whether voting is open remotely or needs the artist’s room code.",
