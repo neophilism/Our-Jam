@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, devices } from "@playwright/test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { createServer } from "node:net";
@@ -27,9 +27,10 @@ test("empty local deployment accepts a song, shows real participation and persis
   const port = await freePort(), origin = `http://127.0.0.1:${port}`;
   let server: ChildProcess | undefined, log = "";
   const owner = await browser.newContext({ baseURL: origin });
-  const guest = await browser.newContext({ baseURL: origin });
+  const guest = await browser.newContext({ baseURL: origin, ...devices["iPhone 13"] });
+  const androidGuest = await browser.newContext({ baseURL: origin, ...devices["Pixel 7"] });
   const display = await browser.newContext({ baseURL: origin });
-  for (const context of [owner, guest, display]) context.setDefaultTimeout(10000);
+  for (const context of [owner, guest, androidGuest, display]) context.setDefaultTimeout(10000);
   async function start() {
     server = spawn(process.execPath, ["--import", "tsx", "scripts/local-rehearsal.ts"], { env: { ...process.env, NODE_ENV: "test", OUR_JAM_LOCAL_DIR: root, OUR_JAM_LOCAL_PORT: String(port), OUR_JAM_NO_OPEN: "1" }, stdio: ["ignore", "pipe", "pipe"] });
     server.stdout?.on("data", (value) => { log = (log + value).slice(-12000); });
@@ -65,12 +66,19 @@ test("empty local deployment accepts a song, shows real participation and persis
     const audio = page.locator(".show-player audio");
     await expect.poll(() => audio.evaluate((a: HTMLMediaElement) => a.currentTime), { timeout: 15000 }).toBeGreaterThan(0.1);
     await expect.poll(async () => (await (await owner.request.get(`/api/operator/events/${slug}`)).json()).round?.state).toBe("open");
-    const audience = await guest.newPage(), screen = await display.newPage();
+    const audience = await guest.newPage(), androidAudience = await androidGuest.newPage(), screen = await display.newPage();
     await screen.goto("/screen/" + slug); await audience.goto("/event/" + slug);
     await audience.getByRole("button", { name: /^I'm in\. Let's make music/ }).click();
     await expect(audience.getByLabel("What would you mix this with?")).toBeEnabled();
     await audience.getByLabel("What would you mix this with?").fill("Local brass section");
     await audience.getByRole("button", { name: "Contribute Sound Wave" }).click();
+    await expect(screen.getByText("Local brass section", { exact: true }).first()).toBeVisible();
+    await androidAudience.goto("/event/" + slug);
+    await androidAudience.getByRole("button", { name: /^I'm in\. Let's make music/ }).click();
+    await expect(androidAudience.getByLabel("What would you mix this with?")).toBeEnabled();
+    await androidAudience.getByLabel("What would you mix this with?").fill("Android cello section");
+    await androidAudience.getByRole("button", { name: "Contribute Sound Wave" }).click();
+    await expect(screen.getByText("Android cello section", { exact: true }).first()).toBeVisible();
     await expect(screen.getByText("Local brass section", { exact: true }).first()).toBeVisible();
     await screen.screenshot({ path: `test-results/${test.info().project.name}-local-real-stage.png`, fullPage: true });
     await page.getByRole("button", { name: "Next track & close round", exact: false }).click();
@@ -78,7 +86,7 @@ test("empty local deployment accepts a song, shows real participation and persis
     await page.getByText("Generation activity", { exact: false }).click();
     await expect(page.getByText("Stable Audio: blocked", { exact: true })).toBeVisible();
     await page.screenshot({ path: `test-results/${test.info().project.name}-local-real-console.png`, fullPage: true });
-    await page.close(); await audience.close(); await screen.close();
+    await page.close(); await audience.close(); await androidAudience.close(); await screen.close();
     await stop(); await start();
     const restored = await (await owner.request.get("/api/events")).json();
     expect(restored.events.some((item: any) => item.slug === slug)).toBe(true);
@@ -86,7 +94,7 @@ test("empty local deployment accepts a song, shows real participation and persis
   } catch (error) {
     throw new Error(String(error) + "\nLocal server diagnostics:\n" + log);
   } finally {
-    await Promise.allSettled([owner.close(), guest.close(), display.close()]);
+    await Promise.allSettled([owner.close(), guest.close(), androidGuest.close(), display.close()]);
     await stop(); await rm(root, { recursive: true, force: true });
   }
 });
