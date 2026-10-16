@@ -35,6 +35,7 @@ jobs:
       - run: npm audit --audit-level=high
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - run: npm run test:features
       - run: docker build -t our-jam:ci .
       - name: Preserve exact checked local source
         run: |

@@ -19,7 +19,8 @@
     "build:web": "vite build",
     "build": "npm run build:server && npm run build:web",
     "test:e2e": "playwright test",
-    "start:worker": "node dist/server/apps/api/src/worker.js"
+    "start:worker": "node dist/server/apps/api/src/worker.js",
+    "test:features": "playwright test --config playwright.features.config.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1149.0",

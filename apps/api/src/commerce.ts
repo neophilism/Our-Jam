@@ -559,6 +559,7 @@ export async function registerCommerce(
     const access = await eventAccess(db, eventId);
     return {
       quote: await quoteEvent(db, eventId, tier),
+      selectedPlanPaid: (await eventAccess(db, eventId, tier)).paid,
       access: {
         paid: access.paid,
         tier: access.tier,
@@ -573,7 +574,7 @@ export async function registerCommerce(
       pending:
         (
           await db.query(
-            "SELECT id,checkout_url,expires_at,tier FROM event_purchases WHERE event_id=$1 AND state='pending'",
+            "SELECT id,command_id,quote_hash,checkout_url,expires_at,tier FROM event_purchases WHERE event_id=$1 AND state='pending'",
             [eventId],
           )
         ).rows[0] ?? null,
@@ -585,6 +586,43 @@ export async function registerCommerce(
       ).rows,
       paymentsConfigured: Boolean(config.gateway),
     };
+  });
+  app.put("/api/operator/events/:id/plan", async (req) => {
+    const who = await artist(req),
+      eventId = id.parse((req.params as any).id),
+      v = z
+        .object({
+          tier: tierInput,
+          expectedRevision: z.number().int().nonnegative(),
+        })
+        .parse(req.body);
+    return db.transaction(async (tx) => {
+      const event = await ownedEvent(tx, eventId, who, true);
+      requireThat(
+        event.state === "waiting",
+        "event_started",
+        "Choose the event plan before starting.",
+        409,
+      );
+      const access = await eventAccess(tx, eventId, v.tier);
+      requireThat(
+        access.paid,
+        "event_payment_required",
+        "This plan requires a verified payment for the current setlist length.",
+        402,
+      );
+      requireThat(
+        access.policy?.revision === v.expectedRevision,
+        "revision_conflict",
+        "Reload the plan before saving.",
+        409,
+      );
+      await tx.query(
+        "UPDATE event_commerce SET tier=$1,revision=revision+1 WHERE event_id=$2",
+        [v.tier, eventId],
+      );
+      return { ok: true };
+    });
   });
   app.post("/api/operator/events/:id/checkout", async (req) => {
     requireThat(
@@ -658,6 +696,7 @@ export async function registerCommerce(
       return { ok: true };
     });
   });
+  const activeVideoRequests = new Set<object>();
   for (const prefix of ["/api/admin", "/api/operator"]) {
     const isAdmin = prefix.endsWith("admin");
     await app.register(async (scope) => {
@@ -666,7 +705,12 @@ export async function registerCommerce(
         { parseAs: "buffer" },
         (_req, body, done) => done(null, body),
       );
-      let active = false;
+      scope.addHook("onResponse", async (req) => {
+        activeVideoRequests.delete(req);
+      });
+      scope.addHook("onError", async (req) => {
+        activeVideoRequests.delete(req);
+      });
       scope.post(
         prefix + "/sponsor-videos",
         {
@@ -694,11 +738,12 @@ export async function registerCommerce(
               503,
             );
             requireThat(
-              !active,
+              activeVideoRequests.size === 0,
               "upload_busy",
               "Another video is being prepared. Try again shortly.",
               429,
             );
+            activeVideoRequests.add(req);
           },
         },
         async (req) => {
@@ -709,7 +754,7 @@ export async function registerCommerce(
               .min(1)
               .max(100)
               .parse((req.query as any).name);
-          active = true;
+
           try {
             const media = await prepareSponsorVideo(req.body as Buffer),
               sha = createHash("sha256").update(media.bytes).digest("hex"),
@@ -733,7 +778,7 @@ export async function registerCommerce(
               400,
             );
           } finally {
-            active = false;
+            activeVideoRequests.delete(req);
           }
         },
       );

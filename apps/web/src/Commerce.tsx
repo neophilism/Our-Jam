@@ -186,15 +186,52 @@ export function EventCommerce({ data }: { data: EventState }) {
               Upload every song first so the price uses its actual audio length.
             </p>
           )}
-          {state.pending ? (
-            <a
-              className="button"
-              href={state.pending.checkout_url ?? undefined}
+          {state.selectedPlanPaid ? (
+            <button
+              disabled={
+                busy ||
+                data.event.state !== "waiting" ||
+                state.access.tier === tier
+              }
+              onClick={() =>
+                void action(() =>
+                  api(`/operator/events/${data.event.id}/plan`, "PUT", {
+                    tier,
+                    expectedRevision: state.policy.revision,
+                  }),
+                )
+              }
             >
-              {state.pending.checkout_url
-                ? "Resume existing checkout"
-                : "Checkout is being prepared. Retry the same purchase if interrupted."}
-            </a>
+              {state.access.tier === tier
+                ? "Selected plan is ready"
+                : "Use this included plan"}
+            </button>
+          ) : state.pending ? (
+            state.pending.checkout_url ? (
+              <a className="button" href={state.pending.checkout_url}>
+                Resume existing checkout
+              </a>
+            ) : (
+              <button
+                disabled={busy}
+                onClick={() =>
+                  void action(async () => {
+                    const value = await api(
+                      `/operator/events/${data.event.id}/checkout`,
+                      "POST",
+                      {
+                        commandId: state.pending.command_id,
+                        tier: state.pending.tier,
+                        quoteHash: state.pending.quote_hash,
+                      },
+                    );
+                    location.assign(value.url);
+                  })
+                }
+              >
+                Resume interrupted checkout
+              </button>
+            )
           ) : (
             <button
               disabled={
@@ -202,7 +239,6 @@ export function EventCommerce({ data }: { data: EventState }) {
                 !q?.verified ||
                 !q.rateCents ||
                 !state.paymentsConfigured ||
-                (state.access.paid && state.access.tier === tier) ||
                 data.event.state !== "waiting"
               }
               onClick={() =>

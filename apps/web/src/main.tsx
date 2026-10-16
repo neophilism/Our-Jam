@@ -1870,6 +1870,7 @@ else if (segments[0] === "library")
 else screen = <Home />;
 createRoot(document.getElementById("root")!).render(
   <>
+    <IdentitySession />
     {screen}
     {segments[0] === "event" && <FeedbackNudge />}
   </>,

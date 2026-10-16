@@ -37,7 +37,7 @@ jobs:
           command: npx playwright install --with-deps chromium
       - run:
           name: Desktop and mobile end-to-end browser tests
-          command: npm run test:e2e
+          command: npm run test:e2e && npm run test:features
       - setup_remote_docker
       - run:
           name: Build real production Docker image

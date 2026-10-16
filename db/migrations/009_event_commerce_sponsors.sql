@@ -1,5 +1,4 @@
 ALTER TABLE source_tracks ADD COLUMN duration_verified boolean NOT NULL DEFAULT false;
-UPDATE source_tracks SET duration_verified=true WHERE audio_url LIKE '%/api/operator/sources/%/audio/%';
 CREATE TABLE commerce_settings (
  singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton), revision integer NOT NULL DEFAULT 0,
  currency text NOT NULL DEFAULT 'usd', prices jsonb NOT NULL DEFAULT '{"platform":0,"ad_free":0,"own_sponsors":0}',
