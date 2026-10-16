@@ -1180,10 +1180,14 @@ function Performer({ slug }: { slug?: string }) {
 }
 function CreateEvent() {
   const [sources, setSources] = useState([
-      { title: "", corePrompt: "", audioUrl: "", durationSeconds: 180 },
+      { title: "", corePrompt: "", file: null as File | null },
     ]),
     [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [storageReady, setStorageReady] = useState<boolean | null>(null),
+    [saved, setSaved] = useState<{ id: string; slug: string } | null>(null),
+    [uploadMessage, setUploadMessage] = useState("");
+  useEffect(() => { let alive = true; api("/operator/album-upload-capabilities").then(r => { if (alive) setStorageReady(Boolean(r.available)); }).catch(() => { if (alive) setStorageReady(false); }); return () => { alive = false; }; }, []);
   return (
     <form
       className="create-event card"
@@ -1192,7 +1196,8 @@ function CreateEvent() {
         setBusy(true);
         const form = new FormData(e.currentTarget);
         try {
-          const created = await api("/operator/events", "POST", {
+          if (storageReady !== true || sources.some(s => !s.file)) throw new Error("Choose an MP3 or WAV for every track. Private album storage must be ready.");
+          const created = saved ?? await api("/operator/events", "POST", {
             title: form.get("title"),
             artistName: form.get("artistName"),
             slug: form.get("slug"),
@@ -1201,11 +1206,20 @@ function CreateEvent() {
               : {}),
             screenLimit: Number(form.get("screenLimit")),
             admissionMode: form.get("admissionMode"),
-            sources: sources.map((s) => ({
-              ...s,
-              audioUrl: s.audioUrl || undefined,
-            })),
+            sources: sources.map((s) => ({ title: s.title, corePrompt: s.corePrompt, durationSeconds: 180 })),
           });
+          setSaved(created);
+          const catalog = await api("/operator/events/" + created.id + "/sources");
+          if (catalog.sources.length !== sources.length) throw new Error("Saved album track count changed; inspect the session before retrying.");
+          for (let i = 0; i < sources.length; i++) {
+            if (catalog.sources[i].audio_url) continue;
+            const file = sources[i].file!;
+            if (!/\.(mp3|wav)$/i.test(file.name) || file.size < 128 || file.size > 128 * 1024 * 1024) throw new Error("Choose MP3/WAV files no larger than 128 MiB.");
+            setUploadMessage("Uploading and validating track " + (i + 1) + " of " + sources.length);
+            const response = await fetch("/api/operator/sources/" + catalog.sources[i].id + "/upload", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/octet-stream", "X-Command-Id": crypto.randomUUID(), "X-Event-Revision": String(catalog.revision) }, body: file });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || result.error || "Audio upload failed.");
+          }
           location.href = "/performer/" + created.slug;
         } catch (e) {
           setError((e as Error).message);
@@ -1216,6 +1230,8 @@ function CreateEvent() {
     >
       <span className="eyebrow">START SOMETHING NEW</span>
       <h2>Set up your album session.</h2>
+      <p className="muted">Upload your own MP3 or WAV tracks directly. No separate audio hosting required. Keep your original masters; the server validates files and prepares private playback copies.</p>
+      {storageReady === false && <p role="alert" className="notice">Private album storage is not available. New sessions are disabled until it is configured.</p>}
       <div className="form-grid">
         <label>
           Event title
@@ -1276,81 +1292,30 @@ function CreateEvent() {
       {sources.map((source, i) => (
         <fieldset className="source-form" key={i}>
           <legend>TRACK {String(i + 1).padStart(2, "0")}</legend>
-          {(
-            ["title", "corePrompt", "audioUrl", "durationSeconds"] as const
-          ).map((key) => (
-            <label key={key}>
-              {
-                {
-                  title: "Track title",
-                  corePrompt: "Signature sound / core prompt",
-                  audioUrl: "Track audio URL (HTTPS)",
-                  durationSeconds: "Track duration in seconds",
-                }[key]
-              }
-              {key === "corePrompt" ? (
-                <textarea
-                  value={source[key]}
-                  required
-                  maxLength={3000}
-                  rows={3}
-                  onChange={(e) =>
-                    setSources((s) =>
-                      s.map((v, j) =>
-                        j === i ? { ...v, [key]: e.target.value } : v,
-                      ),
-                    )
-                  }
-                />
-              ) : (
-                <input
-                  type={
-                    key === "durationSeconds"
-                      ? "number"
-                      : key === "audioUrl"
-                        ? "url"
-                        : "text"
-                  }
-                  min={key === "durationSeconds" ? 15 : undefined}
-                  max={key === "durationSeconds" ? 1200 : undefined}
-                  required={key !== "audioUrl"}
-                  value={source[key]}
-                  onChange={(e) =>
-                    setSources((s) =>
-                      s.map((v, j) =>
-                        j === i
-                          ? {
-                              ...v,
-                              [key]:
-                                key === "durationSeconds"
-                                  ? Number(e.target.value)
-                                  : e.target.value,
-                            }
-                          : v,
-                      ),
-                    )
-                  }
-                />
-              )}
-            </label>
-          ))}
+          <label>Track title<input required maxLength={120} disabled={busy || !!saved} value={source.title} onChange={(e) => setSources(list => list.map((s,j) => j === i ? { ...s, title: e.target.value } : s))}/></label>
+          <label>Signature sound / core prompt<textarea required rows={3} maxLength={3000} disabled={busy || !!saved} value={source.corePrompt} onChange={(e) => setSources(list => list.map((s,j) => j === i ? { ...s, corePrompt: e.target.value } : s))}/></label>
+          <label>Upload track (MP3 or WAV)<input type="file" accept=".mp3,.wav,audio/mpeg,audio/wav" required disabled={busy || !!saved} onChange={(e) => setSources(list => list.map((s,j) => j === i ? { ...s, file: e.target.files?.[0] ?? null } : s))}/></label>
+          <p className="tiny muted">15 seconds to 10 minutes; up to 128 MiB. Track duration is measured from the actual upload.</p>
         </fieldset>
       ))}
       <button
         type="button"
         className="ghost"
+        disabled={busy || !!saved}
         onClick={() =>
           setSources((s) => [
             ...s,
-            { title: "", corePrompt: "", audioUrl: "", durationSeconds: 180 },
+            { title: "", corePrompt: "", file: null as File | null },
           ])
         }
       >
         + Add album track
       </button>
       <Notice error={error} />
-      <button disabled={busy}>
-        {busy ? "Creating…" : "Create the room ↗"}
+      {uploadMessage && <p role="status">{uploadMessage}</p>}
+      {saved && <p role="status">Your session was saved. Retry remaining uploads here, or <a href={"/performer/" + saved.slug}>open it in the performer console</a>.</p>}
+      <button disabled={busy || storageReady !== true}>
+        {busy ? "Uploading your album…" : saved ? "Retry remaining uploads ↗" : "Create and upload album ↗"}
       </button>
     </form>
   );
