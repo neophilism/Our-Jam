@@ -74,7 +74,7 @@ app.post("/__test__/native-sponsor", async (req, reply) => {
     ],
   };
   await db.query(
-    "UPDATE rounds SET settings=jsonb_set(settings,'{sponsorBreak}',$1::jsonb), state=$2,opened_at=now()-($3::integer*interval '1 second'),paused_at=CASE WHEN $2='paused' THEN now() ELSE NULL END,paused_ms=0,deadline_at=now()+interval '15 minutes',revision=revision+1 WHERE event_id=$4 AND state IN ('open','paused')",
+    "UPDATE rounds SET settings=jsonb_set(settings,'{sponsorBreak}',$1::jsonb), state=$2,opened_at=now()-($3::integer*interval '1 second'),paused_at=CASE WHEN $2='paused' THEN now() ELSE NULL END,paused_ms=0,deadline_at=now()+interval '15 minutes' WHERE event_id=$4 AND state IN ('open','paused')",
     [
       JSON.stringify(opening),
       ended ? "open" : "paused",
@@ -82,6 +82,9 @@ app.post("/__test__/native-sponsor", async (req, reply) => {
       event.id,
     ],
   );
+  await db.query("UPDATE events SET revision=revision+1 WHERE id=$1", [
+    event.id,
+  ]);
   return { ok: true };
 });
 await app.listen({ host: "127.0.0.1", port: 4173 });
