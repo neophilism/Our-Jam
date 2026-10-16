@@ -727,10 +727,10 @@ function Audience({ slug }: { slug: string }) {
         {tab === "tracks" && <Tracks data={data} refresh={refresh} />}
         {tab === "people" && (
           <section className="people">
-            <h2>The people behind the sound.</h2>
+            <h2>Meet the people shaping this song.</h2>
             <p>
-              Live support in this round, followed by the contributions that
-              made it into released music.
+              See who's suggesting Sound Waves, which ideas are getting
+              votes, and whose ideas became new music.
             </p>
             {waves.slice(0, 10).map((w, i) => (
               <div className="person" key={w.id}>
@@ -740,7 +740,7 @@ function Audience({ slug }: { slug: string }) {
                   <strong>{w.name}</strong>
                   <small>{w.text}</small>
                 </div>
-                <span>{w.votes} points</span>
+                <span>{w.votes} {w.votes === 1 ? "vote" : "votes"}</span>
               </div>
             ))}
             {!waves.length && (
@@ -755,7 +755,7 @@ function Audience({ slug }: { slug: string }) {
         <div className="support-artist">
           <div>
             <span className="eyebrow">IT STARTED WITH THE ALBUM</span>
-            <strong>Take the original sound home.</strong>
+            <strong>Find the artist's original album.</strong>
           </div>
           {(data.event.purchaseLinks?.length || data.event.purchaseUrl) ? <PurchaseChoices links={data.event.purchaseLinks?.length ? data.event.purchaseLinks as PurchaseLink[] : [{provider:"other", url:data.event.purchaseUrl!}]} label="Get the album" mode={data.event.purchaseMode} preferredProvider={data.event.preferredPurchaseProvider} /> : <span className="muted">Album links coming soon</span>}
         </div>
@@ -788,10 +788,10 @@ function Tracks({
     <section className="tracks">
       <div className="section-heading">
         <div>
-          <span className="eyebrow">MADE HERE. YOURS TO KEEP.</span>
-          <h2>The room has a sound.</h2>
+          <span className="eyebrow">INSPIRED BY YOU. MADE TOGETHER.</span>
+          <h2>Listen to the tracks your crowd created.</h2>
         </div>
-        <span className="muted">Free listening & downloads</span>
+        <span className="muted">Listen, download, and vote for your favorites</span>
       </div>
       {data.releases.map((r, i) => (
         <article className="track" key={r.id}>
@@ -824,11 +824,11 @@ function Tracks({
       {!data.releases.length && (
         <div className="empty">
           <span className="empty-symbol">♫</span>
-          <h3>The best part is still coming.</h3>
+          <h3>No new tracks just yet.</h3>
           <p>
-            Tracks appear here after your Sound Waves become music.
+            When a crowd-created track is ready and the artist releases it,
             <br />
-            Keep contributing while the next round plays.
+            you can listen here, download it, and tell the artist what you think.
           </p>
         </div>
       )}
@@ -982,8 +982,8 @@ function Listener({
       />
       <p className={eligible ? "feedback-prompt" : "muted"}>
         {eligible
-          ? "You helped make this. How does it sound?"
-          : "Would you bring this into the live show?"}
+          ? "Love this new track? Vote for the songs you want to hear again."
+          : "Listen to this crowd-created track. Vote for the ones you want to hear again."}
       </p>
       <div className="reactions">
         <button onClick={() => react(1)}>♡ Love this</button>
@@ -1029,7 +1029,7 @@ function Listener({
           <summary>Made together · {credits.length} Sound Waves</summary>
           {credits.map((c, i) => (
             <p key={i}>
-              <strong>{c.text}</strong> · {c.name} · {c.points} points
+              <strong>{c.text}</strong> · {c.name} · {c.points} {c.points === 1 ? "vote" : "votes"}
             </p>
           ))}
         </details>
@@ -1101,7 +1101,7 @@ function Screen({ slug }: { slug: string }) {
         <div>
           <h2>Your phone is part of the instrument.</h2>
           <p>
-            Contribute a Sound Wave. Move your five points. Keep what we make.
+            Imagine a new sound. Share your Sound Wave. Vote on the crowd’s ideas.
           </p>
         </div>
         <div className="qr-pair">
@@ -1256,9 +1256,13 @@ function CreateEvent() {
         }
       }}
     >
-      <span className="eyebrow">START SOMETHING NEW</span>
-      <h2>Set up your album session.</h2>
-      <p className="muted">Upload your own MP3 or WAV tracks directly. No separate audio hosting required. Keep your original masters; the server validates files and prepares private playback copies.</p>
+      <span className="eyebrow">INVITE YOUR FANS INTO THE MUSIC</span>
+      <h2>Create a jam around your songs.</h2>
+      <p className="muted">
+        Add the songs you'll play, describe the musical identity you want to preserve,
+        and share the event code with your fans. You can upload MP3 or WAV files
+        right here—no outside hosting needed.
+      </p>
       {storageReady === false && <p role="alert" className="notice">Private album storage is not available. New sessions are disabled until it is configured.</p>}
       <div className="form-grid">
         <label>
@@ -1266,7 +1270,7 @@ function CreateEvent() {
           <input
             name="title"
             required
-            placeholder="An album. A block. A new sound."
+            placeholder="e.g. Friday Night Album Jam"
             maxLength={120}
           />
         </label>
@@ -1313,15 +1317,19 @@ function CreateEvent() {
       <PurchaseEditor links={purchaseLinks} onChange={setPurchaseLinks} disabled={busy} mode={purchaseMode} onModeChange={setPurchaseMode} preferredProvider={preferredPurchaseProvider} onPreferredChange={setPreferredPurchaseProvider}/>
       <div className="section-heading">
         <h3>The album, in order</h3>
-        <span className="muted">The core sound stays yours.</span>
+        <span className="muted">Set up the songs fans will help reimagine.</span>
       </div>
       {sources.map((source, i) => (
         <fieldset className="source-form" key={i}>
           <legend>TRACK {String(i + 1).padStart(2, "0")}</legend>
           <label>Track title<input required maxLength={120} disabled={busy} value={source.title} onChange={(e) => setSources(list => list.map((s,j) => j === i ? { ...s, title: e.target.value } : s))}/></label>
-          <label>Signature sound / core prompt<textarea required rows={3} maxLength={3000} disabled={busy} value={source.corePrompt} onChange={(e) => setSources(list => list.map((s,j) => j === i ? { ...s, corePrompt: e.target.value } : s))}/></label>
+          <label>Describe this song's signature sound<textarea required rows={3} maxLength={3000} disabled={busy} value={source.corePrompt} onChange={(e) => setSources(list => list.map((s,j) => j === i ? { ...s, corePrompt: e.target.value } : s))}/></label>
           <label>Upload track (MP3 or WAV)<input type="file" accept=".mp3,.wav,audio/mpeg,audio/wav" required disabled={busy} onChange={(e) => setSources(list => list.map((s,j) => j === i ? { ...s, file: e.target.files?.[0] ?? null } : s))}/></label>
-          <p className="tiny muted">15 seconds to 10 minutes; up to 128 MiB. Track duration is measured from the actual upload.</p>
+          <p className="tiny muted">
+            Describe the instruments, rhythm, style, and mood that make this song
+            recognizable. Only you can see this description. File limit: 15 seconds
+            to 10 minutes, up to 128 MiB; duration is detected automatically.
+          </p>
         </fieldset>
       ))}
       <button
@@ -1507,9 +1515,9 @@ function Console({ slug }: { slug: string }) {
           </section>
           <section className="card">
             <div className="section-heading">
-              <h2>The room right now</h2>
+              <h2>Sound Waves fans are voting for</h2>
               <span>
-                {data.round?.waves.reduce((n, w) => n + w.votes, 0) ?? 0} points
+                {data.round?.waves.reduce((n, w) => n + w.votes, 0) ?? 0} votes
               </span>
             </div>
             <WaveField waves={data.round?.waves ?? []} limit={6} beat={beat} />
@@ -1517,7 +1525,7 @@ function Console({ slug }: { slug: string }) {
               {data.round?.waves.map((w) => (
                 <div key={w.id}>
                   <span>
-                    {w.text} <small>{w.votes} points</small>
+                    {w.text} <small>{w.votes} votes</small>
                   </span>
                   <button
                     className="text-button"
@@ -1528,7 +1536,7 @@ function Console({ slug }: { slug: string }) {
                       )
                     }
                   >
-                    Hide & return points
+                    Hide idea & return votes
                   </button>
                 </div>
               ))}
