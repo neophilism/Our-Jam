@@ -1,40 +1,64 @@
 {
-  "schemaVersion": 1,
   "repository": "neophilism/Our-Jam",
-  "roadmapVersion": 1,
+  "title": "Our-Jam",
   "planVerified": true,
   "plannedPrCount": 54,
+  "sourceFiles": [
+    ".exechub/project.yml",
+    "DEVELOPMENT_PLAN.md",
+    "backlog.json",
+    "PROGRESS.md"
+  ],
+  "schemaVersion": 1,
+  "roadmapVersion": 1,
   "observedAt": "2026-10-11T17:41:45.550Z",
   "units": [
     {
       "id": "OJ-001",
       "title": "Production V1 — approved work package 1 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-002",
       "title": "Production V1 — approved work package 2 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-003",
       "title": "Production V1 — approved work package 3 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-004",
       "title": "Production V1 — approved work package 4 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-005",
       "title": "Identity roles and scoped authorization",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "status": "in_progress",
+      "implementationNotes": "Web/native guest identities, private recovery keys and origin-scoped Keychain credentials exist. PR25's native-to-API-to-stage test passed. Multi-artist provisioning, staff roles, display pairing and stronger artist authentication remain open.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-006",
@@ -42,7 +66,12 @@
       "origin": "original",
       "prs": [
         12
-      ]
+      ],
+      "status": "in_progress",
+      "implementationNotes": "Revision-fenced settings and private source editing include merged MP3/WAV ingestion, decoded duration, private content-addressed storage and authenticated delivery. Uploads retain MP3 playback derivatives, not original masters. Real local upload/playback/restart acceptance passed; actual Neon delivery and owner-file/hardware acceptance remain open.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-007",
@@ -50,55 +79,92 @@
       "origin": "original",
       "prs": [
         15
-      ]
+      ],
+      "status": "in_progress",
+      "implementationNotes": "IndexedDB backup with SHA-256 and local continuation exists. Persistent loopback API/database/audio startup passed real browser acceptance. PR28's automatic deadlines/controller reconciliation and graceful shutdown passed both application and native gates and merged. PR31 prerequisite checks and source/platform-specific dependency repair passed and merged. Hosted offline reload, physical routing and venue acceptance remain open.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-008",
       "title": "Production V1 — approved work package 8 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-009",
       "title": "Production V1 — approved work package 9 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-010",
       "title": "Production V1 — approved work package 10 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-011",
       "title": "Durable realtime subscriptions and recovery",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "status": "in_progress",
+      "implementationNotes": "Event-log streaming and snapshot fallback reject older responses and pause stale/offline votes. Snapshot bounds, identity isolation, shared-network budgets and slow-socket disconnection exist. Merged PR28 verifies stream shutdown while ordinary requests drain. Multi-instance fanout and deployed venue/load evidence remain open.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-012",
       "title": "Production V1 — approved work package 12 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-013",
       "title": "Production V1 — approved work package 13 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "status": "in_progress",
+      "implementationNotes": "The actual public renderer displayed a native Simulator submission and stored vote count in PR25 and PR28 acceptance. PR29's monitor window and exact connection fields passed desktop/mobile tests and merged. Physical display visibility, QR distance and venue acceptance remain open.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-014",
       "title": "Production V1 — approved work package 14 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "status": "in_progress",
+      "implementationNotes": "Frozen provider selection, durable receipts and $0 no-call guards are merged. PR34 adds explicit GET-only saved Mureka task reconciliation, keeping one paid attempt/reservation, exact lease fencing and content-hashed objects. Synthetic provider/API/concurrency and browser checks passed; funded billing, entitlement, quality and latency evidence remain open.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-015",
       "title": "Production V1 — approved work package 15 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "status": "in_progress",
+      "implementationNotes": "Immutable core prompts and selected Sound Waves form closed-round snapshots. Mureka's 1,024-character limit blocks without truncation. PR34 provides owning-artist, revision-fenced, replay-safe operator reconciliation for saved UNKNOWN Mureka receipts without blind POST resubmission; $0 still blocks requests. Missing-receipt/manual provider cases and real-provider acceptance remain open.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-016",
@@ -107,19 +173,30 @@
       "prs": [
         5,
         16
-      ]
+      ],
+      "status": "in_progress",
+      "implementationNotes": "Boundary/immediate/review policies, private previews, holds and never-dispatched cancellation preserve ownership, moderation and budget rules. Both adapters validate decoded audio. Actual provider/storage delivery, exports and production rollout remain open.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-017",
       "title": "Production V1 — approved work package 17 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-018",
       "title": "Production V1 — approved work package 18 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-019",
@@ -127,7 +204,12 @@
       "origin": "original",
       "prs": [
         13
-      ]
+      ],
+      "status": "in_progress",
+      "implementationNotes": "Verified opt-in email, encrypted contacts, bounded outbox, unsubscribe, signed suppression and foreground notices exist behind disabled delivery. The production email schema is now initialized with delivery disabled. Real sender delivery, native/web push and large-crowd throughput remain open.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-020",
@@ -135,13 +217,23 @@
       "origin": "original",
       "prs": [
         12
-      ]
+      ],
+      "status": "in_progress",
+      "implementationNotes": "Queue controls preserve current playback and reject stale commands. The provider toggle and generation-failure panel are merged; PR34 adds private receipt visibility and explicit saved-task checks without changing spend approval. Private cue and physical show rehearsal remain open.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-021",
       "title": "Private headphone cue and audio diagnostics",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "status": "in_progress",
+      "implementationNotes": "Capability-detected outputs, test tones/confirmation, selected-sink playback and output-loss recovery exist. Separate headphone-device fallback remains. Physical isolation, recording exclusion and native output acceptance remain open.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-022",
@@ -150,13 +242,21 @@
       "prs": [
         4,
         15
-      ]
+      ],
+      "status": "in_progress",
+      "implementationNotes": "Checksummed local recording selects browser inputs and handles disconnection. Synthetic browser tests do not prove physical Rave/USB routing, long recordings or multitrack capture.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-023",
       "title": "Production V1 — approved work package 23 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-024",
@@ -165,49 +265,81 @@
       "prs": [
         14,
         17
-      ]
+      ],
+      "status": "in_progress",
+      "implementationNotes": "Profiles, archives and liked tracks include remote-voting policy, listener access, room-code admission and bounded capacity. SwiftUI admission exists; core open-room native participation passed. Restricted-room native UI acceptance, Expo parity, physical devices and venue-load evidence remain open.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-025",
       "title": "Production V1 — approved work package 25 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-026",
       "title": "Load monitoring recovery and full show rehearsal",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "status": "in_progress",
+      "implementationNotes": "Production migrations 001-008 now succeeded, with an empty schema diff against rehearsal, no user data/jobs, and a restricted NOLOGIN runtime role. The owner-requested fresh free Render create was again tool-safety rejected; no hosted URL exists. PR25/28/30/32 native/local gates and PR31 startup checks passed. Live storage, runtime credential wiring, cloud and physical venue acceptance remain open.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-027",
       "title": "Production V1 — approved work package 27 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-028",
       "title": "Visual quality and performance refinement",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "status": "in_progress",
+      "implementationNotes": "Readable layout is separate from the lazy 3D renderer, with motion preferences, hidden/offscreen suspension and graphics-loss fallback. Physical frame/thermal tests, advanced packing and cinematic refinement remain open.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-029",
       "title": "Production V1 — approved work package 29 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-030",
       "title": "Production V1 — approved work package 30 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-031",
       "title": "Fan collections following and return journeys",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "status": "in_progress",
+      "implementationNotes": "Web/API recoverable profiles, follows and private release feeds are implemented. PR30 now passed actual native profile editing, following, stable recovery-key disclosure through snapshot refresh, explicit save and profile restoration; it is merged. Earlier native failures were corrected, not waived. Verified accounts and richer engagement remain open.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-032",
@@ -215,139 +347,210 @@
       "origin": "original",
       "prs": [
         11
-      ]
+      ],
+      "status": "in_progress",
+      "implementationNotes": "PR25/28 core SwiftUI native-to-stage acceptance passed. PR30 recovery/following and PR32 keyboard/private-playback corrections now also passed exact-head application and actual Simulator/native-to-stage checks and merged. Universal architectures compiled; iPhone SE supplied interaction evidence. Expo draft11/Android, offline/background/push, physical devices, membership/signing and store/full-native parity remain separate.",
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-033",
       "title": "Production V1 — approved work package 33 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-034",
       "title": "Production V1 — approved work package 34 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-035",
       "title": "Production V1 — approved work package 35 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-036",
       "title": "Production V1 — approved work package 36 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-037",
       "title": "Production V1 — approved work package 37 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-038",
       "title": "Production V1 — approved work package 38 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-039",
       "title": "Production V1 — approved work package 39 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-040",
       "title": "Production V1 — approved work package 40 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-041",
       "title": "Production V1 — approved work package 41 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-042",
       "title": "Production V1 — approved work package 42 of 42",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-043",
       "title": "DJ V2 — approved work package 1 of 8",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-044",
       "title": "DJ V2 — approved work package 2 of 8",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-045",
       "title": "DJ V2 — approved work package 3 of 8",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-046",
       "title": "DJ V2 — approved work package 4 of 8",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-047",
       "title": "DJ V2 — approved work package 5 of 8",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-048",
       "title": "DJ V2 — approved work package 6 of 8",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-049",
       "title": "DJ V2 — approved work package 7 of 8",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-050",
       "title": "DJ V2 — approved work package 8 of 8",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-051",
       "title": "Secondary demonstration — approved work package 1 of 4",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-052",
       "title": "Secondary demonstration — approved work package 2 of 4",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-053",
       "title": "Secondary demonstration — approved work package 3 of 4",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     },
     {
       "id": "OJ-054",
       "title": "Secondary demonstration — approved work package 4 of 4",
       "origin": "original",
-      "prs": []
+      "prs": [],
+      "dependsOn": [],
+      "externalDependencies": [],
+      "externalPrerequisites": []
     }
   ],
   "pullRequests": [
