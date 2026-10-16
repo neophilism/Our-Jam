@@ -1113,9 +1113,14 @@ function Performer({ slug }: { slug?: string }) {
     [error, setError] = useState(""),
     [events, setEvents] = useState<any[]>([]);
   useEffect(() => {
-    api("/session")
-      .then((r) => setSigned(r.operator))
-      .catch((e) => setError(e.message));
+    const read = () => {
+      void api("/session")
+        .then((r) => setSigned(r.operator))
+        .catch((e) => setError(e.message));
+    };
+    read();
+    window.addEventListener("ourjam:identity-session", read);
+    return () => window.removeEventListener("ourjam:identity-session", read);
   }, []);
   useEffect(() => {
     if (!signed) return;

@@ -61,6 +61,7 @@ async function connect(
   if (!response.ok)
     throw new Error(v.message ?? "Could not restore your Our Jam account.");
   localStorage.setItem("ourjam.identity.role", role);
+  window.dispatchEvent(new Event("ourjam:identity-session"));
   return v;
 }
 export function IdentityLink({
@@ -217,17 +218,16 @@ export function SignIn() {
           </p>
         ) : (
           <>
-            <label>
-              I’m here as
-              <select
-                value={role}
-                disabled={busy}
-                onChange={(e) => setRole(e.target.value as typeof role)}
-              >
-                <option value="audience">Audience member</option>
-                <option value="performer">Performer</option>
-              </select>
-            </label>
+            <label htmlFor="identity-role">I’m here as</label>
+            <select
+              id="identity-role"
+              value={role}
+              disabled={busy}
+              onChange={(e) => setRole(e.target.value as typeof role)}
+            >
+              <option value="audience">Audience member</option>
+              <option value="performer">Performer</option>
+            </select>
             {signedIn && (
               <div>
                 <button

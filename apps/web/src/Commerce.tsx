@@ -149,20 +149,19 @@ export function EventCommerce({ data }: { data: EventState }) {
         setlist, rounded up to the next minute. This purchase covers this event;
         it is not a subscription.
       </p>
-      <label>
-        Event plan
-        <select
-          value={tier}
-          disabled={busy}
-          onChange={(e) => setTier(e.target.value as Tier)}
-        >
-          {Object.entries(plans).map(([key, label]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <label htmlFor="event-commerce-plan">Event plan</label>
+      <select
+        id="event-commerce-plan"
+        value={tier}
+        disabled={busy}
+        onChange={(e) => setTier(e.target.value as Tier)}
+      >
+        {Object.entries(plans).map(([key, label]) => (
+          <option key={key} value={key}>
+            {label}
+          </option>
+        ))}
+      </select>
       {state && (
         <>
           <p role="status">

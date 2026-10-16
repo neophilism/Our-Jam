@@ -1,3 +1,6 @@
+import { createEvent, advance, submitWave } from "../apps/api/src/service.js";
+import { eventInput } from "../packages/contracts/src/index.js";
+import { claimPlayback } from "../apps/api/src/playback.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
@@ -29,6 +32,32 @@ test("verified audience sign-in links the existing profile without changing vote
     "INSERT INTO sessions(token_hash,participant_id,kind,expires_at) VALUES($1,$2,'guest',now()+interval '1 day')",
     [digest(token), participant],
   );
+  const event = await createEvent(
+    db,
+    "our-jam",
+    eventInput.parse({
+      title: "Identity preservation",
+      artistName: "Fixture",
+      slug: "identity-" + randomUUID(),
+      minimumRoundSeconds: 0,
+      sources: [{ title: "Song", corePrompt: "Private", durationSeconds: 180 }],
+    }),
+  );
+  await db.query(
+    "INSERT INTO event_members(event_id,participant_id) VALUES($1,$2)",
+    [event.id, participant],
+  );
+  const lease = await claimPlayback(db, "our-jam", event.id);
+  const opened = await advance(db, "our-jam", event.id, randomUUID(), 0, {
+    ...lease,
+    sequence: 1,
+  });
+  const wave = await submitWave(
+    db,
+    { participantId: participant },
+    opened.roundId!,
+    { commandId: randomUUID(), expectedRevision: 0, text: "Warm piano" },
+  );
   const c = claims();
   const result = await exchangeIdentity(
     db,
@@ -43,6 +72,22 @@ test("verified audience sign-in links the existing profile without changing vote
   ).rows[0];
   assert.equal(s.participant_id, participant);
   assert.equal(result.profileChanged, false);
+  const allocation = (
+    await db.query(
+      "SELECT * FROM allocations WHERE participant_id=$1 AND wave_id=$2",
+      [participant, wave.waveId],
+    )
+  ).rows[0];
+  assert.equal(allocation.points, 1);
+  assert.equal(
+    (
+      await db.query(
+        "SELECT * FROM event_members WHERE event_id=$1 AND participant_id=$2",
+        [event.id, participant],
+      )
+    ).rows.length,
+    1,
+  );
   assert.equal((await db.query("SELECT * FROM participants")).rows.length, 1);
   assert.equal(
     (
@@ -220,4 +265,59 @@ test("identity exchange denies invalid tokens, admin escalation, missing Origin 
       NEON_AUTH_JWKS_URL: "https://other.test/keys",
     }),
   );
+});
+
+test("managed identity verifier checks signature, exact branch issuer/audience, algorithm and expiry", async (t) => {
+  const { generateKeyPair, exportJWK, SignJWT } = await import("jose");
+  const { privateKey, publicKey } = await generateKeyPair("EdDSA");
+  const jwk = {
+    ...(await exportJWK(publicKey)),
+    kid: "fixture-key",
+    alg: "EdDSA",
+    use: "sig",
+  };
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async () =>
+      new Response(JSON.stringify({ keys: [jwk] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+  );
+  const config = configuredIdentity({
+    IDENTITY_ENABLED: "1",
+    NEON_AUTH_BASE_URL: "https://auth.example.test/neondb/auth",
+  })!;
+  const signed = async (
+    issuer = "https://auth.example.test",
+    audience = "https://auth.example.test",
+    exp = "15m",
+    key = privateKey,
+  ) =>
+    new SignJWT({ emailVerified: true, banned: false })
+      .setProtectedHeader({ alg: "EdDSA", kid: "fixture-key" })
+      .setSubject("verified-subject")
+      .setIssuer(issuer)
+      .setAudience(audience)
+      .setIssuedAt()
+      .setExpirationTime(exp)
+      .sign(key);
+  assert.equal((await config.verify(await signed())).sub, "verified-subject");
+  await assert.rejects(
+    config.verify(await signed("https://another-branch.example.test")),
+  );
+  await assert.rejects(
+    config.verify(await signed(undefined, "wrong-audience")),
+  );
+  await assert.rejects(
+    config.verify(await signed(undefined, undefined, "-1m")),
+  );
+  const other = await generateKeyPair("EdDSA");
+  await assert.rejects(
+    config.verify(
+      await signed(undefined, undefined, undefined, other.privateKey),
+    ),
+  );
+  await assert.rejects(config.verify("not-a-jwt"));
 });

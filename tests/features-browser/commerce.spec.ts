@@ -1,18 +1,27 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page, type BrowserContext } from "@playwright/test";
 const origin = "http://127.0.0.1:4174";
+let cookies: Awaited<ReturnType<BrowserContext["cookies"]>> | undefined;
 async function login(page: Page) {
+  if (cookies) {
+    await page.context().addCookies(cookies);
+    return;
+  }
   const r = await page.request.post("/api/operator/login", {
     headers: { origin },
     data: { token: "browser-test-only-operator-token-123456" },
   });
-  expect(r.ok()).toBeTruthy();
+  expect(r.ok(), await r.text()).toBeTruthy();
+  cookies = (await page.context().cookies()).filter(
+    (c) => c.name === "oj_operator",
+  );
 }
 async function fixture(page: Page, paid = false, tier = "platform") {
   await login(page);
   const r = await page.request.post("/__test__/event", {
+    headers: { origin },
     data: { paid, tier },
   });
-  expect(r.ok()).toBeTruthy();
+  expect(r.ok(), await r.text()).toBeTruthy();
   return r.json();
 }
 test("artist sees measured event quote and admin can configure prices without granting performer admin rights", async ({
@@ -111,7 +120,10 @@ test("silent sponsor video and countdown pause with music and the server prevent
     commandId: crypto.randomUUID(),
     pause: false,
   });
-  await page.request.post("/__test__/elapsed", { data: { eventId: event.id } });
+  await page.request.post("/__test__/elapsed", {
+    headers: { origin },
+    data: { eventId: event.id },
+  });
   await expect(sponsor).toHaveCount(0);
   const accepted = await post(`/api/rounds/${opened.roundId}/waves`, {
     commandId: crypto.randomUUID(),

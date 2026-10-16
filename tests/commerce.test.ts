@@ -398,3 +398,34 @@ test("admin and payment routes reject artist/guest escalation, unsigned callback
     /test keys/,
   );
 });
+
+test("Stripe SDK verifies exact raw webhook bytes, rejects tampering and stale signatures", async () => {
+  const Stripe = (await import("stripe")).default;
+  const secret = "whsec_fixture_not_a_real_secret",
+    body = JSON.stringify({
+      id: "evt_fixture_signature",
+      type: "checkout.session.completed",
+      livemode: false,
+      data: { object: { id: "cs_fixture" } },
+    });
+  const gateway = configuredCommerce({
+    COMMERCE_ENABLED: "1",
+    STRIPE_SECRET_KEY: "sk_test_fixture_not_a_real_key",
+    STRIPE_WEBHOOK_SECRET: secret,
+  })!.gateway!;
+  const signature = Stripe.webhooks.generateTestHeaderString({
+    payload: body,
+    secret,
+  });
+  assert.equal(
+    gateway.verify(Buffer.from(body), signature).id,
+    "evt_fixture_signature",
+  );
+  assert.throws(() => gateway.verify(Buffer.from(body + " "), signature));
+  const stale = Stripe.webhooks.generateTestHeaderString({
+    payload: body,
+    secret,
+    timestamp: Math.floor(Date.now() / 1000) - 600,
+  });
+  assert.throws(() => gateway.verify(Buffer.from(body), stale));
+});

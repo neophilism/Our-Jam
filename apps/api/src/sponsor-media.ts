@@ -70,7 +70,7 @@ export async function prepareSponsorVideo(bytes: Uint8Array) {
         "-crf",
         "24",
         "-vf",
-        "scale=w='min(1920,iw)':h=-2",
+        "scale=w='trunc(min(1920,iw)/2)*2':h=-2",
         "-pix_fmt",
         "yuv420p",
         "-movflags",
@@ -85,7 +85,33 @@ export async function prepareSponsorVideo(bytes: Uint8Array) {
       "invalid_video",
       "Prepared video exceeds the upload limit.",
     );
-    return { bytes: prepared, durationSeconds: duration };
+    const checked = await exec(
+      "ffprobe",
+      [
+        "-v",
+        "error",
+        "-protocol_whitelist",
+        "file,pipe",
+        "-show_entries",
+        "format=duration:stream=codec_type",
+        "-of",
+        "json",
+        output,
+      ],
+      { timeout: 30000, maxBuffer: 65536 },
+    );
+    const result = JSON.parse(checked.stdout),
+      actual = Number(result.format?.duration);
+    requireThat(
+      Number.isFinite(actual) &&
+        actual >= 1 &&
+        actual <= 60 &&
+        result.streams?.length === 1 &&
+        result.streams[0].codec_type === "video",
+      "invalid_video",
+      "The prepared ad must be a silent video between 1 and 60 seconds.",
+    );
+    return { bytes: prepared, durationSeconds: actual };
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
