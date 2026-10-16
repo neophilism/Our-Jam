@@ -56,7 +56,7 @@ test("an artist-selected ten-Sound-Wave allowance is enforced and visible to the
   move[waves[10]] = 1;
   await allocate(db, {participantId: voter}, roundId, {commandId:randomUUID(),expectedRevision:1,allocations:move});
   const updated = await snapshot(db, event.slug, voter);
-  assert.equal(updated.round?.waves.find(w => w.id === waves[0])?.mine, 0);
+  assert.equal(updated.round?.waves.some(w => w.id === waves[0]), false, "a wave without votes is not ranked");
   assert.equal(updated.round?.waves.find(w => w.id === waves[10])?.mine, 1);
 });
 
