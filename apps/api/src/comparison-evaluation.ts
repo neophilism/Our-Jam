@@ -58,7 +58,7 @@ export async function comparisonCostReport(db:Database) {
     const counts={runs:group.length,successful:group.filter(r=>r.state==="succeeded").length,
       usable:group.filter(r=>r.approved_usable===true).length,failedOrUnknown:group.filter(r=>["unknown","failed","blocked"].includes(r.state)).length};
     const hasAllQuotes=group.every(r=>r.estimated_cost_micro_usd!==null);
-    const hasAllActuals=group.every(r=>r.actual_cost_micro_usd!==null);
+    const hasAllActuals=group.every(r=>r.actual_cost_micro_usd!==null && r.cost_certainty==="reconciled");
     const quotedTotalMicroUsd=hasAllQuotes?group.reduce((n,r)=>n+Number(r.estimated_cost_micro_usd),0):null;
     const actualTotalMicroUsd=hasAllActuals?group.reduce((n,r)=>n+Number(r.actual_cost_micro_usd),0):null;
     const averageQuality=group.filter(r=>r.sound_quality!==null).reduce((n,r)=>n+Number(r.sound_quality),0)/(group.filter(r=>r.sound_quality!==null).length||1);

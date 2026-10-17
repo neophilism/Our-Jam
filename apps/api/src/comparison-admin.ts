@@ -4,6 +4,7 @@ import { id } from "../../../packages/contracts/src/index.js";
 import { prepareComparisonInput, prepareComparisonBatch, listComparisonBatches, readComparisonBatch } from "./comparison-batches.js";
 import { requirePlatformAdmin } from "./platform-admin.js";
 import { configuredStorage } from "./generation-config.js";
+import { comparisonInvoiceHistory, reconcileComparisonInvoice, comparisonInvoiceInput } from "./comparison-invoices.js";
 import { saveComparisonReview, comparisonReviewInput, readComparisonReviews, comparisonCostReport, costReportCsv } from "./comparison-evaluation.js";
 import { requireThat } from "../../../packages/domain/src/index.js";
 import { comparisonPreflight, startComparisonBatch, startComparisonInput } from "./comparison-dispatch.js";
@@ -13,6 +14,16 @@ export function registerComparisonAdmin(app: FastifyInstance, db: Database) {
   app.get("/api/admin/comparisons", async req => {
     await requirePlatformAdmin(db, req);
     return { batches: await listComparisonBatches(db) };
+  });
+  app.get("/api/admin/comparisons/:id/invoices",async req=>{
+    await requirePlatformAdmin(db,req);
+    return comparisonInvoiceHistory(db,id.parse((req.params as {id:string}).id));
+  });
+  app.post("/api/admin/comparisons/:id/runs/:runId/invoice",async req=>{
+    await requirePlatformAdmin(db,req);
+    const params=req.params as {id:string;runId:string};
+    return reconcileComparisonInvoice(db,id.parse(params.id),id.parse(params.runId),
+      comparisonInvoiceInput.parse(req.body));
   });
   app.get("/api/admin/comparisons/cost-report",async req=>{
     await requirePlatformAdmin(db,req);

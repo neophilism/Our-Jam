@@ -30,7 +30,7 @@ test("scoring saves favorite and usable decision, and changing favorite unsets p
   assert.equal(reviews.find(r=>r.runId===runs[0].id)?.approvedUsable,true);
   const report=await comparisonCostReport(db);
   assert.equal(report.reduce((sum,row)=>sum+row.usable,0),1);
-  assert.equal(report.reduce((sum,row)=>sum+row.actualTotalMicroUsd,0),0);
+  assert.equal(report.reduce((sum,row)=>sum+(row.actualTotalMicroUsd??0),0),0);
   assert.ok(report.every(row=>row.actualTotalMicroUsd===null));
   assert.match(costReportCsv(report),/provider,runs,successful,usable/);
   assert.equal((await db.query("SELECT COUNT(*)::int n FROM platform_policy_audit WHERE action='comparison.review'")).rows[0].n,2);

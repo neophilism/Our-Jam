@@ -1,0 +1,26 @@
+name: Private GPU gateway (unit tests)
+on:
+  pull_request:
+    paths:
+      - 'gpu_gateway/**'
+      - '.github/workflows/gpu-gateway.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'gpu_gateway/**'
+      - '.github/workflows/gpu-gateway.yml'
+permissions:
+  contents: read
+jobs:
+  private-gateway-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile and test gateway without GPU or credentials
+        run: |
+          python -m compileall -q gpu_gateway
+          python -m unittest -v gpu_gateway.test_gateway

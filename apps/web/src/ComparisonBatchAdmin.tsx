@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import { ComparisonAudition } from "./ComparisonAudition";
+import { ComparisonInvoiceAdmin } from "./ComparisonInvoiceAdmin";
 
 type BatchSummary = {
   id: string; purpose: "private_research" | "commercial_evaluation";
@@ -139,6 +140,8 @@ export function ComparisonBatchAdmin({ selectionRevision, selectedProviders }: {
           </div>}
         </>}
         <ComparisonAudition batchId={detail.id} runs={detail.runs} onBlindChange={setBlindAudition}/>
+        {!blindAudition && <ComparisonInvoiceAdmin batchId={detail.id} runs={detail.runs}/>}
+        {blindAudition && detail.runs.some(r=>r.state==="succeeded") && <p className="muted">Reveal provider identities or turn off blind listening to enter supplier invoice evidence.</p>}
         {(!blindAudition || !detail.runs.some(r=>r.state==="succeeded")) && <div className="comparison-result-grid">
           {detail.runs.map(r => <div className="comparison-result" key={r.id}>
             <strong>{r.provider.replaceAll("_"," ")}</strong>
