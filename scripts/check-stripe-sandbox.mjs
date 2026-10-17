@@ -69,10 +69,14 @@ async function main() {
     if (expired.status !== "expired" || expired.livemode !== false)
       throw Error("Stripe Checkout expiration not verified");
     console.log("Stripe accepted sandbox Checkout expiration: PASS");
-  } catch {
-    // No raw Stripe exception is printed (it may carry request/response context).
-    throw Error(session ? "Sandbox Checkout expiration or validation failed; inspect restricted-key permissions" :
-      "Sandbox Checkout creation failed; inspect restricted-key permissions");
+  } catch (error) {
+    // Record only explicitly bounded, SDK-defined Stripe error classification.
+    // Never print raw exception, message, request IDs or response bodies.
+    const safe = (value) => typeof value === "string" && /^[a-z_]{1,64}$/.test(value) ? value : "unspecified";
+    const status = Number.isInteger(error?.statusCode) && error.statusCode >= 400 && error.statusCode <= 599 ? error.statusCode : "none";
+    console.error(`Stripe test-mode request classification: type=${safe(error?.type)} code=${safe(error?.code)} status=${status}`);
+    throw Error(session ? "Sandbox Checkout expiration or validation failed; inspect Stripe test account permissions" :
+      "Sandbox Checkout creation failed; inspect Stripe test account permissions");
   }
   // A valid whsec prefix cannot prove signed webhook delivery. That is a separate test.
   console.log("No customer charge or application event purchase was created.");
