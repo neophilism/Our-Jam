@@ -7,26 +7,41 @@ import { murekaProvider } from "../../../packages/providers/src/mureka.js";
 import { aceStepProvider } from "../../../packages/providers/src/ace-step.js";
 import { gpuGatewayProvider } from "../../../packages/providers/src/gpu-gateway.js";
 import type { MediaStore } from "../../../packages/providers/src/storage.js";
-import type { ComparisonEngineId } from "../../../packages/providers/src/comparison-catalog.js";
+import { COMPARISON_ENGINES, type ComparisonEngineId } from "../../../packages/providers/src/comparison-catalog.js";
+import {gpuHostTargets,chooseGpuHost,type HostTarget} from "../../../packages/providers/src/gpu-host-routing.js";
 
-/** Private, dedicated comparison worker. Never imported by the live show job processor. */
-export function comparisonMusicProvider(engine: ComparisonEngineId, purpose: "private_research" | "commercial_evaluation", env:NodeJS.ProcessEnv=process.env): MusicProvider {
+/** The host is fixed once, before submit. No fallback occurs after any generation POST. */
+export function comparisonMusicProvider(
+  engine: ComparisonEngineId,purpose: "private_research" | "commercial_evaluation",
+  env:NodeJS.ProcessEnv=process.env,chosen?:HostTarget,
+): MusicProvider {
   const block=comparisonConfiguration(engine,purpose,env);
   if(block)throw new ProviderError("comparison_engine_not_authorized",false);
-  if(engine==="mureka")return murekaProvider(env.MUREKA_API_KEY!,{model:env.MUREKA_MODEL || "mureka-9.5",
-    mediaHosts:env.MUREKA_MEDIA_HOSTS?.split(",").map(s=>s.trim()).filter(Boolean)});
+  if(engine==="mureka")return murekaProvider(env.MUREKA_API_KEY!,{
+    model:env.MUREKA_MODEL || "mureka-9.5",
+    mediaHosts:env.MUREKA_MEDIA_HOSTS?.split(",").map(s=>s.trim()).filter(Boolean)
+  });
   if(engine==="stability")return stabilityProvider(env.STABLE_AUDIO_KEY||env.STABILITY_API_KEY!);
-  if(engine==="ace_step")return aceStepProvider({
-    baseUrl:env.ACE_STEP_BASE_URL!,token:env.ACE_STEP_TOKEN!,
-    model:env.ACE_STEP_MODEL==="acestep-v15-base"?"acestep-v15-base":"acestep-v15-turbo",
-  });
-  const model=engine==="heartmula"?(env.HEARTMULA_MODEL||"HeartMuLa-oss-3B"):
-    engine==="stable_audio_open"?(env.STABLE_AUDIO_OPEN_MODEL||"stable-audio-3-medium"):
-    (env.MUSICGEN_MODEL||"facebook/musicgen-small");
+  const checkpoint=COMPARISON_ENGINES.find(x=>x.id===engine)!.checkpoint;
+  const host=chosen??gpuHostTargets(engine,checkpoint,env)[0];
+  if(!host || host.engine!==engine || host.model!==checkpoint)
+    throw new ProviderError("comparison_host_or_checkpoint_mismatch",false);
+  if(host.protocol==="ace")
+    return aceStepProvider({baseUrl:host.root,token:host.token,model:"acestep-v15-xl-sft"});
   return gpuGatewayProvider({
-    engine,purpose,model,baseUrl:env.OURJAM_GPU_GATEWAY_URL!,token:env.OURJAM_GPU_GATEWAY_TOKEN!,
-    checkpointApproved:true,
+    engine,model:checkpoint,purpose,baseUrl:host.root,token:host.token,checkpointApproved:true,
   });
+}
+/** Pre-submit model probe chooses the backup without trying a second billable POST. */
+export async function chooseComparisonMusicHost(
+  engine:ComparisonEngineId,purpose:"private_research"|"commercial_evaluation",
+  env:NodeJS.ProcessEnv=process.env,request:typeof fetch=fetch,
+):Promise<HostTarget|null>{
+  if(engine==="mureka"||engine==="stability")return null;
+  if(comparisonConfiguration(engine,purpose,env))
+    throw new ProviderError("comparison_engine_not_authorized",false);
+  const checkpoint=COMPARISON_ENGINES.find(x=>x.id===engine)!.checkpoint;
+  return chooseGpuHost(gpuHostTargets(engine,checkpoint,env),request);
 }
 export type ComparisonWorkerConfig = {
   store:MediaStore;
@@ -34,10 +49,11 @@ export type ComparisonWorkerConfig = {
   validate?:typeof validateAudio;
   makeProvider?:(id:ComparisonEngineId,purpose:"private_research"|"commercial_evaluation")=>MusicProvider;
   clock?:()=>number;
+  hostRequest?:typeof fetch;
 };
 type Claim = {
   id:string;batchId:string;provider:ComparisonEngineId;purpose:"private_research"|"commercial_evaluation";
-  prompt:string;durationSeconds:number;attemptId:string;leaseFence:string;
+  prompt:string;durationSeconds:number;attemptId:string;leaseFence:string;checkpoint:string;
   snapshot:Record<string,any>;
 };
 function estimateCost(snapshot:Record<string,any>,seconds:number,estimatedFallback:number):number {
@@ -71,7 +87,8 @@ export async function comparisonGenerationTick(db:Database,config:ComparisonWork
       "SELECT r.*,b.prompt,b.purpose,b.duration_seconds,b.approved_ceiling_micro_usd FROM comparison_runs r JOIN comparison_batches b ON b.id=r.batch_id WHERE r.state='queued' AND b.state IN ('queued','running') ORDER BY r.created_at,r.id LIMIT 1 FOR UPDATE OF r SKIP LOCKED",
     )).rows[0];
     if(!r)return null;
-    const issue=comparisonConfiguration(r.provider as ComparisonEngineId,r.purpose,env);
+    const issue=comparisonConfiguration(r.provider as ComparisonEngineId,r.purpose,env) ||
+      (COMPARISON_ENGINES.find(x=>x.id===r.provider)?.checkpoint!==r.checkpoint?"checkpoint_changed_prepare_new_batch":null);
     const snapshot=(r.settings_snapshot??{}) as Record<string,any>;
     const ceiling=Number(r.approved_ceiling_micro_usd);
     const estimated=Number(r.estimated_cost_micro_usd);
@@ -94,14 +111,34 @@ export async function comparisonGenerationTick(db:Database,config:ComparisonWork
     await tx.query("UPDATE comparison_batches SET state='running',updated_at=now() WHERE id=$1",[r.batch_id]);
     const fence=(await tx.query("SELECT lease_until::text fence FROM comparison_runs WHERE id=$1",[r.id])).rows[0].fence;
     return {id:r.id,batchId:r.batch_id,provider:r.provider,purpose:r.purpose,
-      prompt:r.prompt,durationSeconds:r.duration_seconds,attemptId,leaseFence:fence,snapshot};
+      prompt:r.prompt,durationSeconds:r.duration_seconds,attemptId,leaseFence:fence,snapshot,checkpoint:r.checkpoint};
   });
   if(!claim)return false;
   const startedAt=(config.clock??Date.now)();
   let provider:MusicProvider;
   try {
+    const host=config.makeProvider?null:
+      await chooseComparisonMusicHost(claim.provider,claim.purpose,env,config.hostRequest??fetch);
+    if(host){
+      const candidates=(claim.snapshot?.rateSnapshot?.hostQuotes??[]) as Array<{
+        host:string;id:string;rateMicroUsd:number;sku:string;
+      }>;
+      const selectedRate=candidates.find(x=>x.host===host.id);
+      if(candidates.length && !selectedRate)
+        throw new ProviderError("fallback_host_not_covered_by_approved_budget",false);
+      if(selectedRate){
+        claim.snapshot.rateSnapshot={...claim.snapshot.rateSnapshot,
+          rateMicroUsd:selectedRate.rateMicroUsd,sku:selectedRate.sku,hostSelected:host.id,
+          selectedRateId:selectedRate.id};
+      }
+      const changed=await db.query(
+        "UPDATE comparison_runs SET settings_snapshot=settings_snapshot || $2::jsonb,updated_at=now() WHERE id=$1 AND attempt_id=$3 AND state='running' AND lease_until=$4::timestamptz RETURNING id",
+        [claim.id,JSON.stringify({gpuHost:host.id,selectedHostRate:claim.snapshot.rateSnapshot}),claim.attemptId,claim.leaseFence],
+      );
+      if(!changed.rows.length)throw new ProviderError("comparison_worker_lease_lost",true);
+    }
     provider=config.makeProvider?config.makeProvider(claim.provider,claim.purpose):
-      comparisonMusicProvider(claim.provider,claim.purpose,env);
+      comparisonMusicProvider(claim.provider,claim.purpose,env,host??undefined);
     const audio=await provider.generate(claim.prompt,claim.durationSeconds,{
       onAccepted:async ref=>{
         const saved=await db.query(
