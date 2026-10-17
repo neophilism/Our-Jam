@@ -4,6 +4,7 @@ import { comparisonConfiguration } from "./comparison-dispatch.js";
 import { validateAudio } from "./media.js";
 import { ProviderError, stabilityProvider, type MusicProvider } from "../../../packages/providers/src/stability.js";
 import { murekaProvider } from "../../../packages/providers/src/mureka.js";
+import { stableAudio3ComparisonProvider } from "../../../packages/providers/src/stable-audio-3.js";
 import { aceStepProvider } from "../../../packages/providers/src/ace-step.js";
 import { gpuGatewayProvider } from "../../../packages/providers/src/gpu-gateway.js";
 import type { MediaStore } from "../../../packages/providers/src/storage.js";
@@ -24,7 +25,7 @@ export function comparisonMusicProvider(
   if(checkpoint && checkpoint!==pinned)throw new ProviderError("stale_checkpoint_requires_new_batch",false);
   if(engine==="mureka")return murekaProvider(env.MUREKA_API_KEY!,{model:env.MUREKA_MODEL||"mureka-9.5",
     mediaHosts:env.MUREKA_MEDIA_HOSTS?.split(",").map(s=>s.trim()).filter(Boolean)});
-  if(engine==="stability")return stabilityProvider(env.STABLE_AUDIO_KEY||env.STABILITY_API_KEY!);
+  if(engine==="stability")return stableAudio3ComparisonProvider(env.STABLE_AUDIO_KEY||env.STABILITY_API_KEY!);
   const connection=hostEndpoint(host,engine==="ace_step"?"ace_step":"gateway",env);
   if(!connection)throw new ProviderError("comparison_host_not_configured",false);
   if(engine==="ace_step")return aceStepProvider({
