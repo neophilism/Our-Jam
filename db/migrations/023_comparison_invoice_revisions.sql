@@ -1,4 +1,4 @@
--- Append-only owner entered invoice amounts; updating a figure retains every revision.
+-- Append-only owner entered invoice amounts. Updating a figure retains every revision.
 -- The operator is responsible for matching invoice totals and allocating shared GPU expenses.
 CREATE TABLE IF NOT EXISTS comparison_invoice_revisions (
   id uuid PRIMARY KEY,
