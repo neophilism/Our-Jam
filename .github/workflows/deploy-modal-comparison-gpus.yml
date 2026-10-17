@@ -1,0 +1,45 @@
+name: Deploy OurJam comparison GPUs to Modal
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_model_rights_and_cloud_spending:
+        description: "I have reviewed checkpoint rights, set the Modal workspace spend limit, and accept billed GPU usage."
+        required: true
+        default: false
+        type: boolean
+permissions:
+  contents: read
+concurrency:
+  group: ourjam-modal-gpu-deployment
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: ${{ inputs.confirm_model_rights_and_cloud_spending }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      OURJAM_MODAL_GATEWAY_IMAGE: ${{ vars.OURJAM_MODAL_GATEWAY_IMAGE }}
+      OURJAM_MODAL_ACE_IMAGE: ${{ vars.OURJAM_MODAL_ACE_IMAGE }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check required Modal secrets, immutable images, and confirmation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$MODAL_TOKEN_ID" ] || [ -z "$MODAL_TOKEN_SECRET" ]; then
+            echo "::error::Set MODAL_TOKEN_ID and MODAL_TOKEN_SECRET as repository Actions secrets."
+            exit 1
+          fi
+          if [[ "$OURJAM_MODAL_GATEWAY_IMAGE" != *@sha256:* ]] || [[ "$OURJAM_MODAL_ACE_IMAGE" != *@sha256:* ]]; then
+            echo "::error::Set image references pinned to digests under GitHub Actions variables."
+            exit 1
+          fi
+      - name: Install Modal CLI
+        run: python -m pip install 'modal>=1.0,<2'
+      - name: Deploy isolated comparison GPU endpoints (may incur cloud charges)
+        run: modal deploy gpu_gateway/modal_deploy.py
