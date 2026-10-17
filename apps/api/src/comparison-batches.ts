@@ -23,7 +23,7 @@ export async function prepareComparisonBatch(db: Database, input: z.infer<typeof
     requireThat(selection.revision === input.expectedSelectionRevision,
       "revision_conflict", "The comparison provider choices changed. Refresh before creating the test.",409);
     requireThat(input.purpose === "private_research" || !selection.selectedProviders.includes("musicgen"),
-      "research_only_model", "MusicGen released weights are noncommercial. Choose private research mode or exclude MusicGen.",400);
+      "research_only_model", "MusicGen weights allow noncommercial use only. A private commercial product evaluation is not noncommercial research; exclude MusicGen unless this is genuine noncommercial research.",400);
     const id = randomUUID();
     const hash = createHash("sha256").update(input.prompt,"utf8").digest("hex");
     await tx.query(
