@@ -36,6 +36,14 @@ class JobStore:
             # A provider may have accepted inference before this process crashed.
             # Never silently retry an interrupted job on service restart.
             db.execute("UPDATE jobs SET state='unknown',error='gateway_interrupted',updated_at=? WHERE state='running'",(time.time(),))
+    def sync(self):
+        # Modal volumes are snapshots. Publish SQLite and result files together.
+        name=os.environ.get("GPU_GATEWAY_MODAL_VOLUME_NAME")
+        if name:
+            with self.connect() as db:
+                db.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            import modal
+            modal.Volume.from_name(name).commit()
     def connect(self):
         db=sqlite3.connect(self.path,timeout=20)
         db.row_factory=sqlite3.Row
@@ -48,6 +56,7 @@ class JobStore:
             db.execute("INSERT INTO jobs VALUES(?,?,?,?,?,?,?,NULL,NULL,?,?)",
                 (job_id,payload["engine"],payload["model"],payload["purpose"],
                  payload["description"],payload["durationSeconds"],"queued",time.time(),time.time()))
+        self.sync()
         return job_id
     def get(self,job_id:str)->dict|None:
         with self.connect() as db:
@@ -61,6 +70,7 @@ class JobStore:
             if row:
                 db.execute("UPDATE jobs SET state='running',updated_at=? WHERE id=? AND state='queued'",(time.time(),row["id"]))
             db.commit()
+            if row:self.sync()
             return dict(row) if row else None
         except:
             db.rollback()
@@ -71,6 +81,7 @@ class JobStore:
         with self.connect() as db:
             db.execute("UPDATE jobs SET state=?,error=?,elapsed_seconds=?,updated_at=? WHERE id=? AND state='running'",
                 (state,error,seconds,time.time(),job_id))
+        self.sync()
 
 class Gateway:
     def __init__(self,root:Path,env:dict[str,str]|None=None,
@@ -111,6 +122,7 @@ class Gateway:
                 row["duration_seconds"],workdir,destination,self.env)
             if not destination.is_file() or destination.is_symlink() or not 1000<=destination.stat().st_size<=MAX_AUDIO_BYTES:
                 raise RunnerError("missing_or_invalid_output")
+            self.store.sync()
             self.store.finish(job_id,"succeeded",None,seconds if isinstance(seconds,(int,float))else time.monotonic()-started)
         except RunnerError as error:
             self.store.finish(job_id,"failed",str(error),None)
