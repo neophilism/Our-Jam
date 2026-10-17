@@ -102,6 +102,7 @@ try {
       hasTouch: mobile,
     });
     const page = await context.newPage();
+    const activate = (locator) => (mobile ? locator.tap() : locator.click());
     page.setDefaultTimeout(30000);
     page.setDefaultNavigationTimeout(60000);
     const request = (path, data) =>
@@ -115,9 +116,12 @@ try {
       await page
         .getByLabel("Platform admin credential", { exact: true })
         .fill(values.PLATFORM_ADMIN_TOKEN);
-      await page
-        .getByRole("button", { name: "Sign in as administrator", exact: true })
-        .click();
+      await activate(
+        page.getByRole("button", {
+          name: "Sign in as administrator",
+          exact: true,
+        }),
+      );
       await page
         .getByRole("heading", { name: "Platform video library", exact: true })
         .waitFor();
@@ -162,7 +166,9 @@ try {
       pass(step);
       step = label + " administrator logout UI";
       await page.goto(development.origin + "/admin/commerce");
-      await page.getByRole("button", { name: "Sign out", exact: true }).click();
+      await activate(
+        page.getByRole("button", { name: "Sign out", exact: true }),
+      );
       await page
         .getByRole("button", { name: "Sign in as administrator", exact: true })
         .waitFor();
@@ -178,9 +184,9 @@ try {
       await page
         .getByLabel("Performer credential", { exact: true })
         .fill(values.OPERATOR_TOKEN);
-      await page
-        .getByRole("button", { name: "Open my console ↗", exact: true })
-        .click();
+      await activate(
+        page.getByRole("button", { name: "Open my console ↗", exact: true }),
+      );
       await page
         .getByRole("heading", {
           name: "Create a jam around your songs.",
@@ -230,6 +236,14 @@ try {
       await context.close();
     }
   }
+  step = "Hosted commit remains unchanged through browser acceptance";
+  const finalHealth = await fetch(development.origin + "/api/health", {
+    redirect: "error",
+    signal: AbortSignal.timeout(60000),
+  });
+  if (!finalHealth.ok || (await finalHealth.json()).commit !== report.commit)
+    throw new Error();
+  pass(step);
   report.result = "passed";
 } catch {
   // Playwright exceptions may include typed input. Do not serialize them.
