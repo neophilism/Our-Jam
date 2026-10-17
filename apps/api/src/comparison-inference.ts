@@ -23,7 +23,7 @@ export function comparisonMusicProvider(
   if(issue)throw new ProviderError("comparison_engine_not_authorized",false);
   const pinned=COMPARISON_ENGINES.find(e=>e.id===engine)!.checkpoint;
   if(checkpoint && checkpoint!==pinned)throw new ProviderError("stale_checkpoint_requires_new_batch",false);
-  if(engine==="mureka")return murekaProvider(env.MUREKA_API_KEY!,{model:env.MUREKA_MODEL||"mureka-9.5",
+  if(engine==="mureka")return murekaProvider(env.MUREKA_API_KEY!,{model:pinned,
     mediaHosts:env.MUREKA_MEDIA_HOSTS?.split(",").map(s=>s.trim()).filter(Boolean)});
   if(engine==="stability")return stableAudio3ComparisonProvider(env.STABLE_AUDIO_KEY||env.STABILITY_API_KEY!);
   const connection=hostEndpoint(host,engine==="ace_step"?"ace_step":"gateway",env);
