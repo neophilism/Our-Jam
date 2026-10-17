@@ -26,7 +26,7 @@ test("still waves avoid the graphics download and voting survives a lost WebGL c
     .click();
   const phrase = "Soft pads " + Date.now();
   await page
-    .getByLabel("What would you mix this with?", { exact: true })
+    .getByLabel("What would you add to this song?", { exact: true })
     .fill(phrase);
   await page
     .getByRole("button", { name: "Contribute Sound Wave", exact: true })

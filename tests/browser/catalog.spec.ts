@@ -61,7 +61,7 @@ test("audience voting stops while offline and refreshes before re-enabling after
   await page.goto("/event/" + slug);
   await page.getByRole("button", { name: "I'm in. Let's make music" }).click();
   const text = "Reconnect " + Date.now();
-  await page.getByLabel("What would you mix this with?").fill(text);
+  await page.getByLabel("What would you add to this song?").fill(text);
   await page.getByRole("button", { name: "Contribute Sound Wave" }).click();
   const support = page.getByRole("button", {
     name: "Vote for " + text,

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import { ComparisonAdmin } from "./ComparisonAdmin";
 import "./platform-admin.css";
 type AdminVoteState =
   | { mode: "fixed"; fixedVotes: number; revision: number }
@@ -216,6 +217,7 @@ export function PlatformAdmin() {
             </button>
             {saved && <p role="status">{saved}</p>}
           </form>
+          <ComparisonAdmin />
           <button
             className="ghost small"
             type="button"
