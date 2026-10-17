@@ -18,9 +18,9 @@ from typing import Callable
 
 MAX_AUDIO_BYTES = 32 * 1024 * 1024
 KNOWN_MODELS = {
-    "heartmula": "HeartMuLa-oss-3B",
+    "heartmula": "HeartMuLa-oss-3B-happy-new-year",
     "stable_audio_open": "stable-audio-3-medium",
-    "musicgen": "facebook/musicgen-small",
+    "musicgen": "facebook/musicgen-large",
 }
 
 class RunnerError(Exception):
