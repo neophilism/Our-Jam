@@ -18,9 +18,10 @@ from typing import Callable
 
 MAX_AUDIO_BYTES = 32 * 1024 * 1024
 KNOWN_MODELS = {
-    "heartmula": "HeartMuLa-oss-3B",
+    "heartmula": "HeartMuLa-oss-3B-happy-new-year",
+    "ace_step": "acestep-v15-xl-sft",
     "stable_audio_open": "stable-audio-3-medium",
-    "musicgen": "facebook/musicgen-small",
+    "musicgen": "facebook/musicgen-large",
 }
 
 class RunnerError(Exception):
@@ -35,6 +36,8 @@ def validate_job(engine: str, model: str, purpose: str, prompt: str, duration_se
         raise RunnerError("invalid_prompt")
     if isinstance(duration_seconds, bool) or not isinstance(duration_seconds, int) or not 10 <= duration_seconds <= 180:
         raise RunnerError("invalid_duration")
+    if engine == "ace_step" and env.get("ACE_STEP_CHECKPOINT_APPROVED") != "1":
+        raise RunnerError("ace_step_checkpoint_unapproved")
     if engine == "heartmula" and env.get("HEARTMULA_CHECKPOINT_APPROVED") != "1":
         raise RunnerError("heartmula_checkpoint_unapproved")
     if engine == "stable_audio_open" and env.get("STABLE_AUDIO_OPEN_LICENSE_APPROVED") != "1":
@@ -104,6 +107,9 @@ def run_engine(
         raise RunnerError("invalid_inference_timeout")
     workdir.mkdir(mode=0o700, parents=True, exist_ok=True)
     output_mp3.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if engine == "ace_step":
+        from .ace_runner import generate_ace
+        return generate_ace(prompt, duration_seconds, output_mp3, config, limit)
     if engine == "heartmula":
         root = Path(config.get("HEARTMULA_REPO_DIR", ""))
         checkpoint = Path(config.get("HEARTMULA_CHECKPOINT_DIR", ""))
