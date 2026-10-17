@@ -159,10 +159,22 @@ try {
           exact: true,
         })
         .waitFor();
+      await page
+        .getByRole("heading", {
+          name: "Choose the engines to compare",
+          exact: true,
+        })
+        .waitFor();
       await page.reload();
       await page
         .getByRole("heading", {
           name: "Voting allowance for all artists",
+          exact: true,
+        })
+        .waitFor();
+      await page
+        .getByRole("heading", {
+          name: "Choose the engines to compare",
           exact: true,
         })
         .waitFor();
