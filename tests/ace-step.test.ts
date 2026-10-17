@@ -18,6 +18,9 @@ test("ACE-Step official async task persists receipt, polls and fetches private-h
         assert.equal(form.batch_size,1);
         assert.equal(form.audio_format,"mp3");
         assert.equal(form.lyrics,"[Instrumental]");
+        assert.equal(form.model,"acestep-v15-xl-sft");
+        assert.equal(form.thinking,true);
+        assert.equal(form.lm_model_path,"acestep-5Hz-lm-4B");
         return json({task_id:id,status:"queued"});
       }
       if(uri.pathname==="/query_result"){
