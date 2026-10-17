@@ -51,13 +51,18 @@ const app = await createApp(db, {
   mediaVerified: mediaStatus === "verified",
   email,
 });
-await app.listen({ port: Number(process.env.PORT ?? 3001), host: "0.0.0.0" });
+// Render's public Docker service exposes 10000; match it even if PORT is absent.
+const listenPort = Number(process.env.PORT ?? (production ? 10000 : 3001));
+if (!Number.isInteger(listenPort) || listenPort < 1 || listenPort > 65535)
+  throw new Error("PORT must be a valid listening port.");
+await app.listen({ port: listenPort, host: "0.0.0.0" });
 console.log(
   JSON.stringify({
     application: "Our Jam",
     status: "listening",
     generation: generation ? "configured" : "not_configured",
     media: mediaStatus,
+    port: listenPort,
   }),
 );
 let ticking = false;
