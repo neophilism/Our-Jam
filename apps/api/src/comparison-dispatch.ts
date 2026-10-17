@@ -4,6 +4,7 @@ import { requireThat } from "../../../packages/domain/src/index.js";
 import { replay, remember } from "./service.js";
 import { currentComparisonRates } from "./comparison-rates.js";
 import { gpuHostTargets } from "../../../packages/providers/src/gpu-host-routing.js";
+import { quoteGpuHosts } from "./comparison-host-quotes.js";
 import { COMPARISON_ENGINES, type ComparisonEngineId } from "../../../packages/providers/src/comparison-catalog.js";
 
 const engineId = z.enum(["mureka","stability","ace_step","heartmula","stable_audio_open","musicgen"]);
@@ -63,29 +64,38 @@ export async function comparisonPreflight(sql:Sql,batchId:string,env:NodeJS.Proc
   const reservedGpuSeconds=gpuEstimateSeconds(env);
   for(const run of runs) {
     const provider=engineId.parse(run.provider), engine=COMPARISON_ENGINES.find(e=>e.id===provider)!;
-    const unit=engine.execution==="paid_api"?"api_generation":"gpu_hour";
-    const requestedSku=engine.execution==="paid_api"?"":env[provider.toUpperCase()+"_GPU_SKU"]||env.COMPARISON_GPU_SKU;
-    const eligible=rates.filter(rate=>rate.provider===provider&&rate.unit===unit&&(!requestedSku||rate.sku===requestedSku));
-    const rate=eligible.length===1?eligible[0]:null;
+    const selfHosted=engine.execution==="self_hosted";
+    const requestedSku=selfHosted?undefined:"";
+    const matches=selfHosted?[]:rates.filter(rate=>rate.provider===provider &&
+      rate.unit==="api_generation" && rate.sku===requestedSku);
+    const apiRate=matches.length===1?matches[0]:null;
+    const hostRates=selfHosted?quoteGpuHosts(provider,engine.checkpoint,rates,reservedGpuSeconds,env):null;
+    const rate=selfHosted?null:apiRate;
     let reason=comparisonConfiguration(provider,batch.purpose,env);
     if(!reason && provider==="musicgen" && Number(batch.duration_seconds)>30)
-      reason="MusicGen small research model supports at most 30 seconds in this runner. Choose 30 seconds or deselect MusicGen.";
-    if(!reason && !rate)reason=eligible.length>1?"Multiple GPU rates match; configure a single GPU SKU.":"Verified operator rate is missing for this provider.";
+      reason="MusicGen Large research model supports at most 30 seconds in this runner. Choose 30 seconds or deselect MusicGen.";
+    if(!reason && selfHosted && hostRates?.reason)reason=hostRates.reason;
+    if(!reason && !selfHosted && !apiRate)
+      reason="The API generation price is missing or ambiguous.";
     if(!reason && run.state!=="prepared")reason="Provider run is already "+run.state+".";
-    const budgetSeconds=engine.execution==="self_hosted"?reservedGpuSeconds:null;
-    const cost=rate?(engine.execution==="paid_api"?rate.rateMicroUsd:
-      budgetSeconds?Math.ceil(rate.rateMicroUsd*budgetSeconds/3600):null):null;
-    if(!reason && cost===null)reason="GPU maximum billed time is missing.";
+    const budgetSeconds=selfHosted?reservedGpuSeconds:null;
+    const cost=selfHosted?hostRates?.maximumMicroUsd??null:apiRate?.rateMicroUsd??null;
     const safeCost=cost!==null&&Number.isSafeInteger(cost)&&cost>0?cost:null;
     if(!reason && safeCost===null)reason="Invalid cost estimate.";
+    const worstRate=selfHosted?hostRates?.quotes.find(q=>q.quoteMicroUsd===hostRates.maximumMicroUsd):null;
     quotes.push({
       provider,label:engine.label,ready:!reason,reason,estimatedCostMicroUsd:safeCost,
       costBasis:rate?(engine.execution==="paid_api"?"quoted API rate per request":
-        "operator GPU rate x configured host billable-time limit; NOT an observed charge"):null,
-      rateCardId:rate?.id??null,
-      rateSnapshot:rate?{id:rate.id,sku:rate.sku,supplier:rate.supplier,unit:rate.unit,
+        "highest configured Modal/Lightning rate times enforced host billable time; not an invoice"):null,
+      rateCardId:selfHosted?worstRate?.id??null:rate?.id??null,
+      rateSnapshot:selfHosted?(worstRate?{
+        id:worstRate.id,sku:worstRate.sku,supplier:worstRate.supplier,unit:"gpu_hour",
+        rateMicroUsd:worstRate.rateMicroUsd,sourceDescription:worstRate.sourceDescription,
+        maxGpuBilledSeconds:budgetSeconds,provenance:"operator_estimate",
+        hostQuotes:hostRates?.quotes??[],quoteMethod:"maximum_of_configured_modal_and_lightning_hosts",
+      }:null):(rate?{id:rate.id,sku:rate.sku,supplier:rate.supplier,unit:rate.unit,
         rateMicroUsd:rate.rateMicroUsd,sourceDescription:rate.sourceDescription,
-        maxGpuBilledSeconds:budgetSeconds,provenance:"operator_estimate"}:null,
+        maxGpuBilledSeconds:null,provenance:"operator_estimate"}:null),
     });
   }
   const complete=runs.length===batch.selected_providers.length &&
