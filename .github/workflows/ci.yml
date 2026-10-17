@@ -3,6 +3,20 @@ on:
   pull_request:
   push:
     branches: [main, feature/artist-event-payments-sponsor-video]
+    # Every PR gets full checks. On the development branch, documentation and
+    # acceptance-only scripts were already checked in the PR and do not change
+    # the deployable application or warrant another native build/deployment.
+    # Keep this list identical to the native push filter below.
+    paths-ignore:
+      - 'README.md'
+      - 'PROGRESS.md'
+      - '.gitignore'
+      - 'docs/**'
+      - 'tests/**'
+      - 'scripts/check-development-*.mjs'
+      - 'scripts/check-stripe-sandbox*.mjs'
+      - '.github/workflows/hosted-development.yml'
+      - '.github/workflows/stripe-*.yml'
 permissions:
   contents: read
 jobs:
