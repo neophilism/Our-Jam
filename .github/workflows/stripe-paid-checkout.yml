@@ -1,0 +1,31 @@
+name: Stripe real sandbox card payment and refund
+on:
+  push:
+    branches: [test/stripe-paid-checkout-refund-acceptance]
+    paths:
+      - scripts/check-stripe-sandbox-paid-checkout.mjs
+      - .github/workflows/stripe-paid-checkout.yml
+permissions:
+  contents: read
+concurrency:
+  group: ourjam-real-stripe-sandbox-payment
+  cancel-in-progress: false
+jobs:
+  real-sandbox-payment:
+    if: github.repository == 'neophilism/Our-Jam' && github.event_name == 'push' && github.ref == 'refs/heads/test/stripe-paid-checkout-refund-acceptance'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Real Stripe TEST-mode card payment, refund and isolated app contract
+        env:
+          RENDER_API_KEY: ${{ secrets.OUR_JAM_RENDER_API_KEY }}
+        run: node --import tsx scripts/check-stripe-sandbox-paid-checkout.mjs
