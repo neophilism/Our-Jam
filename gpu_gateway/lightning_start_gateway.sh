@@ -6,7 +6,7 @@ if [ "${LIGHTNING_GPU_STUDIO_TLS_PROXY_ACK:-}" != "1" ]; then
   echo "Refusing start: confirm the Studio's managed HTTPS port proxy is in use." >&2
   exit 2
 fi
-if [ "${#GPU_GATEWAY_TOKEN}" -lt 32 ]; then
+if [ -z "${GPU_GATEWAY_TOKEN:-}" ] || [ "${#GPU_GATEWAY_TOKEN}" -lt 32 ]; then
   echo "Refusing start: GPU_GATEWAY_TOKEN must be at least 32 characters." >&2
   exit 2
 fi
