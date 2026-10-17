@@ -99,7 +99,8 @@ async function run() {
         commandId: randomUUID(), tier: "platform", quoteHash: q.hash,
       }, commerce.gateway, testOrigin);
       const purchase = (await db.query("SELECT * FROM event_purchases WHERE id=$1", [response.purchaseId])).rows[0];
-      assert.equal(purchase.session_id, response.url ? purchase.session_id : null);
+      assert.equal(response.purchaseId, purchase.id);
+      assert.equal(purchase.checkout_url, response.url);
       assert.ok(purchase.session_id?.startsWith("cs_test_"));
       assert.equal(new URL(response.url).hostname, "checkout.stripe.com");
       sessions.push(purchase.session_id);
