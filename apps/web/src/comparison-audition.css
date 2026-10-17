@@ -1,0 +1,10 @@
+.comparison-audition { margin: 20px 0; padding: 22px; }
+.comparison-audition-actions,.comparison-audition-choices { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin: 12px 0; }
+.comparison-audition-choices button { min-width: 110px; }
+.comparison-audition audio { width:100%; display:block; margin:15px 0; }
+.comparison-audition-review { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; align-items:end; margin-top:20px; }
+.comparison-audition-review label { display:flex; flex-direction:column; gap:6px; }
+.comparison-audition-review label:has(input[type=checkbox]) { display:flex; flex-direction:row; gap:8px; align-items:center; }
+.comparison-audition-review input[type=checkbox],.comparison-audition-actions input[type=checkbox] { width:20px; height:20px; min-height:20px; accent-color:var(--lime); }
+.comparison-audition-notes { grid-column:1/-1; }
+.comparison-audition-review button { justify-self:start; }
