@@ -74,6 +74,8 @@ export async function comparisonPreflight(sql:Sql,batchId:string,env:NodeJS.Proc
     const eligible=rates.filter(rate=>rate.provider===provider&&rate.unit===unit&&(!requestedSku||rate.sku===requestedSku));
     const rate=eligible.length===1?eligible[0]:null;
     let reason=comparisonConfiguration(provider,batch.purpose,env);
+    if(!reason && provider==="musicgen" && Number(batch.duration_seconds)>30)
+      reason="MusicGen small research model supports at most 30 seconds in this runner. Choose 30 seconds or deselect MusicGen.";
     if(!reason && !rate)reason=eligible.length>1?"Multiple GPU rates match; configure a single GPU SKU.":"Verified operator rate is missing for this provider.";
     if(!reason && run.state!=="prepared")reason="Provider run is already "+run.state+".";
     const budgetSeconds=engine.execution==="self_hosted"?reservedGpuSeconds:null;
