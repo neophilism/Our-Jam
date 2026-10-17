@@ -75,3 +75,32 @@ test("admin preflight rejects unauthenticated guests and cannot queue with bad O
   assert.equal((await app.inject({method:"POST",url:start,headers,payload:{commandId:randomUUID(),approvedCeilingMicroUsd:1000000}})).statusCode,409,
     "server test environment is not explicitly enabled for paid generation");
 });
+
+test("MusicGen duration greater than 30 seconds is blocked before any billable model call",async t=>{
+  const db=await testDatabase();t.after(()=>db.close());
+  const original=await readComparisonSelection(db);
+  const selected=await updateComparisonSelection(db,{
+    commandId:randomUUID(),expectedRevision:original.revision,selectedProviders:["musicgen"],
+  });
+  const batch=await prepareComparisonBatch(db,{
+    commandId:randomUUID(),expectedSelectionRevision:selected.revision,
+    prompt:"Instrumental cinematic orchestral track with deep drums.",durationSeconds:60,purpose:"private_research",
+  });
+  await setComparisonRate(db,comparisonRateInput.parse({
+    commandId:randomUUID(),provider:"musicgen",sku:"Research GPU",unit:"gpu_hour",
+    rateMicroUsd:890000,supplier:"Synthetic rate",sourceDescription:"Private GPU test only",
+  }));
+  const allowed:NodeJS.ProcessEnv={...env,
+    OURJAM_GPU_GATEWAY_URL:"https://gpu.example.invalid/",OURJAM_GPU_GATEWAY_TOKEN:"private-test-token",
+    MUSICGEN_NONCOMMERCIAL_RESEARCH_APPROVED:"1",
+    COMPARISON_GPU_SKU:"Research GPU",COMPARISON_GPU_ENFORCED_BILLING_SECONDS:"180",
+    COMPARISON_GPU_HOST_BILLING_LIMIT_ACK:"1",
+  };
+  const preflight=await comparisonPreflight(db,batch.id,allowed);
+  assert.equal(preflight.allReady,false);
+  assert.match(preflight.quotes[0].reason??"",/30 seconds/);
+  await assert.rejects(startComparisonBatch(db,batch.id,{
+    commandId:randomUUID(),approvedCeilingMicroUsd:1000000,
+  },allowed),{code:"comparison_not_ready"});
+  assert.equal((await readComparisonBatch(db,batch.id)).state,"prepared");
+});
