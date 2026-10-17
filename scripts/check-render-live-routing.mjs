@@ -37,10 +37,13 @@ async function run() {
   console.log("Approved isolated environment: PASS");
   console.log("Custom RENDER_GIT_COMMIT environment variable present: " +
     Object.hasOwn(values, "RENDER_GIT_COMMIT"));
+  console.log("Configured PORT: " + (/^[0-9]{2,5}$/.test(values.PORT ?? "") ? values.PORT : "not explicitly set"));
 
-  const deploys = await request("/deploys?limit=5");
+  const rawDeploys = await request("/deploys?limit=5");
+  const deploys = (Array.isArray(rawDeploys) ? rawDeploys : rawDeploys?.deploys ?? [])
+    .map(item => item?.deploy ?? item);
   if (!Array.isArray(deploys)) throw Error("Unexpected Render deploy list");
-  const live = deploys.find(x => x.status === "live");
+  const live = deploys.find(x => x?.status === "live");
   if (!live?.commit?.id || !/^[a-f0-9]{40}$/.test(live.commit.id))
     throw Error("No verified live Render deploy commit");
   console.log("Render live deployment commit: " + live.commit.id);
