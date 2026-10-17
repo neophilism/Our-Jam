@@ -66,6 +66,12 @@ const app = await createApp(db, {
     },
   },
 });
+// Bounded CI diagnostics: route names/status only, never handoff query values,
+// identity tokens, credentials or request bodies. Not registered in production.
+app.addHook("onResponse", async (req, reply) => {
+  if (req.url.startsWith("/api/identity/") || req.url.startsWith("/__test__/auth/") || req.url.startsWith("/signin"))
+    console.log(JSON.stringify({ route: req.routeOptions.url, status: reply.statusCode }));
+});
 // Controlled provider fixture for actual ASWebAuthenticationSession UI tests;
 // no email, password, external OAuth provider or real account is contacted.
 app.get("/__test__/auth/get-session", async (_req, reply) => {
