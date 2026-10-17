@@ -34,10 +34,10 @@ export async function prepareComparisonBatch(db: Database, input: z.infer<typeof
       const engine=COMPARISON_ENGINES.find(p=>p.id===engineId)!;
       await tx.query(
         "INSERT INTO comparison_runs(id,batch_id,provider,checkpoint,settings_snapshot) VALUES($1,$2,$3,$4,$5::jsonb)",
-        [randomUUID(),id,engine.id,engine.checkpoint,JSON.stringify({ instrumentals:true,requestedDurationSeconds:input.durationSeconds,execution:engine.execution,rights:engine.rights })],
+        [randomUUID(),id,engine.id,engine.checkpoint,JSON.stringify({instrumentals:true,requestedDurationSeconds:input.durationSeconds,execution:engine.execution,rights:engine.rights,gpuHost:engine.execution==="self_hosted"?selection.gpuHost:null,modelCheckpoint:engine.checkpoint})],
       );
     }
-    const response={ id,state:"prepared" as const,selectedProviders:selection.selectedProviders,purpose:input.purpose,durationSeconds:input.durationSeconds,hasDispatched:false };
+    const response={ id,state:"prepared" as const,selectedProviders:selection.selectedProviders,gpuHost:selection.gpuHost,purpose:input.purpose,durationSeconds:input.durationSeconds,hasDispatched:false };
     await remember(tx,"comparison-admin",input.commandId,cached.hash,response);
     return response;
   });
@@ -58,7 +58,7 @@ export async function readComparisonBatch(db: Database, batchId: string) {
   )).rows[0];
   requireThat(batch,"comparison_not_found","Comparison batch not found.",404);
   const runs=(await db.query(
-    "SELECT id,provider,checkpoint,state,reason,attempts,generated_duration_seconds,estimated_cost_micro_usd,actual_cost_micro_usd,cost_certainty,created_at,started_at,finished_at FROM comparison_runs WHERE batch_id=$1 ORDER BY created_at,id",[batchId]
+    "SELECT id,provider,checkpoint,state,reason,attempts,generated_duration_seconds,estimated_cost_micro_usd,actual_cost_micro_usd,cost_certainty,settings_snapshot,created_at,started_at,finished_at FROM comparison_runs WHERE batch_id=$1 ORDER BY created_at,id",[batchId]
   )).rows;
   return {
     id:batch.id,prompt:batch.prompt,promptHash:batch.prompt_sha256,
@@ -69,7 +69,7 @@ export async function readComparisonBatch(db: Database, batchId: string) {
       id:run.id,provider:run.provider,checkpoint:run.checkpoint,state:run.state,reason:run.reason,
       attempts:run.attempts,generatedDurationSeconds:run.generated_duration_seconds,
       estimatedCostMicroUsd:run.estimated_cost_micro_usd,actualCostMicroUsd:run.actual_cost_micro_usd,
-      costCertainty:run.cost_certainty,startedAt:run.started_at,finishedAt:run.finished_at,
+      costCertainty:run.cost_certainty,gpuHost:run.settings_snapshot?.gpuHost??null,modelCheckpoint:run.settings_snapshot?.modelCheckpoint??run.checkpoint,startedAt:run.started_at,finishedAt:run.finished_at,
     })),
   };
 }
