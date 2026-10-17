@@ -29,6 +29,8 @@ test("local private storage persists audio and enforces signed expiring delivery
   const tampered = new URL(address); tampered.searchParams.set("sig", "0".repeat(64));
   assert.equal((await app.inject(tampered.pathname + tampered.search)).statusCode, 403);
   assert.equal((await app.inject({ method: "GET", url: address.pathname + address.search, headers: { range: "bytes=1000-2000" } })).statusCode, 416);
+  await assert.rejects(media.store.put(key, bytes, sha, "video/mp4"));
+  await assert.rejects(media.store.url(key, false, "video/mp4"));
   await assert.rejects(media.store.put("../outside.mp3", bytes, sha));
   await assert.rejects(media.store.put(key, bytes, "0".repeat(64)));
   await assert.rejects(localMediaStore(root, "https://public.example.test", secret));

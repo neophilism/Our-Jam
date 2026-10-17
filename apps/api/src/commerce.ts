@@ -762,7 +762,7 @@ export async function registerCommerce(
               sha = createHash("sha256").update(media.bytes).digest("hex"),
               videoId = randomUUID(),
               key = `sponsors/${videoId}/${sha}.mp4`;
-            await store!.put(key, media.bytes, sha);
+            await store!.put(key, media.bytes, sha, "video/mp4");
             await db.query(
               "INSERT INTO sponsor_videos(id,owner_artist_id,sponsor_name,object_key,sha256,duration_seconds) VALUES($1,$2,$3,$4,$5,$6)",
               [videoId, owner, name, key, sha, media.durationSeconds],
@@ -803,7 +803,7 @@ export async function registerCommerce(
       return reply
         .header("Cache-Control", "private, no-store")
         .header("Referrer-Policy", "no-referrer")
-        .redirect(await store!.url(v.object_key, false));
+        .redirect(await store!.url(v.object_key, false, "video/mp4"));
     });
     app.patch(prefix + "/sponsor-videos/:id", async (req) => {
       const owner = isAdmin ? (await admin(req), null) : await artist(req);
@@ -833,7 +833,7 @@ export async function registerCommerce(
     return reply
       .header("Cache-Control", "no-store")
       .header("Referrer-Policy", "no-referrer")
-      .redirect(await store!.url(v.object_key, false));
+      .redirect(await store!.url(v.object_key, false, "video/mp4"));
   });
   await app.register(async (scope) => {
     scope.removeContentTypeParser("application/json");

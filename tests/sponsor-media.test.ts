@@ -6,6 +6,9 @@ import { mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { prepareSponsorVideo } from "../apps/api/src/sponsor-media.js";
+import { createApp } from "../apps/api/src/app.js";
+import { testDatabase } from "./database.js";
+import type { MediaStore } from "../packages/providers/src/storage.js";
 const exec = promisify(execFile);
 test("sponsor MP4 is fully decoded into silent video, with no retained audio track", async (t) => {
   const dir = await mkdtemp(path.join(tmpdir(), "ourjam-video-test-"));
@@ -47,6 +50,36 @@ test("sponsor MP4 is fully decoded into silent video, with no retained audio tra
   const streams = JSON.parse(stdout).streams;
   assert.equal(streams.length, 1);
   assert.equal(streams[0].codec_type, "video");
+
+  // Exercise the real upload, private preview and published redirect. The
+  // browser fixture's video endpoint cannot catch incorrect S3 MIME requests.
+  const db = await testDatabase();
+  t.after(() => db.close());
+  const writes: Parameters<MediaStore["put"]>[] = [];
+  const reads: Parameters<MediaStore["url"]>[] = [];
+  const store: MediaStore = {
+    put: async (...args) => { writes.push(args); },
+    url: async (...args) => { reads.push(args); return "https://storage.example.invalid/signed-video"; },
+  };
+  const origin = "http://localhost:5173", adminToken = "test-only-platform-key-1234567890123";
+  const app = await createApp(db, { origin, secureCookies: false, mediaStore: store,
+    commerce: { enabled: true, adminToken } });
+  t.after(() => app.close());
+  const login = await app.inject({ method: "POST", url: "/api/admin/login", headers: { origin }, payload: { token: adminToken } });
+  assert.equal(login.statusCode, 200, login.body);
+  const cookie = login.headers["set-cookie"]!.toString().split(";")[0];
+  const upload = await app.inject({ method: "POST", url: "/api/admin/sponsor-videos?name=Fixture", headers: { origin, cookie, "content-type": "application/octet-stream" }, payload: result.bytes });
+  assert.equal(upload.statusCode, 200, upload.body);
+  const videoId = upload.json().id;
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0][3], "video/mp4");
+  assert.ok(writes[0][0].endsWith(".mp4"));
+  assert.equal((await app.inject(`/api/sponsor-videos/${videoId}`)).statusCode, 404);
+  assert.equal(reads.length, 0);
+  assert.equal((await app.inject({ url: `/api/admin/sponsor-videos/${videoId}/preview`, headers: { cookie } })).statusCode, 302);
+  assert.equal((await app.inject({ method: "PATCH", url: `/api/admin/sponsor-videos/${videoId}`, headers: { origin, cookie }, payload: { active: true } })).statusCode, 200);
+  assert.equal((await app.inject(`/api/sponsor-videos/${videoId}`)).statusCode, 302);
+  assert.deepEqual(reads, [[writes[0][0], false, "video/mp4"], [writes[0][0], false, "video/mp4"]]);
 });
 test("unsupported and malformed sponsor inputs cannot publish a video", async () => {
   await assert.rejects(
