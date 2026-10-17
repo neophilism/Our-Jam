@@ -74,7 +74,7 @@ async function main() {
     // Never print raw exception, message, request IDs or response bodies.
     const safe = (value) => typeof value === "string" && /^[a-z_]{1,64}$/.test(value) ? value : "unspecified";
     const status = Number.isInteger(error?.statusCode) && error.statusCode >= 400 && error.statusCode <= 599 ? error.statusCode : "none";
-    console.error(`Stripe test-mode request classification: type=${safe(error?.type)} code=${safe(error?.code)} status=${status}`);
+    console.error(`Stripe test-mode request classification: class=${safe(error?.constructor?.name?.replace(/([a-z])([A-Z])/g, "$1_$2").toLowerCase())} type=${safe(error?.rawType ?? error?.raw?.type ?? error?.type)} code=${safe(error?.code ?? error?.raw?.code)} param=${safe(error?.param?.replace(/\\[[0-9]+\\]/g, "")?.replace(/[^a-z_]/g, "_"))} status=${status}`);
     throw Error(session ? "Sandbox Checkout expiration or validation failed; inspect Stripe test account permissions" :
       "Sandbox Checkout creation failed; inspect Stripe test account permissions");
   }
