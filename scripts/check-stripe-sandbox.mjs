@@ -59,7 +59,7 @@ async function main() {
       success_url: development.origin + "/performer?stripe_preflight=complete",
       cancel_url: development.origin + "/performer?stripe_preflight=cancel",
       client_reference_id: "ourjam-preflight-" + randomUUID(),
-      expires_at: Math.floor(Date.now()/1000) + 1800,
+      expires_at: Math.floor(Date.now()/1000) + 3600,
     }, { idempotencyKey: "ourjam-preflight-" + randomUUID() });
     if (!session.id?.startsWith("cs_test_") || session.livemode !== false ||
         !session.url || new URL(session.url).hostname !== "checkout.stripe.com")
