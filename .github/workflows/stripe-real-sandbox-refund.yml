@@ -1,0 +1,30 @@
+name: Real Stripe sandbox payment and refund API
+on:
+  push:
+    branches: [test/stripe-real-sandbox-intent-refund]
+    paths:
+      - scripts/check-stripe-real-sandbox-refund.mjs
+      - .github/workflows/stripe-real-sandbox-refund.yml
+permissions:
+  contents: read
+concurrency:
+  group: ourjam-real-sandbox-intent-refund
+  cancel-in-progress: false
+jobs:
+  stripe-sandbox:
+    if: github.repository == 'neophilism/Our-Jam' && github.event_name == 'push' && github.ref == 'refs/heads/test/stripe-real-sandbox-intent-refund'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Process and refund a real Stripe TEST-mode payment with isolated credentials
+        env:
+          RENDER_API_KEY: ${{ secrets.OUR_JAM_RENDER_API_KEY }}
+        run: node scripts/check-stripe-real-sandbox-refund.mjs
