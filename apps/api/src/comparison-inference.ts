@@ -4,29 +4,34 @@ import { comparisonConfiguration } from "./comparison-dispatch.js";
 import { validateAudio } from "./media.js";
 import { ProviderError, stabilityProvider, type MusicProvider } from "../../../packages/providers/src/stability.js";
 import { murekaProvider } from "../../../packages/providers/src/mureka.js";
+import { stableAudio3ComparisonProvider } from "../../../packages/providers/src/stable-audio-3.js";
 import { aceStepProvider } from "../../../packages/providers/src/ace-step.js";
 import { gpuGatewayProvider } from "../../../packages/providers/src/gpu-gateway.js";
 import type { MediaStore } from "../../../packages/providers/src/storage.js";
-import type { ComparisonEngineId } from "../../../packages/providers/src/comparison-catalog.js";
+import { COMPARISON_ENGINES, type ComparisonEngineId } from "../../../packages/providers/src/comparison-catalog.js";
+import { hostEndpoint, type GpuHost } from "./comparison-gpu-hosts.js";
 
 /** Private, dedicated comparison worker. Never imported by the live show job processor. */
-export function comparisonMusicProvider(engine: ComparisonEngineId, purpose: "private_research" | "commercial_evaluation", env:NodeJS.ProcessEnv=process.env): MusicProvider {
-  const block=comparisonConfiguration(engine,purpose,env);
-  if(block)throw new ProviderError("comparison_engine_not_authorized",false);
-  if(engine==="mureka")return murekaProvider(env.MUREKA_API_KEY!,{model:env.MUREKA_MODEL || "mureka-9.5",
+export function comparisonMusicProvider(
+  engine:ComparisonEngineId,
+  purpose:"private_research"|"commercial_evaluation",
+  env:NodeJS.ProcessEnv=process.env,
+  host:GpuHost="legacy",
+  checkpoint?:string,
+):MusicProvider {
+  const issue=comparisonConfiguration(engine,purpose,env,host);
+  if(issue)throw new ProviderError("comparison_engine_not_authorized",false);
+  const pinned=COMPARISON_ENGINES.find(e=>e.id===engine)!.checkpoint;
+  if(checkpoint && checkpoint!==pinned)throw new ProviderError("stale_checkpoint_requires_new_batch",false);
+  if(engine==="mureka")return murekaProvider(env.MUREKA_API_KEY!,{model:pinned,
     mediaHosts:env.MUREKA_MEDIA_HOSTS?.split(",").map(s=>s.trim()).filter(Boolean)});
-  if(engine==="stability")return stabilityProvider(env.STABLE_AUDIO_KEY||env.STABILITY_API_KEY!);
+  if(engine==="stability")return stableAudio3ComparisonProvider(env.STABLE_AUDIO_KEY||env.STABILITY_API_KEY!);
+  const connection=hostEndpoint(host,engine==="ace_step"?"ace_step":"gateway",env);
+  if(!connection)throw new ProviderError("comparison_host_not_configured",false);
   if(engine==="ace_step")return aceStepProvider({
-    baseUrl:env.ACE_STEP_BASE_URL!,token:env.ACE_STEP_TOKEN!,
-    model:env.ACE_STEP_MODEL==="acestep-v15-base"?"acestep-v15-base":"acestep-v15-turbo",
+    ...connection,model:"acestep-v15-xl-sft",
   });
-  const model=engine==="heartmula"?(env.HEARTMULA_MODEL||"HeartMuLa-oss-3B"):
-    engine==="stable_audio_open"?(env.STABLE_AUDIO_OPEN_MODEL||"stable-audio-3-medium"):
-    (env.MUSICGEN_MODEL||"facebook/musicgen-small");
-  return gpuGatewayProvider({
-    engine,purpose,model,baseUrl:env.OURJAM_GPU_GATEWAY_URL!,token:env.OURJAM_GPU_GATEWAY_TOKEN!,
-    checkpointApproved:true,
-  });
+  return gpuGatewayProvider({engine,purpose,model:pinned,...connection,checkpointApproved:true});
 }
 export type ComparisonWorkerConfig = {
   store:MediaStore;
@@ -71,7 +76,7 @@ export async function comparisonGenerationTick(db:Database,config:ComparisonWork
       "SELECT r.*,b.prompt,b.purpose,b.duration_seconds,b.approved_ceiling_micro_usd FROM comparison_runs r JOIN comparison_batches b ON b.id=r.batch_id WHERE r.state='queued' AND b.state IN ('queued','running') ORDER BY r.created_at,r.id LIMIT 1 FOR UPDATE OF r SKIP LOCKED",
     )).rows[0];
     if(!r)return null;
-    const issue=comparisonConfiguration(r.provider as ComparisonEngineId,r.purpose,env);
+    const issue=comparisonConfiguration(r.provider as ComparisonEngineId,r.purpose,env,(r.settings_snapshot?.gpuHost??"legacy") as GpuHost);
     const snapshot=(r.settings_snapshot??{}) as Record<string,any>;
     const ceiling=Number(r.approved_ceiling_micro_usd);
     const estimated=Number(r.estimated_cost_micro_usd);
@@ -101,7 +106,7 @@ export async function comparisonGenerationTick(db:Database,config:ComparisonWork
   let provider:MusicProvider;
   try {
     provider=config.makeProvider?config.makeProvider(claim.provider,claim.purpose):
-      comparisonMusicProvider(claim.provider,claim.purpose,env);
+      comparisonMusicProvider(claim.provider,claim.purpose,env,(claim.snapshot.gpuHost??"legacy") as GpuHost,claim.snapshot.modelCheckpoint);
     const audio=await provider.generate(claim.prompt,claim.durationSeconds,{
       onAccepted:async ref=>{
         const saved=await db.query(

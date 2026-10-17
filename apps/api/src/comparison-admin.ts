@@ -8,7 +8,7 @@ import { comparisonInvoiceHistory, reconcileComparisonInvoice, comparisonInvoice
 import { saveComparisonReview, comparisonReviewInput, readComparisonReviews, comparisonCostReport, costReportCsv } from "./comparison-evaluation.js";
 import { requireThat } from "../../../packages/domain/src/index.js";
 import { comparisonPreflight, startComparisonBatch, startComparisonInput } from "./comparison-dispatch.js";
-import { comparisonReadiness, comparisonSelectionInput, readComparisonSelection, updateComparisonSelection } from "./comparison-settings.js";
+import { comparisonReadiness, comparisonGpuHostsReadiness, comparisonSelectionInput, readComparisonSelection, updateComparisonSelection } from "./comparison-settings.js";
 
 export function registerComparisonAdmin(app: FastifyInstance, db: Database) {
   app.get("/api/admin/comparisons", async req => {
@@ -74,8 +74,8 @@ export function registerComparisonAdmin(app: FastifyInstance, db: Database) {
   });
   app.get("/api/admin/comparison/settings", async (req) => {
     await requirePlatformAdmin(db, req);
-    const [selection, providers] = await Promise.all([readComparisonSelection(db), Promise.resolve(comparisonReadiness())]);
-    return { ...selection, providers };
+    const selection = await readComparisonSelection(db);
+    return { ...selection, providers:comparisonReadiness(process.env,selection.gpuHost), gpuHosts:comparisonGpuHostsReadiness() };
   });
   app.patch("/api/admin/comparison/settings", async (req) => {
     await requirePlatformAdmin(db, req);
