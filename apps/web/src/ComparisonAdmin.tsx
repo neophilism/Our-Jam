@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import { ComparisonBatchAdmin } from "./ComparisonBatchAdmin";
 import "./comparison-admin.css";
 
 type Engine = {
@@ -73,6 +74,7 @@ export function ComparisonAdmin() {
     </> : !error ? <p>Loading provider catalog...</p> : null}
     {saved && <p role="status">{saved}</p>}
     {error && <p role="alert" className="notice">{error}</p>}
+    {data && <ComparisonBatchAdmin selectionRevision={data.revision} selectedProviders={data.selectedProviders}/>}
     <p className="tiny muted">Metered GPU time, actual API invoices, idle capacity and cost per usable track will appear here once comparison jobs and billing collectors are connected. An installed open-weight model is not free GPU usage.</p>
   </section>;
 }
