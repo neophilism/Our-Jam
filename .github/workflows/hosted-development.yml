@@ -1,0 +1,37 @@
+name: Hosted development acceptance
+on:
+  push:
+    branches: [feature/artist-event-payments-sponsor-video]
+    paths:
+      - scripts/check-development-*.mjs
+      - .github/workflows/hosted-development.yml
+permissions:
+  contents: read
+concurrency:
+  group: ourjam-hosted-acceptance
+  cancel-in-progress: false
+jobs:
+  hosted:
+    if: github.repository == 'neophilism/Our-Jam' && github.event_name == 'push' && github.ref == 'refs/heads/feature/artist-event-payments-sponsor-video'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Verify real hosted sessions and setup UI
+        env:
+          RENDER_API_KEY: ${{ secrets.OUR_JAM_RENDER_API_KEY }}
+        run: node scripts/check-development-ui.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hosted-development-evidence
+          path: hosted-evidence/
+          retention-days: 7
