@@ -142,10 +142,13 @@ try {
         development.auth + "/callback/google"
       )
         throw new Error();
-      await page.screenshot({
-        path: `hosted-evidence/${label}-setup.png`,
-        fullPage: true,
-      });
+      // Capture configuration diagnostics only; never the unpublished video
+      // library or the performer's potentially private event list.
+      await page
+        .getByRole("region", { name: "Integration setup", exact: true })
+        .screenshot({
+          path: `hosted-evidence/${label}-setup.png`,
+        });
       pass(step);
       step =
         label + " shared administrator session after navigation and reload";
@@ -206,10 +209,6 @@ try {
         ).status() !== 401
       )
         throw new Error();
-      await page.screenshot({
-        path: `hosted-evidence/${label}-performer.png`,
-        fullPage: true,
-      });
       pass(step);
       step = label + " performer logout and Google entry UI";
       if (!(await request("/api/operator/logout", {})).ok()) throw new Error();
