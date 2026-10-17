@@ -51,9 +51,8 @@ test("ACE-Step model capability probe only accepts exact requested XL model",asy
   const hosts=gpuHostTargets("ace_step","acestep-v15-xl-sft",env);
   const selected=await chooseGpuHost(hosts,async(input)=>{
     const host=new URL(String(input)).hostname;
-    assert.equal(new URL(String(input)).pathname,"/v1/models");
-    return new Response(JSON.stringify({code:200,data:{models:[{name:host==="ace-lightning.example"?
-      "acestep-v15-xl-sft":"acestep-v15-turbo"}]}}),{headers:{"content-type":"application/json"}});
+    assert.equal(new URL(String(input)).pathname,"/v1/health");
+    return new Response(JSON.stringify({ok:true,models:[{engine:"ace_step",model:host==="lightning.example"?"acestep-v15-xl-sft":"acestep-v15-turbo",available:true}]}),{headers:{"content-type":"application/json"}});
   });
   assert.equal(selected.id,"lightning");
 });
