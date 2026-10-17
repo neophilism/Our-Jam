@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import { ComparisonRateAdmin } from "./ComparisonRateAdmin";
 import { ComparisonBatchAdmin } from "./ComparisonBatchAdmin";
 import "./comparison-admin.css";
 
@@ -75,6 +76,7 @@ export function ComparisonAdmin() {
     {saved && <p role="status">{saved}</p>}
     {error && <p role="alert" className="notice">{error}</p>}
     {data && <ComparisonBatchAdmin selectionRevision={data.revision} selectedProviders={data.selectedProviders}/>}
-    <p className="tiny muted">Metered GPU time, actual API invoices, idle capacity and cost per usable track will appear here once comparison jobs and billing collectors are connected. An installed open-weight model is not free GPU usage.</p>
+    <ComparisonRateAdmin />
+    <p className="tiny muted">Cloud invoices, host billing, and cost per usable track are tracked separately from estimated rate cards. An installed open-weight model does not include free GPU computation.</p>
   </section>;
 }

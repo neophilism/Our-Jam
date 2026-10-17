@@ -11,6 +11,8 @@ type BatchDetail = {
     attempts:number; actualCostMicroUsd:number|null; estimatedCostMicroUsd:number|null; costCertainty:string }[];
 };
 
+type Quote = {provider:string;label:string;ready:boolean;reason:string|null;estimatedCostMicroUsd:number|null;costBasis:string|null};
+type Preflight = {batchId:string;allReady:boolean;quotes:Quote[];estimatedTotalMicroUsd:number|null;warning:string};
 export function ComparisonBatchAdmin({ selectionRevision, selectedProviders }: { selectionRevision: number; selectedProviders: string[] }) {
   const [prompt, setPrompt] = useState("");
   const [durationSeconds, setDuration] = useState(60);
@@ -18,6 +20,8 @@ export function ComparisonBatchAdmin({ selectionRevision, selectedProviders }: {
   const [acceptedResearch, setAcceptedResearch] = useState(false);
   const [list, setList] = useState<BatchSummary[]>([]);
   const [detail, setDetail] = useState<BatchDetail | null>(null);
+  const [preflight, setPreflight] = useState<Preflight | null>(null);
+  const [ceilingUsd, setCeilingUsd] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState("");
@@ -41,6 +45,7 @@ export function ComparisonBatchAdmin({ selectionRevision, selectedProviders }: {
         prompt,durationSeconds,purpose,
       });
       setDetail(await api<BatchDetail>("/admin/comparisons/"+batch.id));
+      setPreflight(await api<Preflight>("/admin/comparisons/"+batch.id+"/preflight"));
       await refresh();
       setSaved("Comparison prepared. The selected model runs are stored separately. No API generation, GPU billing or audio output has started yet.");
     } catch(e) { setError((e as Error).message); }
@@ -48,8 +53,33 @@ export function ComparisonBatchAdmin({ selectionRevision, selectedProviders }: {
   }
   async function view(id:string) {
     setError("");
-    try { setDetail(await api<BatchDetail>("/admin/comparisons/"+id)); }
+    try {
+      setDetail(await api<BatchDetail>("/admin/comparisons/"+id));
+      setPreflight(await api<Preflight>("/admin/comparisons/"+id+"/preflight"));
+    }
     catch(e) { setError((e as Error).message); }
+  }
+  async function start() {
+    if (!detail || !preflight?.allReady || preflight.estimatedTotalMicroUsd===null) return;
+    const amount = Number(ceilingUsd);
+    const approvedCeilingMicroUsd = Math.round(amount*1_000_000);
+    if(!Number.isSafeInteger(approvedCeilingMicroUsd) ||
+       approvedCeilingMicroUsd < preflight.estimatedTotalMicroUsd) {
+      setError("Enter an explicit USD spending ceiling at least as high as the quoted total.");
+      return;
+    }
+    if(!window.confirm("Queue the selected music-generation requests? Actual API charges and GPU rental usage may exceed estimates if the host does not enforce its configured limit. Confirm your budget before proceeding.")) return;
+    setBusy(true);setError("");setSaved("");
+    try{
+      await api("/admin/comparisons/"+detail.id+"/start","POST",{
+        commandId:crypto.randomUUID(),approvedCeilingMicroUsd,
+      });
+      setDetail(await api<BatchDetail>("/admin/comparisons/"+detail.id));
+      setPreflight(await api<Preflight>("/admin/comparisons/"+detail.id+"/preflight"));
+      await refresh();
+      setSaved("Comparison queued with the approved spending ceiling. Actual generation requires a separately configured worker; no output is implied until a run succeeds.");
+    }catch(e){setError((e as Error).message);}
+    finally{setBusy(false);}
   }
   return <section className="comparison-batch-panel" aria-labelledby="comparison-create-title">
     <h3 id="comparison-create-title">Prepare an instrumental comparison</h3>
@@ -86,6 +116,26 @@ export function ComparisonBatchAdmin({ selectionRevision, selectedProviders }: {
       {detail && <div className="comparison-result-panel">
         <h4>Comparison {detail.id.slice(0,8)} · {detail.state}</h4>
         <p>{detail.prompt}</p>
+        {preflight?.batchId===detail.id && <>
+          <h4>Pricing and readiness preflight</h4>
+          <p className="muted">{preflight.warning}</p>
+          <ul>{preflight.quotes.map(quote=><li key={quote.provider}>
+            <strong>{quote.label}</strong>: {quote.ready?"Ready to queue":quote.reason}
+            {" · "}{quote.estimatedCostMicroUsd===null?"Cost not available":("$"+(quote.estimatedCostMicroUsd/1_000_000).toFixed(4)+" estimated")}
+            {quote.costBasis && <span className="muted"> · {quote.costBasis}</span>}
+          </li>)}</ul>
+          {preflight.estimatedTotalMicroUsd!==null && <p><strong>Estimated total: {"$"+(preflight.estimatedTotalMicroUsd/1_000_000).toFixed(4)}</strong></p>}
+          {detail.state==="prepared" && <div className="comparison-batch-form">
+            <label>Maximum budget you approve for this batch (USD)
+              <input type="number" min="0.000001" step="0.000001" value={ceilingUsd} disabled={busy}
+                onChange={e=>setCeilingUsd(e.target.value)} placeholder="Enter your maximum spending approval"/>
+            </label>
+            <button type="button" disabled={busy || !preflight.allReady} onClick={()=>void start()}>
+              {busy?"Queuing...":"Approve budget and queue selected generators"}
+            </button>
+            {!preflight.allReady && <p className="muted">Generation cannot start until each selected engine has a valid rate, server configuration and applicable license approval.</p>}
+          </div>}
+        </>}
         <div className="comparison-result-grid">
           {detail.runs.map(r => <div className="comparison-result" key={r.id}>
             <strong>{r.provider.replaceAll("_"," ")}</strong>
