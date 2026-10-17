@@ -277,18 +277,22 @@ export function SignIn() {
       <section className="card identity-card">
         <span className="eyebrow">YOUR PLACE IN OUR JAM</span>
         <h1>
-          {mode === "signup"
-            ? "Create your account."
-            : mode === "forgot"
-              ? "Reset your password."
-              : mode === "verify"
-                ? "Verify your email."
-                : mode === "reset"
-                  ? "Choose a new password."
-                  : "Welcome back."}
+          {nativeRequest && signedIn
+            ? "Return to Our Jam."
+            : mode === "signup"
+              ? "Create your account."
+              : mode === "forgot"
+                ? "Reset your password."
+                : mode === "verify"
+                  ? "Verify your email."
+                  : mode === "reset"
+                    ? "Choose a new password."
+                    : "Welcome back."}
         </h1>
         <p>
-          Fans join and participate for free. Performers pay for their events.
+          {nativeRequest && signedIn
+            ? "Your account is ready."
+            : "Fans join and participate for free. Performers pay for their events."}
         </p>
         {!config ? (
           <p>Checking sign-in options…</p>
@@ -300,6 +304,30 @@ export function SignIn() {
           </p>
         ) : (
           <>
+            {nativeRequest && signedIn && (
+              <button
+                disabled={busy}
+                onClick={() =>
+                  void action(async (auth) => {
+                    await connect("audience", auth);
+                    const result = await api<{ callback: string }>(
+                      "/identity/native/approve",
+                      "POST",
+                      { requestId: nativeRequest },
+                    );
+                    const target = new URL(result.callback);
+                    if (
+                      target.protocol !== "com.neophilism.ourjam:" ||
+                      target.hostname !== "signin"
+                    )
+                      throw new Error("Invalid app sign-in callback.");
+                    location.assign(result.callback);
+                  })
+                }
+              >
+                Return to iOS with this account
+              </button>
+            )}
             {nativeRequest && (
               <p>
                 Sign in to return to the iOS device that opened this page. This
@@ -319,30 +347,6 @@ export function SignIn() {
             </select>
             {signedIn && (
               <div>
-                {nativeRequest && (
-                  <button
-                    disabled={busy}
-                    onClick={() =>
-                      void action(async (auth) => {
-                        await connect("audience", auth);
-                        const result = await api<{ callback: string }>(
-                          "/identity/native/approve",
-                          "POST",
-                          { requestId: nativeRequest },
-                        );
-                        const target = new URL(result.callback);
-                        if (
-                          target.protocol !== "com.neophilism.ourjam:" ||
-                          target.hostname !== "signin"
-                        )
-                          throw new Error("Invalid app sign-in callback.");
-                        location.assign(result.callback);
-                      })
-                    }
-                  >
-                    Return to iOS with this account
-                  </button>
-                )}
                 {!nativeRequest && (
                   <button
                     disabled={busy}

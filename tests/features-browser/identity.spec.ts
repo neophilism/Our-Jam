@@ -230,6 +230,7 @@ test("native sign-in requires an explicit return confirmation and redeems only o
       body: JSON.stringify(body),
     });
   });
+  await page.setViewportSize({ width: 375, height: 667 });
   const signIn = new URL(started.signInUrl);
   signIn.searchParams.set("role", "performer");
   await page.goto(signIn.href);
@@ -242,6 +243,8 @@ test("native sign-in requires an explicit return confirmation and redeems only o
     exact: true,
   });
   await expect(button).toBeVisible();
+  const bounds = await button.boundingBox();
+  expect(bounds!.y + bounds!.height).toBeLessThan(540);
   const response = page.waitForResponse((r) =>
     r.url().endsWith("/api/identity/native/approve"),
   );

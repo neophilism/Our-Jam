@@ -164,8 +164,16 @@ final class OurJamUITests: XCTestCase {
         if app.alerts.buttons["Continue"].waitForExistence(timeout: 2) { app.alerts.buttons["Continue"].tap() }
         let browser = app.webViews.firstMatch
         let confirm = browser.buttons["Return to iOS with this account"]
-        XCTAssertTrue(confirm.waitForExistence(timeout: 25), app.debugDescription)
+        // Cold ASWebAuthenticationSession startup can exceed 25 seconds on a
+        // fresh Simulator. Require the actual page/button, then an unobscured
+        // control above Safari's toolbar before sending the real tap.
+        XCTAssertTrue(confirm.waitForExistence(timeout: 60), app.debugDescription)
+        expectation(for: NSPredicate(format: "hittable == true"), evaluatedWith: confirm)
+        waitForExpectations(timeout: 10)
+        XCTAssertLessThan(confirm.frame.maxY, app.frame.height * 0.82, "The native return action must be reachable above browser chrome")
         confirm.tap()
+        let browserClosed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: browser)
+        XCTAssertEqual(XCTWaiter.wait(for: [browserClosed], timeout: 20), .completed, app.debugDescription)
         let name = app.textFields["profileName"]
         XCTAssertTrue(name.waitForExistence(timeout: 20), app.debugDescription)
         reveal(name, in: app, towardTop: true)
