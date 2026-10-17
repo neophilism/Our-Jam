@@ -6,7 +6,7 @@ CREATE TABLE commerce_settings (
  slot_seconds integer NOT NULL DEFAULT 5 CHECK(slot_seconds BETWEEN 1 AND 60), platform_video_ids jsonb NOT NULL DEFAULT '[]'
 );
 INSERT INTO commerce_settings(singleton) VALUES(true);
-CREATE TABLE platform_admin_sessions (token_hash text PRIMARY KEY, expires_at timestamptz NOT NULL);
+CREATE TABLE IF NOT EXISTS platform_admin_sessions (token_hash text PRIMARY KEY, expires_at timestamptz NOT NULL);
 CREATE TABLE artist_access_keys (token_hash text PRIMARY KEY, artist_id text NOT NULL REFERENCES artists(id), revoked boolean NOT NULL DEFAULT false);
 CREATE TABLE sponsor_videos (
  id uuid PRIMARY KEY, owner_artist_id text REFERENCES artists(id), sponsor_name text NOT NULL,

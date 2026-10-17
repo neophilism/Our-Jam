@@ -1,3 +1,4 @@
+import { changePlatformVotePolicy } from "../apps/api/src/vote-policy.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -14,6 +15,11 @@ import { eventInput } from "../packages/contracts/src/index.js";
 test("an artist-selected ten-Sound-Wave allowance is enforced and visible to the fan", async (t) => {
   const db = await testDatabase();
   t.after(() => db.close());
+  await changePlatformVotePolicy(db, {
+    commandId: randomUUID(),
+    expectedRevision: 0,
+    policy: { mode: "artist", minVotes: 3, maxVotes: 20 },
+  });
   const event = await createEvent(
     db,
     "our-jam",
@@ -33,6 +39,7 @@ test("an artist-selected ten-Sound-Wave allowance is enforced and visible to the
       ],
     }),
   );
+
   const lease = await claimPlayback(db, "our-jam", event.id);
   const opened = await advance(db, "our-jam", event.id, randomUUID(), 0, {
     ...lease,

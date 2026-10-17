@@ -1,3 +1,8 @@
+import {
+  readPlatformVotePolicy,
+  resolveVoteLimit,
+  effectiveVoteLimit,
+} from "./vote-policy.js";
 import { z } from "zod";
 import { VOTE_BUDGET } from "../../../packages/domain/src/index.js";
 import {
@@ -115,17 +120,33 @@ export async function updateSettings(
       "The show changed. Refresh before saving settings.",
       409,
     );
+    const platform = await readPlatformVotePolicy(tx, true);
+    const requestedVoteMode =
+      input.voteMode ?? event.settings.voteMode ?? "weighted";
+    requireThat(
+      !(
+        event.settings.voteMode === "single" && requestedVoteMode === "weighted"
+      ),
+      "legacy_vote_mode_locked",
+      "This show uses one vote per Sound Wave and cannot switch back to the older voting mode.",
+    );
+    const voteLimit =
+      requestedVoteMode === "single"
+        ? platform.mode === "fixed"
+          ? platform.fixedVotes
+          : input.votesPerListener === undefined
+            ? effectiveVoteLimit(platform, event.settings.votesPerListener)
+            : resolveVoteLimit(platform, input.votesPerListener)
+        : VOTE_BUDGET;
     const settings = {
       ...event.settings,
       screenLimit: input.screenLimit,
       minimumRoundSeconds: input.minimumRoundSeconds,
       maxWaves: input.maxWaves,
       maxGenerations: input.maxGenerations,
-      voteMode: input.voteMode ?? event.settings.voteMode ?? "weighted",
-      votesPerListener:
-        input.votesPerListener ??
-        event.settings.votesPerListener ??
-        VOTE_BUDGET,
+      voteMode: requestedVoteMode,
+      votesPerListener: voteLimit,
+
       releaseMode: input.releaseMode,
       purchaseLinks:
         input.purchaseLinks ??

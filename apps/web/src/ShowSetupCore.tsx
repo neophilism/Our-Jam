@@ -19,6 +19,11 @@ export function ShowSetup({
     [album, setAlbum] = useState<any[] | null>(null),
     [settings, setSettings] = useState<EventState["event"] | null>(null),
     [purchaseLinks, setPurchaseLinks] = useState<PurchaseLink[]>([]),
+    [platformVotes, setPlatformVotes] = useState<
+      | { mode: "fixed"; fixedVotes: number }
+      | { mode: "artist"; minVotes: number; maxVotes: number }
+      | null
+    >(null),
     [purchaseMode, setPurchaseMode] = useState<PurchaseMode>("menu"),
     [preferredPurchaseProvider, setPreferredPurchaseProvider] = useState(""),
     [checks, setChecks] = useState<Record<string, string>>({});
@@ -32,6 +37,19 @@ export function ShowSetup({
       checking.current?.abort();
     };
   }, [data.event.revision]);
+  useEffect(() => {
+    let live = true;
+    api("/operator/vote-policy")
+      .then((policy) => {
+        if (live) setPlatformVotes(policy);
+      })
+      .catch((e) => {
+        if (live) setError(e.message);
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
   async function action(work: () => Promise<void>) {
     setBusy(true);
     setError("");
@@ -144,8 +162,11 @@ export function ShowSetup({
                     artistName: form.get("artistName"),
                     purchaseUrl: null,
                     purchaseLinks,
-                    voteMode: form.get("voteMode"),
-                    votesPerListener: Number(form.get("votesPerListener")),
+                    voteMode: "single",
+                    votesPerListener:
+                      platformVotes?.mode === "fixed"
+                        ? platformVotes.fixedVotes
+                        : Number(form.get("votesPerListener")),
                     purchaseMode,
                     preferredPurchaseProvider:
                       purchaseMode === "direct"
@@ -201,35 +222,39 @@ export function ShowSetup({
                   <option value="review">Hold for my approval</option>
                 </select>
               </div>
-              <label>
-                How should people vote on Sound Waves?
-                <select
-                  name="voteMode"
-                  defaultValue={settings.settings.voteMode ?? "weighted"}
-                >
-                  <option value="single">
-                    One vote per Sound Wave (recommended)
-                  </option>
-                  <option value="weighted">
-                    Older-show voting (allow multiple votes on one idea)
-                  </option>
-                </select>
-              </label>
-              <label>
-                Number of different Sound Waves each fan can vote for per song
-                <input
-                  name="votesPerListener"
-                  type="number"
-                  min={1}
-                  max={1000}
-                  required
-                  defaultValue={settings.settings.votesPerListener ?? 5}
-                />
-                <small className="muted">
-                  A higher limit applies only to one-vote-per-Sound-Wave shows,
-                  starting with the next song.
-                </small>
-              </label>
+              {platformVotes?.mode === "artist" ? (
+                <label>
+                  Votes each listener may cast per song
+                  <input
+                    name="votesPerListener"
+                    type="number"
+                    min={platformVotes.minVotes}
+                    max={platformVotes.maxVotes}
+                    step={1}
+                    required
+                    defaultValue={Math.max(
+                      platformVotes.minVotes,
+                      Math.min(
+                        platformVotes.maxVotes,
+                        settings.settings.votesPerListener ??
+                          platformVotes.minVotes,
+                      ),
+                    )}
+                  />
+                  <small className="muted">
+                    The platform lets you choose from {platformVotes.minVotes}{" "}
+                    to {platformVotes.maxVotes}. Each submitted Sound Wave uses
+                    one vote, and listeners can vote once per idea. New settings
+                    take effect on the next song.
+                  </small>
+                </label>
+              ) : (
+                <p className="tiny muted">
+                  {platformVotes?.mode === "fixed"
+                    ? `The platform currently allows ${platformVotes.fixedVotes} votes per listener per song. You cannot change this amount.`
+                    : "Loading voting limits…"}
+                </p>
+              )}
               <PurchaseEditor
                 links={purchaseLinks}
                 onChange={setPurchaseLinks}
@@ -239,6 +264,7 @@ export function ShowSetup({
                 preferredProvider={preferredPurchaseProvider}
                 onPreferredChange={setPreferredPurchaseProvider}
               />
+
               {(
                 [
                   ["screenLimit", "Waves visible on screen", 4, 60],
@@ -276,7 +302,9 @@ export function ShowSetup({
                 </label>
               ))}
             </div>
-            <button disabled={busy}>Save show settings</button>
+            <button disabled={busy || !platformVotes}>
+              Save show settings
+            </button>
           </form>
         )}
       </details>

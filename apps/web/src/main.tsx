@@ -21,6 +21,7 @@ import {
 import { Account } from "./Account";
 import { VisualPreferences } from "./VisualPreferences";
 import { AdmissionSettings } from "./AdmissionSettings";
+import { PlatformAdmin } from "./PlatformAdmin";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import QRCode from "qrcode";
@@ -705,7 +706,7 @@ function Audience({ slug }: { slug: string }) {
                         >
                           <option value="">Choose a Sound Wave</option>
                           {waves
-                            .filter((w) => w.mine)
+                            .filter((w) => w.mine && (!singleVote || !w.own))
                             .map((w) => (
                               <option value={w.id} key={w.id}>
                                 {w.text}
@@ -715,8 +716,9 @@ function Audience({ slug }: { slug: string }) {
                       </label>
                     )}
                     <p className="tiny muted">
-                      Share one musical idea for this song. Submitting it uses
-                      one vote; you can still vote for other ideas.
+                      Share as many musical ideas as your vote allowance
+                      permits. Each Sound Wave you create uses one vote, leaving
+                      the rest for other ideas.
                     </p>
                   </form>
                   <div className="wave-list">
@@ -743,7 +745,9 @@ function Audience({ slug }: { slug: string }) {
                           <button
                             className="ghost"
                             aria-label={`Take back a vote from ${w.text}`}
-                            disabled={!open || !w.mine || busy}
+                            disabled={
+                              !open || !w.mine || (singleVote && w.own) || busy
+                            }
                             onClick={() => vote(w, -1)}
                           >
                             −
@@ -1293,6 +1297,30 @@ function Performer({ slug }: { slug?: string }) {
   );
 }
 function CreateEvent() {
+  const [platformVotes, setPlatformVotes] = useState<
+    | { mode: "fixed"; fixedVotes: number }
+    | { mode: "artist"; minVotes: number; maxVotes: number }
+    | null
+  >(null);
+  const [requestedVotes, setRequestedVotes] = useState(5);
+  useEffect(() => {
+    let live = true;
+    api("/operator/vote-policy")
+      .then((policy) => {
+        if (live) {
+          setPlatformVotes(policy);
+          setRequestedVotes(
+            policy.mode === "fixed" ? policy.fixedVotes : policy.minVotes,
+          );
+        }
+      })
+      .catch((e) => {
+        if (live) setError(e.message);
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
   const [purchaseLinks, setPurchaseLinks] = useState<PurchaseLink[]>([]);
   const [purchaseMode, setPurchaseMode] = useState<PurchaseMode>("menu");
   const [preferredPurchaseProvider, setPreferredPurchaseProvider] =
@@ -1353,7 +1381,10 @@ function CreateEvent() {
                 slug: form.get("slug"),
                 purchaseLinks,
                 voteMode: "single",
-                votesPerListener: Number(form.get("votesPerListener")),
+                votesPerListener:
+                  platformVotes?.mode === "fixed"
+                    ? platformVotes.fixedVotes
+                    : requestedVotes,
                 purchaseMode,
                 preferredPurchaseProvider:
                   purchaseMode === "direct"
@@ -1368,6 +1399,7 @@ function CreateEvent() {
                 })),
               },
             ));
+
           setSaved(created);
           const catalog = await api(
             "/operator/events/" + created.id + "/sources",
@@ -1488,21 +1520,31 @@ function CreateEvent() {
           </select>
         </label>
       </div>
-      <label className="vote-cap-setting">
-        How many different Sound Waves can each fan vote for per song?
-        <input
-          name="votesPerListener"
-          type="number"
-          required
-          min={1}
-          max={1000}
-          defaultValue={5}
-        />
-        <span className="tiny muted">
-          Each fan gets one vote per Sound Wave and can change their choices
-          until the song ends.
-        </span>
-      </label>
+      {platformVotes?.mode === "artist" ? (
+        <label className="vote-cap-setting">
+          How many votes can each fan cast per song?
+          <input
+            name="votesPerListener"
+            type="number"
+            required
+            min={platformVotes.minVotes}
+            max={platformVotes.maxVotes}
+            value={requestedVotes}
+            onChange={(e) => setRequestedVotes(Number(e.target.value))}
+          />
+          <span className="tiny muted">
+            Choose from {platformVotes.minVotes} to {platformVotes.maxVotes}{" "}
+            votes. Each Sound Wave a fan submits uses one vote; fans can vote
+            once per idea.
+          </span>
+        </label>
+      ) : (
+        <p className="tiny muted vote-cap-setting">
+          {platformVotes?.mode === "fixed"
+            ? `Each listener gets ${platformVotes.fixedVotes} votes per song, set by the platform.`
+            : "Loading the platform's voting rules…"}
+        </p>
+      )}
       <PurchaseEditor
         links={purchaseLinks}
         onChange={setPurchaseLinks}
@@ -1512,6 +1554,7 @@ function CreateEvent() {
         preferredProvider={preferredPurchaseProvider}
         onPreferredChange={setPreferredPurchaseProvider}
       />
+
       <div className="section-heading">
         <h3>The album, in order</h3>
         <span className="muted">
@@ -1602,7 +1645,7 @@ function CreateEvent() {
           .
         </p>
       )}
-      <button disabled={busy || storageReady !== true}>
+      <button disabled={busy || storageReady !== true || !platformVotes}>
         {busy
           ? "Uploading your album…"
           : saved
@@ -2073,7 +2116,11 @@ else if (segments[0] === "admin")
   screen = (
     <>
       <Header />
-      <CommerceAdmin />
+      <nav aria-label="Administration sections">
+        <a href="/admin">Voting policy</a> ·{" "}
+        <a href="/admin/commerce">Payments and sponsor videos</a>
+      </nav>
+      {segments[1] === "commerce" ? <CommerceAdmin /> : <PlatformAdmin />}
     </>
   );
 else if (segments[0] === "event" && segments[1])

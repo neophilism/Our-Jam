@@ -41,7 +41,7 @@ test("artist sees measured event quote and admin can configure prices without gr
     .selectOption("own_sponsors");
   await expect(page.locator(".commerce-panel")).toContainText("$9.00");
   expect((await page.request.get("/api/admin/commerce")).status()).toBe(401);
-  await page.goto("/admin");
+  await page.goto("/admin/commerce");
   await page
     .getByLabel("Platform admin credential", { exact: true })
     .fill("browser-test-only-admin-token-12345678");

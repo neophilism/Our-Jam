@@ -23,7 +23,7 @@ Missing the one-time API secret fails only the deployment job on development pus
 - Newer development commits supersede older ones before a deployment starts. Deploy jobs serialize without canceling an already-submitted deployment. HTTP mutation failures/timeouts are not automatically retried: a timeout may have submitted a deploy, and its receipt/list must be inspected before another submission.
 - A live Render receipt is insufficient: the public app must report the accepted commit and verified readiness. Diagnostic errors never echo API bodies, connection strings or tokens.
 
-No actual API deployment, successful hosted media probe, real Google/email account completion or Stripe transaction is claimed until performed. All commerce/identity features remain off main until complete acceptance. New platform-wide voting administration on main is a separate integration delta; its migration numbering and admin routes must be reconciled before these branches can be merged to main.
+No actual API deployment, successful hosted media probe, real Google/email account completion or Stripe transaction is claimed until performed. All commerce/identity features remain off main until complete acceptance. The platform-wide voting integration preserves both full migration names, reconciles the shared admin routes and requires twelve migration records; see voting-commerce-integration.md.
 
 ## Official references
 

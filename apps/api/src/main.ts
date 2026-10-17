@@ -43,6 +43,7 @@ const app = await createApp(db, {
   commerce: configuredCommerce(),
   identity: configuredIdentity(),
   operatorToken: process.env.OPERATOR_TOKEN,
+  adminToken: process.env.PLATFORM_ADMIN_TOKEN ?? process.env.ADMIN_TOKEN,
   secureCookies: production,
   serveWeb: true,
   providerReady: Boolean(generation),

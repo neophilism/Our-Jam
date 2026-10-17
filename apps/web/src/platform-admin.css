@@ -1,0 +1,11 @@
+.platform-admin { max-width: 850px; margin: clamp(25px,6vw,85px) auto; padding: 0 20px 80px; }
+.platform-admin h1 { font-size: clamp(38px,6vw,72px); margin: 10px 0 20px; }
+.platform-admin > p { line-height: 1.6; max-width: 760px; }
+.admin-vote-panel { margin: 24px 0; display: grid; gap: 20px; }
+.admin-vote-panel fieldset { border: 1px solid var(--line); padding: 16px; border-radius: 8px; }
+.admin-vote-panel legend { font-weight: 700; }
+.admin-vote-panel fieldset label { display: block; margin: 12px 0; }
+.admin-vote-panel input[type="radio"] { display: inline-block; width: 18px; height: 18px; min-height: 18px; margin-right: 9px; accent-color: var(--lime); }
+.admin-vote-panel input[type="number"] { width: min(220px,100%); display: block; margin-top: 8px; }
+.admin-vote-range { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 18px; }
+.admin-vote-range p { grid-column: 1/-1; }

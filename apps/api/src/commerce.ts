@@ -449,44 +449,6 @@ export async function registerCommerce(
     paymentsConfigured: Boolean(config.gateway),
     mode: config.live ? "live" : "test",
   }));
-  app.post(
-    "/api/admin/login",
-    { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } },
-    async (req, reply) => {
-      const { token } = z
-        .object({ token: z.string().min(32).max(256) })
-        .parse(req.body);
-      requireThat(
-        config.adminToken &&
-          Buffer.byteLength(token) === Buffer.byteLength(config.adminToken) &&
-          timingSafeEqual(Buffer.from(token), Buffer.from(config.adminToken)),
-        "invalid_admin",
-        "Invalid administrator credential.",
-        401,
-      );
-      const raw = randomBytes(32).toString("hex");
-      await db.query(
-        "INSERT INTO platform_admin_sessions(token_hash,expires_at) VALUES($1,now()+interval '2 hours')",
-        [digest(raw)],
-      );
-      reply.setCookie("oj_platform_admin", raw, {
-        path: "/",
-        httpOnly: true,
-        secure: origin.startsWith("https:"),
-        sameSite: "strict",
-        maxAge: 7200,
-      });
-      return { ok: true };
-    },
-  );
-  app.post("/api/admin/logout", async (req, reply) => {
-    await admin(req);
-    await db.query("DELETE FROM platform_admin_sessions WHERE token_hash=$1", [
-      digest(req.cookies.oj_platform_admin!),
-    ]);
-    reply.clearCookie("oj_platform_admin", { path: "/" });
-    return { ok: true };
-  });
   app.get("/api/admin/commerce", async (req) => {
     await admin(req);
     return {

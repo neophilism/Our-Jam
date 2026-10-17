@@ -10,7 +10,7 @@ The callback uses `com.neophilism.ourjam://signin` with a request ID and a one-u
 
 This is an explicit restore of the signed-in account profile. Separate guest profiles/voting budgets are not merged. Existing guest votes stay with their original profile. Mobile device sessions retain the existing 30-day device-session lifetime and device-only sign-out semantics; they are separate from the short web bridge sessions. Signing out a browser does not promise to revoke other devices. Account-wide session administration and account-deletion propagation require separate implementation/acceptance.
 
-Migration 011 adds temporary handoff records. Apply it and runtime grants only on the isolated development database. Deployed readiness now checks all eleven migration records. Handshake records contain hashed codes, not plaintext bearer tokens or PKCE verifiers. Expired requests are removed when a new handoff starts.
+Migration 011 adds temporary handoff records. Apply it and runtime grants only on the isolated development database. Deployed readiness now checks all twelve migration records after the voting-policy integration. Handshake records contain hashed codes, not plaintext bearer tokens or PKCE verifiers. Expired requests are removed when a new handoff starts.
 
 Acceptance: API tests cover original-device binding, PKCE, code tampering, one-use concurrent redemption, expiry, exact Origin, verified browser approval, redirect injection, logout and absence of performer access. Desktop/mobile browser acceptance uses controlled provider fixtures and the real handoff API. Native compilation, real ASWebAuthenticationSession/provider completion, physical-device Keychain failure/recovery and cancel/background behavior must pass before completion is claimed.
 

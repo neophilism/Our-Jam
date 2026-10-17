@@ -1,3 +1,5 @@
+import { createEvent } from "../apps/api/src/service.js";
+import { eventInput } from "../packages/contracts/src/index.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -35,31 +37,18 @@ test("production API: persistent multiuser voting, isolation, conflicts, closing
   assert.equal(signIn.statusCode, 200, signIn.body);
   const op = signIn.cookies[0].name + "=" + signIn.cookies[0].value;
   const slug = "test-" + randomUUID();
-  const create = await request(
-    "POST",
-    "/api/operator/events",
-    {
-      title: "Album launch",
-      slug,
-      artistName: "Test Artist",
-      minimumRoundSeconds: 0,
-      sources: [
-        {
-          title: "First track",
-          corePrompt: "PRIVATE_SIGNATURE_PROMPT",
-          durationSeconds: 180,
-        },
-        {
-          title: "Second track",
-          corePrompt: "PRIVATE_SECOND",
-          durationSeconds: 120,
-        },
-      ],
-    },
-    op,
-  );
-  assert.equal(create.statusCode, 200, create.body);
-  const event = create.json();
+  // This regression exercises the pre-existing weighted-vote model. New API
+  // events always use one vote per Sound Wave; the old policy is grandfathered.
+  const event = await createEvent(db, "our-jam", eventInput.parse({
+    title: "Album launch",
+    slug,
+    artistName: "Test Artist",
+    minimumRoundSeconds: 0,
+    sources: [
+      { title: "First track", corePrompt: "PRIVATE_SIGNATURE_PROMPT", durationSeconds: 180 },
+      { title: "Second track", corePrompt: "PRIVATE_SECOND", durationSeconds: 120 },
+    ],
+  }));
   async function guest() {
     const r = await request("POST", "/api/session");
     const cookie = r.cookies[0].name + "=" + r.cookies[0].value;

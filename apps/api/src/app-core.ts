@@ -1,5 +1,8 @@
 import { revokeBrowserSession, type IdentityConfig } from "./identity.js";
 import type { CommerceConfig } from "./commerce.js";
+import { readPlatformVotePolicy } from "./vote-policy.js";
+import { registerPlatformAdmin } from "./platform-admin.js";
+
 import {
   accountStatus,
   createRecoveryKey,
@@ -97,6 +100,7 @@ export type AppConfig = {
   commerce?: CommerceConfig;
   identity?: IdentityConfig;
   operatorToken?: string;
+  adminToken?: string;
   secureCookies: boolean;
   providerReady?: boolean;
   serveWeb?: boolean;
@@ -284,11 +288,12 @@ export async function createApp(db: Database, config: AppConfig) {
   app.get("/api/ready", async () => {
     const rows = (
       await db.query(
-        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql','005_artist_profiles.sql','006_release_controls.sql','007_audience_admission.sql','008_profile_recovery.sql','009_event_commerce_sponsors.sql','010_identity_signin.sql','011_native_identity_handoff.sql')",
+        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql','005_artist_profiles.sql','006_release_controls.sql','007_audience_admission.sql','008_profile_recovery.sql','009_event_commerce_sponsors.sql','010_identity_signin.sql','011_native_identity_handoff.sql','009_platform_vote_policy.sql')",
       )
     ).rows;
     requireThat(
-      rows.length === 11,
+      rows.length === 12,
+
       "schema_not_ready",
       "Required database migrations have not been applied.",
       503,
@@ -667,9 +672,23 @@ export async function createApp(db: Database, config: AppConfig) {
     reply.clearCookie("oj_operator", { path: "/" });
     return { ok: true };
   });
+  registerPlatformAdmin(app, db, {
+    adminToken: config.adminToken ?? config.commerce?.adminToken,
+    secureCookies: config.secureCookies,
+  });
   app.post("/api/operator/events", async (req) => {
     const op = await session(req, "operator");
-    return createEvent(db, op.artist_id, eventInput.parse(req.body));
+    const input = eventInput.parse(req.body);
+    requireThat(
+      input.voteMode !== "weighted",
+      "legacy_voting_unavailable",
+      "New shows use one vote per Sound Wave. Older weighted voting is available only for existing legacy events.",
+    );
+    return createEvent(db, op.artist_id, { ...input, voteMode: "single" });
+  });
+  app.get("/api/operator/vote-policy", async (req) => {
+    await session(req, "operator");
+    return readPlatformVotePolicy(db);
   });
   app.get("/api/operator/events", async (req) => {
     const op = await session(req, "operator");

@@ -33,7 +33,7 @@ Optional GitHub sign-in requires an OAuth app at https://github.com/settings/dev
 
 ## Acceptance already performed and still required
 
-The acceptance database received migrations 009–011 and restricted runtime grants. Runtime login has no schema creation, migration-history write, superuser, role creation, database creation or RLS bypass. Production and active rehearsal migrations/settings were not changed. A private acceptance media bucket is separate from rehearsal media.
+The acceptance database received commerce/identity/native migrations 009–011 plus `009_platform_vote_policy.sql`, with restricted runtime grants (twelve records total). Runtime login has no schema creation, migration-history write, superuser, role creation, database creation or RLS bypass. Production and active rehearsal migrations/settings were not changed. A private acceptance media bucket is separate from rehearsal media.
 
 Required next: isolated hosted readiness and media probe; real owner Google/email account signup, verification, reset, restore and logout; Stripe sandbox checkout/verified webhook/refund; sponsor upload/playback/countdown/pause/reconnect; physical iPhone/Android checks. Fixtures and public OAuth initiation do not prove successful account sign-in or email delivery.
 
