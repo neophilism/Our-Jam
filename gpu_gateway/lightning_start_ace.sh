@@ -5,7 +5,7 @@ if [ "${LIGHTNING_GPU_STUDIO_TLS_PROXY_ACK:-}" != "1" ]; then
   echo "Refusing ACE-Step start: confirm HTTPS-managed Studio port is enabled." >&2
   exit 2
 fi
-if [ "${#ACESTEP_API_KEY}" -lt 32 ]; then
+if [ -z "${ACESTEP_API_KEY:-}" ] || [ "${#ACESTEP_API_KEY}" -lt 32 ]; then
   echo "Refusing ACE-Step start: private ACESTEP_API_KEY must be at least 32 characters." >&2
   exit 2
 fi
