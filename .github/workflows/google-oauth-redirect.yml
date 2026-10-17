@@ -1,0 +1,26 @@
+name: Hosted Google OAuth redirect acceptance
+on:
+  push:
+    branches: [test/google-oauth-redirect-acceptance]
+    paths:
+      - scripts/check-google-oauth-redirect.mjs
+      - .github/workflows/google-oauth-redirect.yml
+permissions:
+  contents: read
+jobs:
+  check-oauth-redirect:
+    if: github.repository == 'neophilism/Our-Jam' && github.event_name == 'push' && github.ref == 'refs/heads/test/google-oauth-redirect-acceptance'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Verify real isolated Google provider authorization and role state
+        run: node scripts/check-google-oauth-redirect.mjs
