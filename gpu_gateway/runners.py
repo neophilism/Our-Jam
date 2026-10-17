@@ -109,7 +109,9 @@ def run_engine(
     output_mp3.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     if engine == "ace_step":
         from .ace_runner import generate_ace
-        return generate_ace(prompt, duration_seconds, output_mp3, config, limit)
+        elapsed = generate_ace(prompt, duration_seconds, output_mp3, config, limit)
+        valid_audio(output_mp3)
+        return elapsed
     if engine == "heartmula":
         root = Path(config.get("HEARTMULA_REPO_DIR", ""))
         checkpoint = Path(config.get("HEARTMULA_CHECKPOINT_DIR", ""))
