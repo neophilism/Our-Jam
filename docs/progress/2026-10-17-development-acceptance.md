@@ -46,3 +46,5 @@ Keep aggregate PR51 draft and all work off main until complete acceptance. Indep
 ## Source validation
 
 Local `npm run check` passed: canonical plan validation, TypeScript and all 113 tests (zero failures/skips). New hosted scripts pass Node syntax checks. Required PR CI and the hosted browser run remain separate checks and must be recorded from actual results. Engine Room synchronization is pending; repository evidence is current and does not claim a live Engine Room update.
+
+PR79 head `54b8c08` passed full GitHub Actions run 39031387933 and CircleCI application/security jobs. CircleCI native job 165 failed before compilation: Homebrew crashed while pouring `ca-certificates` (`undefined method '[]' for nil`, `Utils::Bottles.load_tab`). The follow-up replaces that mutable Homebrew installation with a pinned upstream Node 24.21.0 ARM64 distribution, verifies the exact archive against the vendor SHA-256 manifest and persists only a job-private binary path. No native assertion or gate is removed. The new exact-head checks must pass before development merge.

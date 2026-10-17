@@ -77,9 +77,8 @@ jobs:
       - run:
           name: Install Node 24 dependencies
           command: |
-            brew install node@24
-            echo "export PATH=\"$(brew --prefix node@24)/bin:\$PATH\"" >> "$BASH_ENV"
-            export PATH="$(brew --prefix node@24)/bin:$PATH"
+            bash scripts/install-ci-node-macos.sh
+            source "$BASH_ENV"
             npm ci
       - run:
           name: Build local backend and web
