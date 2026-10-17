@@ -5,22 +5,25 @@ import type { Database } from "./db.js";
 import { digest, requireThat } from "../../../packages/domain/src/index.js";
 import { adminVoteUpdateInput, changePlatformVotePolicy, readPlatformVotePolicy } from "./vote-policy.js";
 
+/** Shared read-only admin-session check; compare lab never uses performer or guest authority. */
+export async function requirePlatformAdmin(db: Database, req: { cookies?: Record<string, unknown> }, required = true) {
+  const raw = req.cookies?.oj_platform_admin;
+  let valid = false;
+  if (typeof raw === "string" && /^[a-f0-9]{64}$/.test(raw)) {
+    const found = (await db.query("SELECT token_hash FROM platform_admin_sessions WHERE token_hash=$1 AND expires_at>now()", [digest(raw)])).rows[0];
+    valid = Boolean(found);
+  }
+  if (required) requireThat(valid, "admin_sign_in_required", "Sign in as the platform administrator.", 401);
+  return valid;
+}
+
 export function registerPlatformAdmin(
   app: FastifyInstance,
   db: Database,
   config: { adminToken?: string; secureCookies: boolean },
 ) {
   const cookieName = "oj_platform_admin";
-  const adminSession = async (req: any, required = true) => {
-    const raw = req.cookies?.[cookieName];
-    let valid = false;
-    if (typeof raw === "string" && /^[a-f0-9]{64}$/.test(raw)) {
-      const found = (await db.query("SELECT token_hash FROM platform_admin_sessions WHERE token_hash=$1 AND expires_at>now()", [digest(raw)])).rows[0];
-      valid = Boolean(found);
-    }
-    if (required) requireThat(valid, "admin_sign_in_required", "Sign in as the platform administrator.", 401);
-    return valid;
-  };
+  const adminSession = (req: any, required = true) => requirePlatformAdmin(db, req, required);
   app.get("/api/admin/session", async (req) => ({ admin: await adminSession(req, false), configured: Boolean(config.adminToken?.length && config.adminToken.length >= 32) }));
   app.post("/api/admin/login", {
     config: { rateLimit: { max: 5, timeWindow: "1 minute", keyGenerator: (req: any) => "platform-admin-login:" + req.ip } },
