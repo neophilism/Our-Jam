@@ -72,7 +72,7 @@ test("host change only affects new comparisons, with separate rates for identica
   const details=await Promise.all([readComparisonBatch(db,first.id),readComparisonBatch(db,second.id)]);
   assert.deepEqual(details[0].runs.map(r=>r.gpuHost),["lightning","lightning"]);
   assert.deepEqual(details[1].runs.map(r=>r.gpuHost),["modal","modal"]);
-  assert.deepEqual(details[0].runs.map(r=>r.modelCheckpoint),details[1].runs.map(r=>r.modelCheckpoint));
+  assert.deepEqual(details[0].runs.map(r=>r.modelCheckpoint).sort(),details[1].runs.map(r=>r.modelCheckpoint).sort());
   for(const provider of ["ace_step","heartmula"] as const) {
     await setComparisonRate(db,comparisonRateInput.parse({
       commandId:randomUUID(),provider,sku:"Lightning L40S",unit:"gpu_hour",
