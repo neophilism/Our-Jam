@@ -8,7 +8,7 @@ import { ProviderError, MAX_AUDIO_BYTES, type MusicProvider } from "./stability.
 export function aceStepProvider(config: {
   baseUrl: string;
   token: string;
-  model?: "acestep-v15-turbo" | "acestep-v15-base";
+  model?: "acestep-v15-xl-sft" | "acestep-v15-xl-turbo" | "acestep-v15-turbo" | "acestep-v15-base";
   request?: typeof fetch;
   wait?: (ms: number) => Promise<void>;
   maxPolls?: number;
@@ -22,7 +22,7 @@ export function aceStepProvider(config: {
   const maxPolls = config.maxPolls ?? 90;
   if (!Number.isSafeInteger(maxPolls) || maxPolls < 1 || maxPolls > 1000)
     throw new Error("Invalid ACE-Step polling limit.");
-  const model = config.model ?? "acestep-v15-turbo";
+  const model = config.model ?? "acestep-v15-xl-sft";
   const headers = { authorization: "Bearer " + config.token };
 
   async function bytes(response: Response, limit: number, uncertain: boolean): Promise<Uint8Array> {
@@ -112,7 +112,7 @@ export function aceStepProvider(config: {
       if(!prompt.trim() || prompt.length>3500 || !Number.isInteger(durationSeconds) || durationSeconds<10 || durationSeconds>180)
         throw new ProviderError("invalid_generation_parameters",false);
       const result=await post("/release_task",{
-        prompt,lyrics:"[Instrumental]",thinking:false,model,audio_duration:durationSeconds,
+        prompt,lyrics:"[Instrumental]",thinking:true,lm_model_path:"acestep-5Hz-lm-4B",model,audio_duration:durationSeconds,
         audio_format:"mp3",batch_size:1,
       },true);
       const taskId=result?.task_id;
