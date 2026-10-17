@@ -25,15 +25,18 @@ test("only logged-in platform admin can manage a persistent six-engine selection
   assert.equal(initialResponse.statusCode, 200, initialResponse.body);
   const initial = initialResponse.json();
   assert.deepEqual(initial.selectedProviders, ["mureka", "stability"]);
+  assert.equal(initial.gpuHost,"modal");
+  assert.equal(initial.gpuHosts.length,2);
   assert.equal(initial.providers.length, 6);
   assert.equal(initial.providers.find((p: any) => p.id === "musicgen").rights, "noncommercial_only");
   assert.equal(initial.providers.find((p: any) => p.id === "stable_audio_open").rights, "community_license_eligibility_required");
   assert.ok(initial.providers.every((p: any) => p.validated === false), "configuration must not claim live GPU acceptance");
 
-  const payload = { commandId: randomUUID(), expectedRevision: initial.revision, selectedProviders: [...COMPARISON_ENGINE_IDS] };
+  const payload = { commandId: randomUUID(), expectedRevision: initial.revision, selectedProviders: [...COMPARISON_ENGINE_IDS],gpuHost:"lightning" };
   const updated = await app.inject({ method: "PATCH", url, headers, payload });
   assert.equal(updated.statusCode, 200, updated.body);
   assert.deepEqual(updated.json().selectedProviders, COMPARISON_ENGINE_IDS);
+  assert.equal(updated.json().gpuHost,"lightning");
   assert.equal((await app.inject({ method: "PATCH", url, headers, payload })).statusCode, 200, "identical retry is idempotent");
   assert.equal((await app.inject({ method: "PATCH", url, headers, payload: { ...payload, commandId: randomUUID() } })).statusCode, 409, "stale revision cannot overwrite current selection");
   assert.equal((await app.inject({ method: "PATCH", url, headers, payload: { commandId: randomUUID(), expectedRevision: 1, selectedProviders: [] } })).statusCode, 400);
@@ -45,11 +48,11 @@ test("only logged-in platform admin can manage a persistent six-engine selection
 });
 
 test("readiness describes configured secret presence but never credentials or imaginary prices", () => {
-  const configured = comparisonReadiness({ MUREKA_API_KEY: "secret", STABLE_AUDIO_KEY: "also-secret", OURJAM_GPU_GATEWAY_URL: "https://gpu.example", OURJAM_GPU_GATEWAY_TOKEN: "gpu-secret" });
+  const configured = comparisonReadiness({ MUREKA_API_KEY: "secret", STABLE_AUDIO_KEY: "also-secret", OURJAM_GPU_GATEWAY_URL: "https://gpu.example/", OURJAM_GPU_GATEWAY_TOKEN: "private-gpu-secret-123",ACE_STEP_BASE_URL:"https://ace.example/",ACE_STEP_TOKEN:"private-ace-secret-123" });
   assert.equal(configured.length, 6);
   assert.ok(configured.every(p => p.configured));
   assert.ok(configured.every(p => !p.validated && !p.costRateKnown));
-  assert.doesNotMatch(JSON.stringify(configured), /also-secret|gpu-secret|"secret"/);
+  assert.doesNotMatch(JSON.stringify(configured), /also-secret|gpu-secret-123|ace-secret-123|"secret"/);
   const empty = comparisonReadiness({});
   assert.ok(empty.every(p => !p.configured));
 });
