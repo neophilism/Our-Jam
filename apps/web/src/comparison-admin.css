@@ -10,3 +10,17 @@
 .comparison-choice strong {font-size:1rem}
 .comparison-choice small {font-size:.83rem;color:var(--muted)}
 .comparison-warning {border:1px solid #a46c28;padding:12px;border-radius:6px}
+
+.comparison-batch-panel {border-top:1px solid var(--line);padding-top:18px;display:grid;gap:14px}
+.comparison-batch-form {display:grid;gap:14px}
+.comparison-batch-form > label {display:grid;gap:6px}
+.comparison-batch-form textarea {width:100%;max-width:100%;padding:10px;min-height:110px}
+.comparison-batch-form input[type="number"] {width:min(200px,100%)}
+.comparison-batch-form fieldset {border:1px solid var(--line);border-radius:8px;padding:12px}
+.comparison-batch-form fieldset label {display:block;margin:8px 0}
+.comparison-batch-form input[type="radio"],.comparison-batch-form input[type="checkbox"] {width:18px;min-height:18px;vertical-align:middle;margin-right:6px}
+.comparison-research-ack {display:flex!important;align-items:flex-start;gap:8px}
+.comparison-history {display:grid;gap:8px}
+.comparison-history > button {display:block;margin:5px 0;text-align:left}
+.comparison-result-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.comparison-result {display:grid;gap:4px;border:1px solid var(--line);padding:12px;border-radius:8px;font-size:.9rem}
