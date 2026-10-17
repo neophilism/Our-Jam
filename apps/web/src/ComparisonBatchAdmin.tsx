@@ -69,7 +69,7 @@ export function ComparisonBatchAdmin({ selectionRevision, selectedProviders }: {
       </fieldset>
       {includesResearchOnly && <label className="comparison-research-ack">
         <input type="checkbox" checked={acceptedResearch} onChange={e=>setAcceptedResearch(e.target.checked)}/>
-        I understand MusicGen's published weights prohibit commercial use; these results remain private research and cannot be distributed as a commercial OurJam release.
+        I confirm this is genuinely noncommercial research, not private development of a commercial product. MusicGen outputs cannot be used commercially without separate permission.
       </label>}
       <button disabled={busy || !prompt.trim() || (includesResearchOnly && (purpose!=="private_research" || !acceptedResearch))}>
         {busy ? "Preparing..." : `Prepare ${selectedProviders.length}-engine comparison`}
