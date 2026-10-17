@@ -87,6 +87,20 @@ class Gateway:
         self.runner=runner
         self.stop=threading.Event()
         self.thread:threading.Thread|None=None
+    def capabilities(self)->list[dict]:
+        approvals={
+            "ace_step":"ACE_STEP_CHECKPOINT_APPROVED",
+            "heartmula":"HEARTMULA_CHECKPOINT_APPROVED",
+            "stable_audio_open":"STABLE_AUDIO_OPEN_LICENSE_APPROVED",
+            "musicgen":"MUSICGEN_NONCOMMERCIAL_RESEARCH_APPROVED",
+        }
+        return [
+            {"engine":engine,"model":model,"available":(
+                self.env.get(approvals[engine])=="1" and
+                self.env.get("GPU_GATEWAY_MODEL_READY_"+engine.upper())=="1"
+            )}
+            for engine,model in KNOWN_MODELS.items()
+        ]
     def submit(self,body:dict)->str:
         if not isinstance(body,dict) or set(body)!=POST_FIELDS:
             raise RunnerError("invalid_job_fields")
@@ -180,6 +194,9 @@ def make_handler(gateway:Gateway):
         def do_GET(self):
             self.connection.settimeout(30)
             if not self.authorized():return
+            if self.path=="/v1/health":
+                self.result(200,{"ok":True,"models":gateway.capabilities()})
+                return
             match=re.fullmatch(r"/v1/jobs/([a-f0-9-]{36})(/audio)?",self.path)
             if not match or not JOB_PATTERN.fullmatch(match.group(1)):
                 self.result(404,{"error":"not_found"});return
