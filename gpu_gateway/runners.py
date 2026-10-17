@@ -42,6 +42,8 @@ def validate_job(engine: str, model: str, purpose: str, prompt: str, duration_se
         raise RunnerError("heartmula_checkpoint_unapproved")
     if engine == "stable_audio_open" and env.get("STABLE_AUDIO_OPEN_LICENSE_APPROVED") != "1":
         raise RunnerError("stable_audio_model_license_unapproved")
+    if env.get("GPU_GATEWAY_MODEL_READY_"+engine.upper()) != "1":
+        raise RunnerError("model_not_ready")
     if engine == "musicgen":
         if purpose != "private_research" or env.get("MUSICGEN_NONCOMMERCIAL_RESEARCH_APPROVED") != "1":
             raise RunnerError("musicgen_noncommercial_only")
