@@ -82,7 +82,7 @@ test("separate outputs require audible tests and confirmation; lost output relea
   const show = page.locator(".show-player audio");
   await expect.poll(() => show.evaluate((a: HTMLMediaElement) => a.sinkId)).toBe("show-speaker");
   await expect(page.getByLabel("Show output", { exact: true })).toBeDisabled();
-  await expect(page.getByText("UNTIL THE NEXT WAVE", { exact: true })).toBeVisible();
+  await expect(page.getByText("TIME LEFT TO VOTE", { exact: true })).toBeVisible();
   const previewButton = page.getByRole("button", { name: "Headphone preview", exact: false });
   await expect(previewButton).toBeEnabled(); await previewButton.click();
   const cue = page.locator(".private-preview audio");

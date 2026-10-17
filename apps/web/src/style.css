@@ -170,6 +170,7 @@ p {
   color: var(--muted);
 }
 header {
+  position: relative;
   height: 96px;
   display: flex;
   justify-content: space-between;

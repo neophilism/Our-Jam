@@ -2,7 +2,7 @@ name: Our Jam checks
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, feature/artist-event-payments-sponsor-video]
 permissions:
   contents: read
 jobs:
@@ -57,3 +57,38 @@ jobs:
           name: browser-evidence
           path: test-results/
           retention-days: 7
+
+  deploy-development:
+    needs: checks
+    if: github.repository == 'neophilism/Our-Jam' && github.event_name == 'push' && github.ref == 'refs/heads/feature/artist-event-payments-sponsor-video'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    permissions:
+      contents: read
+      actions: read
+    concurrency:
+      group: ourjam-development-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Deploy accepted development commit through the Render API
+        env:
+          RENDER_API_KEY: ${{ secrets.OUR_JAM_RENDER_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$RENDER_API_KEY" ]; then
+            echo 'Development was NOT deployed. One-time setup: add OUR_JAM_RENDER_API_KEY in repository Actions secrets.' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          node scripts/deploy-development.mjs
+      - name: Verify hosted authorization and media without credentials or spending
+        if: success()
+        env:
+          OUR_JAM_REQUIRE_MEDIA_VERIFIED: '1'
+          OUR_JAM_EXPECT_ZERO_SPEND: '1'
+        run: node scripts/check-hosted-readiness.mjs https://our-jam.onrender.com
