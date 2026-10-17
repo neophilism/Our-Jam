@@ -1,5 +1,5 @@
 import { ProviderError, MAX_AUDIO_BYTES, type MusicProvider } from "./stability.js";
-export type GatewayEngine = "heartmula" | "stable_audio_open" | "musicgen";
+export type GatewayEngine = "ace_step" | "heartmula" | "stable_audio_open" | "musicgen";
 export type GatewayPurpose = "private_research" | "commercial_evaluation";
 
 /**
