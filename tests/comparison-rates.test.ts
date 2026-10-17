@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {randomUUID} from "node:crypto";
 import {testDatabase} from "./database.js";
+import {createApp} from "../apps/api/src/app.js";
 import {comparisonRateInput,setComparisonRate,currentComparisonRates} from "../apps/api/src/comparison-rates.js";
 
 test("meter rates store explicit operator estimates and never invent $0 GPU costs",async t=>{
@@ -29,4 +30,30 @@ test("API jobs cannot masquerade as GPU-seconds; missing rates remain absent not
   assert.throws(()=>comparisonRateInput.parse({...base,rateMicroUsd:0}));
   assert.throws(()=>comparisonRateInput.parse({...base,rateMicroUsd:-10}));
   assert.equal((await currentComparisonRates(db)).length,1);
+});
+
+test("rate API is platform-admin-only and Origin protected; performer cannot set financial assumptions",async t=>{
+  const db=await testDatabase();
+  const origin="http://our-jam.test";
+  const adminToken="private-rate-admin-token-123456789";
+  const app=await createApp(db,{origin,secureCookies:false,adminToken});
+  t.after(async()=>{await app.close();await db.close();});
+  const url="/api/admin/comparison/rates";
+  assert.equal((await app.inject({method:"GET",url})).statusCode,401);
+  assert.equal((await app.inject({method:"POST",url,headers:{origin},payload:{}})).statusCode,401);
+  const login=await app.inject({method:"POST",url:"/api/admin/login",headers:{origin},payload:{token:adminToken}});
+  assert.equal(login.statusCode,200,login.body);
+  const cookie=login.cookies.find(c=>c.name==="oj_platform_admin")!.value;
+  const headers={origin,cookie:"oj_platform_admin="+cookie};
+  const input={commandId:randomUUID(),provider:"mureka",sku:"",unit:"api_generation",rateMicroUsd:225000,supplier:"Mureka",
+    sourceDescription:"Manual API estimate awaiting provider invoice"};
+  const saved=await app.inject({method:"POST",url,headers,payload:input});
+  assert.equal(saved.statusCode,200,saved.body);
+  assert.equal(saved.json().provenance,"operator_estimate");
+  const rates=await app.inject({method:"GET",url,headers});
+  assert.equal(rates.statusCode,200,rates.body);
+  assert.equal(rates.json().rates[0].rateMicroUsd,225000);
+  assert.match(rates.json().warning,/estimates/);
+  assert.equal((await app.inject({method:"POST",url,headers:{...headers,origin:"https://evil.invalid"},payload:input})).statusCode,403);
+  assert.equal((await app.inject({method:"POST",url,headers:{origin,cookie:"oj_operator=notanadmin"},payload:input})).statusCode,401);
 });
