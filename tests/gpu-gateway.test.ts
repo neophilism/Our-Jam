@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { gpuGatewayProvider } from "../packages/providers/src/gpu-gateway.js";
 import { ProviderError } from "../packages/providers/src/stability.js";
 const id="550e8400-e29b-41d4-a716-446655440000";
-const engineModels=[["heartmula","HeartMuLa-oss-3B"],["stable_audio_open","stable-audio-3-medium"],["musicgen","facebook/musicgen-small"]] as const;
+const engineModels=[["heartmula","HeartMuLa-oss-3B-happy-new-year"],["stable_audio_open","stable-audio-3-medium"],["musicgen","facebook/musicgen-large"]] as const;
 test("all three GPU-hosted engine adapters use a private task receipt, a distinct provider ID and one instrumental output",async()=>{
   for(const [engine,model] of engineModels){
     const calls:string[]=[];
@@ -31,12 +31,12 @@ test("all three GPU-hosted engine adapters use a private task receipt, a distinc
   }
 });
 test("MusicGen cannot be configured commercially; missing rights approval blocks GPU submission",()=>{
-  assert.throws(()=>gpuGatewayProvider({engine:"musicgen",purpose:"commercial_evaluation",model:"facebook/musicgen-small",baseUrl:"https://gpu.ourjam.example/",token:"private",checkpointApproved:true}),/noncommercial/);
+  assert.throws(()=>gpuGatewayProvider({engine:"musicgen",purpose:"commercial_evaluation",model:"facebook/musicgen-large",baseUrl:"https://gpu.ourjam.example/",token:"private",checkpointApproved:true}),/noncommercial/);
   assert.throws(()=>gpuGatewayProvider({engine:"stable_audio_open",purpose:"commercial_evaluation",model:"stable-audio-3-medium",baseUrl:"https://gpu.ourjam.example/",token:"private",checkpointApproved:false}),/Checkpoint/);
-  assert.throws(()=>gpuGatewayProvider({engine:"heartmula",purpose:"private_research",model:"HeartMuLa-oss-3B",baseUrl:"http://gpu.ourjam.example/",token:"private",checkpointApproved:true}),/HTTPS/);
+  assert.throws(()=>gpuGatewayProvider({engine:"heartmula",purpose:"private_research",model:"HeartMuLa-oss-3B-happy-new-year",baseUrl:"http://gpu.ourjam.example/",token:"private",checkpointApproved:true}),/HTTPS/);
 });
 test("saved GPU task resume never submits a new generation",async()=>{
-  const paths:string[]=[];const engine="heartmula",model="HeartMuLa-oss-3B";
+  const paths:string[]=[];const engine="heartmula",model="HeartMuLa-oss-3B-happy-new-year";
   const provider=gpuGatewayProvider({engine,model,purpose:"private_research",baseUrl:"https://gpu.ourjam.example/",token:"secret",checkpointApproved:true,
     request:async(input)=>{
       const p=new URL(String(input)).pathname;paths.push(p);
@@ -49,7 +49,7 @@ test("saved GPU task resume never submits a new generation",async()=>{
 });
 test("unknown acceptance and provider mismatches fail closed",async()=>{
   let calls=0;
-  const provider=gpuGatewayProvider({engine:"musicgen",model:"facebook/musicgen-small",purpose:"private_research",baseUrl:"https://gpu.ourjam.example/",token:"secret",checkpointApproved:true,
+  const provider=gpuGatewayProvider({engine:"musicgen",model:"facebook/musicgen-large",purpose:"private_research",baseUrl:"https://gpu.ourjam.example/",token:"secret",checkpointApproved:true,
     request:async()=>{calls++;throw new Error("Disconnected");}});
   await assert.rejects(provider.generate("Quiet cinematic instrumental",45),(err:any)=>err instanceof ProviderError && err.uncertain===true);
   assert.equal(calls,1);
