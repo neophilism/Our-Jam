@@ -8,7 +8,7 @@ import argparse
 
 def main() -> None:
     parser=argparse.ArgumentParser()
-    parser.add_argument("--model",required=True,choices=["facebook/musicgen-small"])
+    parser.add_argument("--model",required=True,choices=["facebook/musicgen-large"])
     parser.add_argument("--prompt",required=True)
     parser.add_argument("--duration",type=int,required=True)
     parser.add_argument("--output",required=True)
