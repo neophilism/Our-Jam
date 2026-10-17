@@ -211,7 +211,9 @@ def main():
     if len(token)<32:raise SystemExit("Set a strong GPU_GATEWAY_TOKEN on the private host.")
     host=os.environ.get("GPU_GATEWAY_BIND","127.0.0.1")
     if host not in ("127.0.0.1","::1"):
-        raise SystemExit("Direct public gateway binding forbidden. Use a TLS reverse proxy to localhost.")
+        if host != "0.0.0.0" or os.environ.get("GPU_GATEWAY_EDGE_PROVIDER") not in ("modal","lightning") or os.environ.get("GPU_GATEWAY_EDGE_TLS_ACK") != "1":
+            raise SystemExit("External binding requires a named Modal/Lightning TLS proxy and explicit security acknowledgment.")
+        # The edge provider terminates HTTPS. The API itself still requires a strong bearer token.
     port=int(os.environ.get("GPU_GATEWAY_PORT","8085"))
     gateway=Gateway(Path(os.environ.get("GPU_GATEWAY_DATA_DIR","./.private-gpu-gateway")))
     gateway.start()
