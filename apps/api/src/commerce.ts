@@ -70,7 +70,8 @@ export function configuredCommerce(
             const s = await stripe.checkout.sessions.create(
               {
                 mode: "payment",
-                allowed_payment_method_types: ["card"],
+                // Checkout 2026 API chooses payment methods from Stripe Dashboard.
+                // Explicit method arrays are not supported on newer accounts.
                 client_reference_id: p.id,
                 metadata: { purchaseId: p.id },
                 line_items: [
@@ -87,7 +88,8 @@ export function configuredCommerce(
                 ],
                 success_url: returnUrl + "?payment=processing",
                 cancel_url: returnUrl + "?payment=cancelled",
-                expires_at: Math.floor(Date.now() / 1000) + 1800,
+                // Add margin above Stripe's 30-minute minimum for network transit.
+                expires_at: Math.floor(Date.now() / 1000) + 3600,
               },
               { idempotencyKey: `our-jam-event-${p.id}` },
             );
