@@ -6,7 +6,7 @@ import unittest
 from urllib import request, error
 from http.server import ThreadingHTTPServer
 
-from gpu_gateway.server import Gateway,make_handler,JobStore
+from gpu_gateway.server import Gateway,make_handler,JobStore,bind_permitted
 from gpu_gateway.runners import RunnerError,validate_job
 
 TOKEN="private-test-token-that-exceeds-32-characters"
@@ -18,6 +18,30 @@ def job(engine="heartmula",model="HeartMuLa-oss-3B-happy-new-year",purpose="comm
             "durationSeconds":seconds,"instrumental":True,"outputs":1}
 
 class GatewayTests(unittest.TestCase):
+    def test_public_port_binding_needs_managed_tls_edge_and_private_token(self):
+        self.assertTrue(bind_permitted("127.0.0.1",{}))
+        self.assertFalse(bind_permitted("0.0.0.0",{}))
+        self.assertFalse(bind_permitted("0.0.0.0",{
+            "GPU_GATEWAY_EDGE_PROVIDER":"modal","GPU_GATEWAY_EDGE_TLS_ACK":"1",
+            "GPU_GATEWAY_TOKEN":"short"
+        }))
+        self.assertTrue(bind_permitted("0.0.0.0",{
+            "GPU_GATEWAY_EDGE_PROVIDER":"modal","GPU_GATEWAY_EDGE_TLS_ACK":"1",
+            "GPU_GATEWAY_TOKEN":TOKEN
+        }))
+        self.assertTrue(bind_permitted("0.0.0.0",{
+            "GPU_GATEWAY_EDGE_PROVIDER":"lightning","GPU_GATEWAY_EDGE_TLS_ACK":"1",
+            "GPU_GATEWAY_TOKEN":TOKEN
+        }))
+        self.assertFalse(bind_permitted("0.0.0.0",{
+            "GPU_GATEWAY_EDGE_PROVIDER":"unknown","GPU_GATEWAY_EDGE_TLS_ACK":"1",
+            "GPU_GATEWAY_TOKEN":TOKEN
+        }))
+        self.assertFalse(bind_permitted("192.0.2.7",{
+            "GPU_GATEWAY_EDGE_PROVIDER":"modal","GPU_GATEWAY_EDGE_TLS_ACK":"1",
+            "GPU_GATEWAY_TOKEN":TOKEN
+        }))
+
     def test_rejects_wrong_license_model_and_noncommercial(self):
         validate_job(**{"engine":"heartmula","model":"HeartMuLa-oss-3B-happy-new-year","purpose":"commercial_evaluation",
                         "prompt":"Jazz drums and bass","duration_seconds":25,"env":ENV})
