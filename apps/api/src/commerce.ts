@@ -70,7 +70,8 @@ export function configuredCommerce(
             const s = await stripe.checkout.sessions.create(
               {
                 mode: "payment",
-                allowed_payment_method_types: ["card"],
+                // Checkout 2026 API chooses payment methods from Stripe Dashboard.
+                // Explicit method arrays are not supported on newer accounts.
                 client_reference_id: p.id,
                 metadata: { purchaseId: p.id },
                 line_items: [
