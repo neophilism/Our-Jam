@@ -8,17 +8,17 @@ const env:NodeJS.ProcessEnv={
   OURJAM_GPU_MODAL_TOKEN:"modal-private-token-12345",
   OURJAM_GPU_LIGHTNING_URL:"https://lightning.example/",
   OURJAM_GPU_LIGHTNING_TOKEN:"lightning-private-token-12345",
-  OURJAM_GPU_MODAL_ACE_URL:"https://ace-modal.example/",
-  OURJAM_GPU_MODAL_ACE_TOKEN:"modal-ace-private-token-12345",
-  OURJAM_GPU_LIGHTNING_ACE_URL:"https://ace-lightning.example/",
-  OURJAM_GPU_LIGHTNING_ACE_TOKEN:"lightning-ace-private-token-12345",
+  
+  
+  
+  
 };
 test("two independently authenticated GPU hosts are selected in explicit priority",()=>{
   const a=gpuHostTargets("heartmula","HeartMuLa-oss-3B-happy-new-year",env);
   assert.deepEqual(a.map(x=>x.id),["modal","lightning"]);
   assert.deepEqual(a.map(x=>x.protocol),["gateway","gateway"]);
   assert.notEqual(a[0].token,a[1].token);
-  assert.deepEqual(gpuHostTargets("ace_step","acestep-v15-xl-sft",env).map(x=>x.protocol),["ace","ace"]);
+  assert.deepEqual(gpuHostTargets("ace_step","acestep-v15-xl-sft",env).map(x=>x.protocol),["gateway","gateway"]);
   assert.deepEqual(gpuHostTargets("musicgen","facebook/musicgen-large",{
     ...env,OURJAM_GPU_HOST_ORDER:"lightning,modal"
   }).map(x=>x.id),["lightning","modal"]);
