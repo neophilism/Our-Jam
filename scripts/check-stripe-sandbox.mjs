@@ -50,7 +50,6 @@ async function main() {
   try {
     session = await stripe.checkout.sessions.create({
       mode: "payment",
-      payment_method_types: ["card"],
       line_items: [{ price_data: {
         currency: "usd",
         product_data: { name: "Our Jam automated sandbox API permission check (not an event purchase)" },
