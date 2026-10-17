@@ -36,12 +36,11 @@ export function gpuHostTargets(engine:ComparisonEngineId,model:string,env:NodeJS
   const targets:HostTarget[]=[];
   for(const id of order){
     const prefix="OURJAM_GPU_"+id.toUpperCase();
-    const ace=engine==="ace_step";
-    const root=env[prefix+(ace?"_ACE_URL":"_URL")];
-    const token=env[prefix+(ace?"_ACE_TOKEN":"_TOKEN")];
+    const root=env[prefix+"_URL"];
+    const token=env[prefix+"_TOKEN"];
     if(!root && !token)continue;
     if(!root||!token||token.length<16)throw new Error("Incomplete or weak "+id+" GPU credentials.");
-    targets.push({id,root:secureGpuRoot(root),token,protocol:ace?"ace":"gateway",engine,model});
+    targets.push({id,root:secureGpuRoot(root),token,protocol:"gateway",engine,model});
   }
   // During migration, keep the existing manual private GPU gateway functional;
   // it is NOT silently treated as an independent third backup.
