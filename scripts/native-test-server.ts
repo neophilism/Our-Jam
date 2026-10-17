@@ -92,6 +92,9 @@ app.get("/__test__/auth/get-session", async (_req, reply) => {
   };
 });
 app.get("/__test__/auth/token", async () => ({ token: fixtureIdentityToken }));
+app.get("/__test__/native-account-evidence", async () => ({
+  completed: (await db.query("SELECT count(*)::integer completed FROM native_identity_handoffs WHERE consumed_at IS NOT NULL")).rows[0].completed,
+}));
 app.get("/__test__/native-evidence", async () => {
   const row = (
     await db.query(

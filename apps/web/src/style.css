@@ -36,14 +36,19 @@ button,
   font-weight: 700;
   text-decoration: none;
   min-height: 44px;
+  touch-action: manipulation;
   transition:
     background 0.15s,
     transform 0.15s;
 }
-button:hover:not(:disabled),
-.button:hover {
-  background: #e3ff84;
-  transform: translateY(-1px);
+/* iOS can consume the first tap to apply a geometry-changing hover state.
+   Hover movement belongs to devices whose primary pointer can actually hover. */
+@media (hover: hover) and (pointer: fine) {
+  button:hover:not(:disabled),
+  .button:hover {
+    background: #e3ff84;
+    transform: translateY(-1px);
+  }
 }
 button:disabled {
   opacity: 0.35;
@@ -102,8 +107,10 @@ form > * + * {
   border-color: #4a4d3e;
   color: #e9eddb;
 }
-.ghost:hover:not(:disabled) {
-  background: #292e1c;
+@media (hover: hover) and (pointer: fine) {
+  .ghost:hover:not(:disabled) {
+    background: #292e1c;
+  }
 }
 .small {
   padding: 9px 12px;

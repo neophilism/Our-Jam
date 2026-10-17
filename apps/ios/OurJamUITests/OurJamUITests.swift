@@ -158,28 +158,44 @@ final class OurJamUITests: XCTestCase {
         app.launchArguments = ["-ourjam.origin", "http://127.0.0.1:4173", "-ourjam.event", "native-integration"]
         app.launch(); XCTAssertTrue(app.buttons["connectButton"].waitForExistence(timeout: 15)); app.buttons["connectButton"].tap()
         XCTAssertTrue(app.tabBars.buttons["You"].waitForExistence(timeout: 20)); app.tabBars.buttons["You"].tap()
-        let login = app.buttons["accountSignIn"]; reveal(login, in: app); login.tap()
-        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        if springboard.buttons["Continue"].waitForExistence(timeout: 3) { springboard.buttons["Continue"].tap() }
-        if app.alerts.buttons["Continue"].waitForExistence(timeout: 2) { app.alerts.buttons["Continue"].tap() }
-        let browser = app.webViews.firstMatch
-        let confirm = browser.buttons["Return to iOS with this account"]
-        // Cold ASWebAuthenticationSession startup can exceed 25 seconds on a
-        // fresh Simulator. Require the actual page/button, then an unobscured
-        // control above Safari's toolbar before sending the real tap.
-        XCTAssertTrue(confirm.waitForExistence(timeout: 60), app.debugDescription)
-        expectation(for: NSPredicate(format: "hittable == true"), evaluatedWith: confirm)
-        waitForExpectations(timeout: 10)
-        XCTAssertLessThan(confirm.frame.maxY, app.frame.height * 0.82, "The native return action must be reachable above browser chrome")
-        confirm.tap()
-        let browserClosed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: browser)
-        XCTAssertEqual(XCTWaiter.wait(for: [browserClosed], timeout: 20), .completed, app.debugDescription)
-        let name = app.textFields["profileName"]
-        XCTAssertTrue(name.waitForExistence(timeout: 20), app.debugDescription)
-        reveal(name, in: app, towardTop: true)
-        expectation(for: NSPredicate(format: "value == %@", "Native account fan"), evaluatedWith: name)
-        waitForExpectations(timeout: 15)
-        let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "OurJam-native-account-restored"; screenshot.lifetime = .keepAlways; add(screenshot)
+        // Both a cold browser and a returning account must complete on one tap.
+        // Do not retry a missed tap: that would hide Safari hover interception.
+        for cycle in 1...2 {
+            let login = app.buttons["accountSignIn"]; reveal(login, in: app); login.tap()
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            if springboard.buttons["Continue"].waitForExistence(timeout: 3) { springboard.buttons["Continue"].tap() }
+            if app.alerts.buttons["Continue"].waitForExistence(timeout: 2) { app.alerts.buttons["Continue"].tap() }
+            let browser = app.webViews.firstMatch
+            let confirm = browser.buttons["Return to iOS with this account"]
+            // Cold ASWebAuthenticationSession startup can exceed 25 seconds on a
+            // fresh Simulator. Require the actual page/button, then an unobscured
+            // control above Safari's toolbar before sending the real tap.
+            XCTAssertTrue(confirm.waitForExistence(timeout: 60), app.debugDescription)
+            expectation(for: NSPredicate(format: "hittable == true"), evaluatedWith: confirm)
+            waitForExpectations(timeout: 10)
+            XCTAssertLessThan(confirm.frame.maxY, app.frame.height * 0.82, "The native return action must be reachable above browser chrome")
+            confirm.tap()
+            let browserClosed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: browser)
+            XCTAssertEqual(XCTWaiter.wait(for: [browserClosed], timeout: 20), .completed, app.debugDescription)
+            let name = app.textFields["profileName"]
+            XCTAssertTrue(name.waitForExistence(timeout: 20), app.debugDescription)
+            reveal(name, in: app, towardTop: true)
+            expectation(for: NSPredicate(format: "value == %@", "Native account fan"), evaluatedWith: name)
+            waitForExpectations(timeout: 15)
+            expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: login)
+            waitForExpectations(timeout: 10)
+            XCTAssertFalse(app.staticTexts["accountSignInError"].exists, app.debugDescription)
+            let completed = expectation(description: "The server consumed this distinct native handoff")
+            URLSession.shared.dataTask(with: URL(string: "http://127.0.0.1:4173/__test__/native-account-evidence")!) { data, response, error in
+                XCTAssertNil(error)
+                XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+                let value = data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Int] }
+                XCTAssertEqual(value?["completed"], cycle)
+                completed.fulfill()
+            }.resume()
+            wait(for: [completed], timeout: 10)
+            let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "OurJam-native-account-restored"; screenshot.lifetime = .keepAlways; add(screenshot)
+        }
     }
 
 }

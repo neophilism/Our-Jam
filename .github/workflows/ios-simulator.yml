@@ -1,7 +1,7 @@
 name: Native iOS simulator
 on:
   pull_request:
-    paths: ['apps/ios/**', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', 'scripts/run-native-simulator.py', 'scripts/native-stage-evidence.mjs', '.github/workflows/ios-simulator.yml']
+    paths: ['apps/ios/**', 'apps/web/src/Identity.tsx', 'apps/web/src/style.css', 'apps/api/src/identity.ts', 'apps/api/src/native-identity.ts', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', 'scripts/run-native-simulator.py', 'scripts/native-stage-evidence.mjs', '.github/workflows/ios-simulator.yml']
   push:
     branches: [main, feature/artist-event-payments-sponsor-video]
 permissions:

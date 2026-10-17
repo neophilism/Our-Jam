@@ -172,6 +172,7 @@ test("password reset stays on the app origin and removes the reset token after u
 
 test("native sign-in requires an explicit return confirmation and redeems only on its initiating device", async ({
   page,
+  isMobile,
 }) => {
   const { createHash } = await import("node:crypto");
   const origin = "http://127.0.0.1:4174",
@@ -248,7 +249,11 @@ test("native sign-in requires an explicit return confirmation and redeems only o
   const response = page.waitForResponse((r) =>
     r.url().endsWith("/api/identity/native/approve"),
   );
-  await button.click();
+  if (isMobile) {
+    await button.hover();
+    await expect(button).toHaveCSS("transform", "none");
+    await button.tap();
+  } else await button.click();
   const approved = await response;
   expect(approved.status()).toBe(200);
   const callback = new URL((await approved.json()).callback);

@@ -67,7 +67,7 @@ struct NativeAccountSignIn: View {
             } else {
                 Text("You can participate as a guest on this server. Account sign-in is not available here yet.").font(.footnote)
             }
-            if !error.isEmpty { Text(error).foregroundStyle(.orange) }
+            if !error.isEmpty { Text(error).foregroundStyle(.orange).accessibilityIdentifier("accountSignInError") }
         }.task(id: model.origin) {
             guard let api = model.api else { return }
             let config: AccountSignInConfig? = try? await api.request("/identity/config")
