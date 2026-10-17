@@ -21,7 +21,7 @@ test("a phone can join, contribute, reallocate and receive another participantâ€
   await page.goto("/event/" + slug);
   await page.getByRole("button", { name: "I'm in. Let's make music" }).click();
   const text = "Brass " + Date.now();
-  await page.getByLabel("What would you mix this with?").fill(text);
+  await page.getByLabel("What would you add to this song?").fill(text);
   await page.getByRole("button", { name: "Contribute Sound Wave" }).click();
   await expect(
     page.getByRole("button", { name: "Vote for " + text, exact: true }),
@@ -321,7 +321,7 @@ test("released credits and feedback follow real listening across an in-app navig
     "Crowd recording fixture",
   );
   await expect(page.locator(".leaderboard")).toContainText(name);
-  await expect(page.locator(".leaderboard")).toContainText("1 Sound Waves in released tracks");
+  await expect(page.locator(".leaderboard")).toContainText("1 Sound Wave in released tracks");
   await page.getByRole("button", { name: "Love it", exact: false }).click();
   await expect(page.getByLabel("Track feedback")).toHaveCount(0);
   await page.goto("/library");
