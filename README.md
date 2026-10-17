@@ -1,5 +1,7 @@
 # Our Jam
 
+The separate commerce/sponsor/sign-in development candidate is live at **https://our-jam.onrender.com**. It stays on `feature/artist-event-payments-sponsor-video`; main and the rehearsal service are separate. Administrator setup is `/admin/commerce`, using this development service’s `PLATFORM_ADMIN_TOKEN`. See [current hosted acceptance and remaining credentials](docs/progress/2026-10-17-development-acceptance.md).
+
 Live music made together. Fans contribute **Sound Waves**, move five votes among them, and help shape the crowd's next release.
 
 ## Hosted rehearsal: run the existing free test server
