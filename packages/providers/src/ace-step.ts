@@ -112,7 +112,7 @@ export function aceStepProvider(config: {
       if(!prompt.trim() || prompt.length>3500 || !Number.isInteger(durationSeconds) || durationSeconds<10 || durationSeconds>180)
         throw new ProviderError("invalid_generation_parameters",false);
       const result=await post("/release_task",{
-        prompt,lyrics:"[Instrumental]",thinking:true,lm_model_path:"acestep-5Hz-lm-4B",model,audio_duration:durationSeconds,
+        prompt,lyrics:"[Instrumental]",thinking:true,lm_model_path:"acestep-5Hz-lm-4B",inference_steps:64,model,audio_duration:durationSeconds,
         audio_format:"mp3",batch_size:1,
       },true);
       const taskId=result?.task_id;
