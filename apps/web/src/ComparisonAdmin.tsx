@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import { ComparisonRateAdmin } from "./ComparisonRateAdmin";
+import { ComparisonCostReport } from "./ComparisonCostReport";
 import { ComparisonBatchAdmin } from "./ComparisonBatchAdmin";
 import "./comparison-admin.css";
 
@@ -77,6 +78,7 @@ export function ComparisonAdmin() {
     {error && <p role="alert" className="notice">{error}</p>}
     {data && <ComparisonBatchAdmin selectionRevision={data.revision} selectedProviders={data.selectedProviders}/>}
     <ComparisonRateAdmin />
+    <ComparisonCostReport />
     <p className="tiny muted">Cloud invoices, host billing, and cost per usable track are tracked separately from estimated rate cards. An installed open-weight model does not include free GPU computation.</p>
   </section>;
 }
