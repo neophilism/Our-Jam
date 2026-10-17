@@ -1,0 +1,159 @@
+.guided-help-trigger {
+  white-space: nowrap;
+  gap: 7px;
+  min-height: 44px;
+}
+.guided-help-trigger > span:first-child {
+  display: grid;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 14px;
+  font-weight: 800;
+}
+.guided-help-shield {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0, 0, 0, 0.7);
+}
+.guided-help-spotlight {
+  position: fixed;
+  z-index: 301;
+  pointer-events: none;
+  border: 3px solid var(--lime);
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+}
+.guided-help-shield:has(+ .guided-help-spotlight) {
+  background: transparent;
+}
+.guided-help-card {
+  position: fixed;
+  z-index: 302;
+  top: 20vh;
+  left: max(16px, calc(50vw - 185px));
+  width: min(370px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 20px;
+  color: #f7f8ef;
+  background: #22251a;
+  border: 1px solid var(--lime);
+  border-radius: 12px;
+  box-shadow: 0 16px 60px #000b;
+  outline: none;
+}
+.guided-help-card:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+.guided-help-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--lime);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.guided-help-skip {
+  min-height: 36px;
+  padding: 6px 8px;
+  background: none;
+  border: none;
+  color: #eee;
+  font-size: 12px;
+}
+.guided-help-card h2 {
+  margin: 12px 0;
+  font-size: 23px;
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+}
+.guided-help-card p {
+  font-size: 15px;
+  line-height: 1.6;
+}
+.guided-help-progress {
+  margin: 22px 0 16px;
+  display: flex;
+  gap: 6px;
+}
+.guided-help-progress i {
+  flex: 1;
+  height: 4px;
+  border-radius: 3px;
+  background: #59624b;
+}
+.guided-help-progress i.done {
+  background: var(--lime);
+}
+.guided-help-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.guided-help-actions button {
+  min-height: 44px;
+}
+@media (max-width: 650px) {
+  .guided-help-trigger {
+    width: 44px;
+    min-width: 44px;
+    padding: 5px;
+    justify-content: center;
+  }
+  .guided-help-trigger-text {
+    display: none;
+  }
+  .guided-help-card {
+    padding: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guided-help-card,
+  .guided-help-spotlight {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.guided-help-invite {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 5vw;
+  z-index: 100;
+  width: min(340px, calc(100vw - 28px));
+  padding: 14px;
+  border: 1px solid var(--lime);
+  border-radius: 9px;
+  background: #24281b;
+  box-shadow: 0 10px 32px #0008;
+  color: #f7f8ef;
+}
+.guided-help-invite p {
+  line-height: 1.5;
+  font-size: 14px;
+}
+.guided-help-invite > div {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.guided-help-invite button {
+  padding: 8px 12px;
+  min-height: 44px;
+  font-size: 12px;
+}
+@media (max-width: 650px) {
+  .guided-help-invite {
+    right: 14px;
+    top: calc(100% + 8px);
+  }
+}

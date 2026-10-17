@@ -1,0 +1,30 @@
+name: Stripe sandbox gateway acceptance
+on:
+  push:
+    branches: [feature/artist-event-payments-sponsor-video, test/stripe-sandbox-gateway-preflight]
+    paths:
+      - scripts/check-stripe-sandbox.mjs
+      - .github/workflows/stripe-sandbox.yml
+permissions:
+  contents: read
+concurrency:
+  group: ourjam-stripe-sandbox-acceptance
+  cancel-in-progress: false
+jobs:
+  sandbox:
+    if: github.repository == 'neophilism/Our-Jam' && github.event_name == 'push' && (github.ref == 'refs/heads/feature/artist-event-payments-sponsor-video' || github.ref == 'refs/heads/test/stripe-sandbox-gateway-preflight')
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Verify real Stripe test-mode Checkout creation and expiration
+        env:
+          RENDER_API_KEY: ${{ secrets.OUR_JAM_RENDER_API_KEY }}
+        run: node scripts/check-stripe-sandbox.mjs

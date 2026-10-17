@@ -36,9 +36,9 @@ test("provider toggle persists while an unfunded real round still sends audience
     await audience.goto(origin + "/event/" + slug);
     await audience.getByRole("button", { name: "I'm in. Let's make music" }).click();
     const text = "Warm woodwinds " + Date.now();
-    await audience.getByLabel("What would you mix this with?").fill(text);
+    await audience.getByLabel("What would you add to this song?").fill(text);
     await audience.getByRole("button", { name: "Contribute Sound Wave" }).click();
-    await expect(audience.getByRole("button", { name: "Support " + text, exact: true })).toBeEnabled();
+    await expect(audience.getByRole("button", { name: "Vote for " + text, exact: true })).toBeDisabled(); // Creating this Sound Wave already placed its one vote.
     await expect(screen.getByText(text, { exact: true }).first()).toBeVisible();
     const privateResponse = await audience.request.get(origin + `/api/operator/events/${event.id}/generation-provider`);
     expect(privateResponse.status()).toBe(401);

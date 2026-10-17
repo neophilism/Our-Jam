@@ -36,14 +36,19 @@ button,
   font-weight: 700;
   text-decoration: none;
   min-height: 44px;
+  touch-action: manipulation;
   transition:
     background 0.15s,
     transform 0.15s;
 }
-button:hover:not(:disabled),
-.button:hover {
-  background: #e3ff84;
-  transform: translateY(-1px);
+/* iOS can consume the first tap to apply a geometry-changing hover state.
+   Hover movement belongs to devices whose primary pointer can actually hover. */
+@media (hover: hover) and (pointer: fine) {
+  button:hover:not(:disabled),
+  .button:hover {
+    background: #e3ff84;
+    transform: translateY(-1px);
+  }
 }
 button:disabled {
   opacity: 0.35;
@@ -102,8 +107,10 @@ form > * + * {
   border-color: #4a4d3e;
   color: #e9eddb;
 }
-.ghost:hover:not(:disabled) {
-  background: #292e1c;
+@media (hover: hover) and (pointer: fine) {
+  .ghost:hover:not(:disabled) {
+    background: #292e1c;
+  }
 }
 .small {
   padding: 9px 12px;
@@ -170,6 +177,7 @@ p {
   color: var(--muted);
 }
 header {
+  position: relative;
   height: 96px;
   display: flex;
   justify-content: space-between;
@@ -1155,7 +1163,11 @@ summary {
 @media (max-width: 650px) {
   header {
     padding: 0 20px;
-    height: 75px;
+    min-height: 75px;
+    height: auto;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    flex-wrap: wrap;
   }
   .brand {
     font-size: 25px;
@@ -1163,6 +1175,7 @@ summary {
   }
   .header-right {
     gap: 10px;
+    flex-wrap: wrap;
   }
   .hide-mobile {
     display: none;
@@ -1872,4 +1885,144 @@ summary {
 }
 .audio-routing .check {
   margin: 20px 0;
+}
+
+.sponsor-break {
+  position: relative;
+  overflow: hidden;
+  min-height: 260px;
+  border-radius: 20px;
+  background: #121a20;
+  margin: 24px 0;
+  border: 1px solid #596659;
+}
+.sponsor-break video {
+  width: 100%;
+  max-height: 65vh;
+  display: block;
+  object-fit: contain;
+}
+.sponsor-countdown {
+  padding: 24px;
+  background: linear-gradient(transparent, rgba(10, 15, 12, 0.96));
+}
+.sponsor-break:has(video) .sponsor-countdown {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+.sponsor-countdown h2 {
+  font-variant-numeric: tabular-nums;
+  margin: 8px 0;
+}
+.stage .sponsor-break {
+  position: absolute;
+  inset: 16% 8% 20%;
+  z-index: 5;
+  margin: 0;
+}
+.stage .sponsor-break video {
+  height: 100%;
+  max-height: 100%;
+}
+.commerce-panel {
+  padding: 24px;
+  margin: 20px 0;
+}
+.sponsor-video-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #57624e;
+}
+
+.identity-card {
+  max-width: 640px;
+  margin: 32px auto;
+}
+.identity-social,
+.identity-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0;
+}
+.identity-social button {
+  flex: 1 1 240px;
+}
+
+/* Plain-language introduction: the concept comes before the instructions. */
+.ourjam-explainer {
+  border-top: 1px solid var(--line);
+  padding: clamp(28px, 5vw, 70px) 0;
+}
+.ourjam-explainer h2 {
+  max-width: 900px;
+  font-size: clamp(30px, 4vw, 55px);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  margin: 18px 0 24px;
+}
+.ourjam-explainer p {
+  max-width: 830px;
+  line-height: 1.8;
+  font-size: clamp(15px, 1.6vw, 19px);
+  margin: 14px 0;
+}
+.ourjam-explainer strong {
+  color: var(--lime);
+}
+.ourjam-explainer .explainer-invitation {
+  font-weight: 700;
+  color: var(--lime);
+}
+.audience-intro {
+  max-width: 870px;
+  font-size: clamp(14px, 1.7vw, 17px);
+  line-height: 1.65;
+  margin: 14px 0 28px;
+}
+.vote-progress {
+  width: 100%;
+  height: 6px;
+  margin: -7px 0 13px;
+  background: #35392b;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.vote-progress span {
+  display: block;
+  height: 100%;
+  background: var(--lime);
+  border-radius: inherit;
+  transition: width 0.18s ease-out;
+}
+.vote-explanation {
+  margin: 0 0 24px;
+  line-height: 1.55;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vote-progress span {
+    transition: none;
+  }
+}
+
+.vote-cap-setting {
+  display: block;
+  max-width: 580px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin: 20px 0;
+}
+.vote-cap-setting input {
+  max-width: 170px;
+  margin: 8px 0;
+}
+.vote-cap-setting .tiny {
+  display: block;
+  line-height: 1.6;
 }

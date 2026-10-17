@@ -2,7 +2,21 @@ name: Our Jam checks
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, feature/artist-event-payments-sponsor-video]
+    # Every PR gets full checks. On the development branch, documentation and
+    # acceptance-only scripts were already checked in the PR and do not change
+    # the deployable application or warrant another native build/deployment.
+    # Keep this list identical to the native push filter below.
+    paths-ignore:
+      - 'README.md'
+      - 'PROGRESS.md'
+      - '.gitignore'
+      - 'docs/**'
+      - 'tests/**'
+      - 'scripts/check-development-*.mjs'
+      - 'scripts/check-stripe-sandbox*.mjs'
+      - '.github/workflows/hosted-development.yml'
+      - '.github/workflows/stripe-*.yml'
 permissions:
   contents: read
 jobs:
@@ -35,6 +49,7 @@ jobs:
       - run: npm audit --audit-level=high
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - run: npm run test:features
       - run: docker build -t our-jam:ci .
       - name: Preserve exact checked local source
         run: |
@@ -56,3 +71,38 @@ jobs:
           name: browser-evidence
           path: test-results/
           retention-days: 7
+
+  deploy-development:
+    needs: checks
+    if: github.repository == 'neophilism/Our-Jam' && github.event_name == 'push' && github.ref == 'refs/heads/feature/artist-event-payments-sponsor-video'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    permissions:
+      contents: read
+      actions: read
+    concurrency:
+      group: ourjam-development-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Deploy accepted development commit through the Render API
+        env:
+          RENDER_API_KEY: ${{ secrets.OUR_JAM_RENDER_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$RENDER_API_KEY" ]; then
+            echo 'Development was NOT deployed. One-time setup: add OUR_JAM_RENDER_API_KEY in repository Actions secrets.' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          node scripts/deploy-development.mjs
+      - name: Verify hosted authorization and media without credentials or spending
+        if: success()
+        env:
+          OUR_JAM_REQUIRE_MEDIA_VERIFIED: '1'
+          OUR_JAM_EXPECT_ZERO_SPEND: '1'
+        run: node scripts/check-hosted-readiness.mjs https://our-jam.onrender.com

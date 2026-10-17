@@ -12,7 +12,7 @@ test("a phone can join, contribute, reallocate and receive another participantâ€
   });
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Your sound. Our next track." }),
+    page.getByRole("heading", { name: "Jam with the music you love." }),
   ).toBeVisible();
   const events = await (await page.request.get("/api/events")).json();
   const slug = events.events.find(
@@ -21,15 +21,15 @@ test("a phone can join, contribute, reallocate and receive another participantâ€
   await page.goto("/event/" + slug);
   await page.getByRole("button", { name: "I'm in. Let's make music" }).click();
   const text = "Brass " + Date.now();
-  await page.getByLabel("What would you mix this with?").fill(text);
+  await page.getByLabel("What would you add to this song?").fill(text);
   await page.getByRole("button", { name: "Contribute Sound Wave" }).click();
   await expect(
-    page.getByRole("button", { name: "Support " + text, exact: true }),
+    page.getByRole("button", { name: "Vote for " + text, exact: true }),
   ).toBeEnabled();
   await page
-    .getByRole("button", { name: "Support " + text, exact: true })
+    .getByRole("button", { name: "Vote for " + text, exact: true })
     .click();
-  await expect(page.getByLabel("3 of 5 points remaining")).toBeVisible();
+  await expect(page.getByLabel("3 of 5 votes remaining")).toBeVisible();
   const other = await browser.newContext();
   const friend = await other.newPage();
   await friend.goto("/event/" + slug);
@@ -37,15 +37,15 @@ test("a phone can join, contribute, reallocate and receive another participantâ€
     .getByRole("button", { name: "I'm in. Let's make music" })
     .click();
   await friend
-    .getByRole("button", { name: "Support " + text, exact: true })
+    .getByRole("button", { name: "Vote for " + text, exact: true })
     .click();
   await expect(
     page.locator(".wave-row").filter({ hasText: text }),
-  ).toContainText("3 points");
+  ).toContainText("3 votes");
   await page
-    .getByRole("button", { name: "Remove a point from " + text, exact: true })
+    .getByRole("button", { name: "Take back a vote from " + text, exact: true })
     .click();
-  await expect(page.getByLabel("4 of 5 points remaining")).toBeVisible();
+  await expect(page.getByLabel("4 of 5 votes remaining")).toBeVisible();
   await expect(page.locator("canvas").first()).toHaveAttribute(
     "data-rendered",
     "true",
@@ -106,7 +106,7 @@ test("performer owns playback, pauses voting, and recovers saved recording chunk
   await page.getByRole("button", { name: "Open my console" }).click();
   const slug = "control-" + Date.now();
   await expect(
-    page.getByRole("heading", { name: "Set up your album session." }),
+    page.getByRole("heading", { name: "Create a jam around your songs." }),
   ).toBeVisible();
   const response = await page.request.post("/api/operator/events", {
     headers: { Origin: "http://127.0.0.1:4173" },
@@ -140,7 +140,7 @@ test("performer owns playback, pauses voting, and recovers saved recording chunk
   await page
     .getByRole("button", { name: "Resume the round", exact: true })
     .click();
-  await expect(page.getByText("UNTIL THE NEXT WAVE")).toBeVisible();
+  await expect(page.getByText("TIME LEFT TO VOTE")).toBeVisible();
   await page
     .getByRole("button", { name: "Release playback control", exact: true })
     .click();
@@ -151,7 +151,7 @@ test("performer owns playback, pauses voting, and recovers saved recording chunk
   await page
     .getByRole("button", { name: "Resume the round", exact: true })
     .click();
-  await expect(page.getByText("UNTIL THE NEXT WAVE")).toBeVisible();
+  await expect(page.getByText("TIME LEFT TO VOTE")).toBeVisible();
   // CI Chromium exposes no usable microphone backend (getUserMedia rejects
   // NotSupportedError). Supply a real synthetic MediaStream while exercising
   // the real MediaRecorder, IndexedDB writes, checksums and recovery unchanged.
@@ -321,7 +321,7 @@ test("released credits and feedback follow real listening across an in-app navig
     "Crowd recording fixture",
   );
   await expect(page.locator(".leaderboard")).toContainText(name);
-  await expect(page.locator(".leaderboard")).toContainText("1 waves included");
+  await expect(page.locator(".leaderboard")).toContainText("1 Sound Wave in released tracks");
   await page.getByRole("button", { name: "Love it", exact: false }).click();
   await expect(page.getByLabel("Track feedback")).toHaveCount(0);
   await page.goto("/library");

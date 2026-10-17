@@ -97,7 +97,7 @@ final class OurJamUITests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [keyboardDismissed], timeout: 8), .completed, "A submitted Sound Wave should reveal the live room, not leave it covered by the keyboard")
         XCTAssertTrue(app.staticTexts["Native warm brass"].waitForExistence(timeout: 15), app.debugDescription)
         app.swipeUp()
-        let support = app.buttons["Support Native warm brass"]
+        let support = app.buttons["Vote for Native warm brass"]
         XCTAssertTrue(support.waitForExistence(timeout: 10))
         support.tap()
         let saved = expectation(description: "Native vote persisted in actual backend")
@@ -114,4 +114,88 @@ final class OurJamUITests: XCTestCase {
         screenshot.lifetime = .keepAlways
         add(screenshot)
     }
+    @MainActor func testSponsorCountdownSurvivesVideoFailureAndPause() throws {
+        continueAfterFailure = false
+        func configure(ended: Bool) {
+            let saved = expectation(description: "Isolated sponsor phase configured")
+            var request = URLRequest(url: URL(string: "http://127.0.0.1:4173/__test__/native-sponsor")!)
+            request.httpMethod = "POST"
+            request.setValue("http://127.0.0.1:4173", forHTTPHeaderField: "Origin")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try! JSONSerialization.data(withJSONObject: ["ended": ended])
+            URLSession.shared.dataTask(with: request) { _, response, error in
+                XCTAssertNil(error); XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200); saved.fulfill()
+            }.resume()
+            wait(for: [saved], timeout: 15)
+        }
+        configure(ended: false)
+        let app = XCUIApplication()
+        app.launchArguments = ["-ourjam.origin", "http://127.0.0.1:4173", "-ourjam.event", "native-integration"]
+        app.launch(); XCTAssertTrue(app.buttons["connectButton"].waitForExistence(timeout: 15)); app.buttons["connectButton"].tap()
+        let countdown = app.staticTexts["sponsorCountdown"]
+        XCTAssertTrue(countdown.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertEqual(countdown.label, "Our Jam begins in 15s")
+        let advanced = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label != %@", "Our Jam begins in 15s"), object: countdown)
+        advanced.isInverted = true
+        XCTAssertEqual(XCTWaiter.wait(for: [advanced], timeout: 4), .completed, "Paused countdown survives refresh and failed video")
+        if app.buttons["joinButton"].exists { app.buttons["joinButton"].tap() }
+        let field = app.textFields["waveText"]
+        reveal(field, in: app); field.tap(); field.typeText("Native sponsor test")
+        XCTAssertFalse(app.buttons["submitWave"].isEnabled)
+        app.swipeDown()
+        let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "OurJam-native-sponsor-countdown"; screenshot.lifetime = .keepAlways; add(screenshot)
+        configure(ended: true)
+        let hidden = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: countdown)
+        XCTAssertEqual(XCTWaiter.wait(for: [hidden], timeout: 15), .completed)
+        reveal(app.buttons["submitWave"], in: app)
+        expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: app.buttons["submitWave"])
+        waitForExpectations(timeout: 10)
+    }
+
+    @MainActor func testZNativeAccountBrowserHandoff() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ourjam.origin", "http://127.0.0.1:4173", "-ourjam.event", "native-integration"]
+        app.launch(); XCTAssertTrue(app.buttons["connectButton"].waitForExistence(timeout: 15)); app.buttons["connectButton"].tap()
+        XCTAssertTrue(app.tabBars.buttons["You"].waitForExistence(timeout: 20)); app.tabBars.buttons["You"].tap()
+        // Both a cold browser and a returning account must complete on one tap.
+        // Do not retry a missed tap: that would hide Safari hover interception.
+        for cycle in 1...2 {
+            let login = app.buttons["accountSignIn"]; reveal(login, in: app); login.tap()
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            if springboard.buttons["Continue"].waitForExistence(timeout: 3) { springboard.buttons["Continue"].tap() }
+            if app.alerts.buttons["Continue"].waitForExistence(timeout: 2) { app.alerts.buttons["Continue"].tap() }
+            let browser = app.webViews.firstMatch
+            let confirm = browser.buttons["Return to iOS with this account"]
+            // Cold ASWebAuthenticationSession startup can exceed 25 seconds on a
+            // fresh Simulator. Require the actual page/button, then an unobscured
+            // control above Safari's toolbar before sending the real tap.
+            XCTAssertTrue(confirm.waitForExistence(timeout: 60), app.debugDescription)
+            expectation(for: NSPredicate(format: "hittable == true"), evaluatedWith: confirm)
+            waitForExpectations(timeout: 10)
+            XCTAssertLessThan(confirm.frame.maxY, app.frame.height * 0.82, "The native return action must be reachable above browser chrome")
+            confirm.tap()
+            let browserClosed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: browser)
+            XCTAssertEqual(XCTWaiter.wait(for: [browserClosed], timeout: 20), .completed, app.debugDescription)
+            let name = app.textFields["profileName"]
+            XCTAssertTrue(name.waitForExistence(timeout: 20), app.debugDescription)
+            reveal(name, in: app, towardTop: true)
+            expectation(for: NSPredicate(format: "value == %@", "Native account fan"), evaluatedWith: name)
+            waitForExpectations(timeout: 15)
+            expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: login)
+            waitForExpectations(timeout: 10)
+            XCTAssertFalse(app.staticTexts["accountSignInError"].exists, app.debugDescription)
+            let completed = expectation(description: "The server consumed this distinct native handoff")
+            URLSession.shared.dataTask(with: URL(string: "http://127.0.0.1:4173/__test__/native-account-evidence")!) { data, response, error in
+                XCTAssertNil(error)
+                XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+                let value = data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Int] }
+                XCTAssertEqual(value?["completed"], cycle)
+                completed.fulfill()
+            }.resume()
+            wait(for: [completed], timeout: 10)
+            let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "OurJam-native-account-restored"; screenshot.lifetime = .keepAlways; add(screenshot)
+        }
+    }
+
 }

@@ -29,9 +29,14 @@ export type EventState = {
     artistName: string;
     artistId: string;
     purchaseUrl?: string;
+    purchaseLinks?: { provider: string; url: string }[];
+    purchaseMode?: "menu" | "direct";
+    preferredPurchaseProvider?: string | null;
     state: string;
     settings: {
       screenLimit: number;
+      voteMode?: "single" | "weighted";
+      votesPerListener?: number;
       maxWaves: number;
       minimumRoundSeconds: number;
       maxGenerations: number;
@@ -41,12 +46,20 @@ export type EventState = {
   };
   round: null | {
     id: string;
+    voteLimit?: number;
+    voteMode?: "single" | "weighted";
     sourceTitle: string;
     state: string;
     openedAt: string;
     deadlineAt: string;
     remainingMs?: number;
     pauseReason?: string;
+    sponsorBreak?: {
+      durationSeconds: number;
+      elapsedMs: number;
+      paused: boolean;
+      clips: { id: string; sponsorName: string; slotSeconds: number }[];
+    };
     revision: number;
     waves: Wave[];
   };

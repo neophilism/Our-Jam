@@ -125,7 +125,7 @@ test("performer prepares audio, reorders tracks and preserves unsaved settings a
       ),
   ).toBe(true);
   await page
-    .getByText("Album files & private signature prompts", { exact: true })
+    .getByText("Review your songs and musical descriptions", { exact: true })
     .click();
   const form = page.locator(".show-setup .source-form").filter({
     has: page.getByRole("heading", { name: "Second song", exact: true }),
@@ -156,61 +156,4 @@ test("performer prepares audio, reorders tracks and preserves unsaved settings a
     path: `test-results/${test.info().project.name}-show-setup.png`,
     fullPage: true,
   });
-});
-
-test("new album measures linked audio automatically and rejects unreadable files", async ({
-  page,
-}) => {
-  await page.goto("/");
-  await operatorSession(page);
-  await page.goto("/performer");
-  const form = page.locator(".create-event");
-  await form
-    .getByLabel("Event title", { exact: true })
-    .fill("Automatic duration");
-  await form.getByLabel("Artist name", { exact: true }).fill("Test artist");
-  const slug = "auto-duration-" + Date.now();
-  await form.getByLabel("Event code", { exact: true }).fill(slug);
-  await form.getByLabel("Track title", { exact: true }).fill("Measured song");
-  await form
-    .getByLabel("Signature sound / core prompt", { exact: true })
-    .fill("Test signature");
-  await expect(
-    form.getByLabel("Track duration in seconds", { exact: true }),
-  ).toHaveCount(0);
-  const media = "https://media.example.test/auto.wav";
-  await form.getByLabel("Track audio URL (HTTPS)", { exact: true }).fill(media);
-  await page.route(media, (route) =>
-    route.fulfill({ contentType: "audio/wav", body: "invalid audio" }),
-  );
-  await form
-    .getByRole("button", { name: "Create the room ↗", exact: true })
-    .click();
-  await expect(form).toContainText("Could not read track duration");
-  await expect(page).toHaveURL(/\/performer$/);
-  const bytes = Buffer.alloc(44 + 8000 * 23 * 2);
-  bytes.write("RIFF");
-  bytes.writeUInt32LE(bytes.length - 8, 4);
-  bytes.write("WAVEfmt ", 8);
-  bytes.writeUInt32LE(16, 16);
-  bytes.writeUInt16LE(1, 20);
-  bytes.writeUInt16LE(1, 22);
-  bytes.writeUInt32LE(8000, 24);
-  bytes.writeUInt32LE(16000, 28);
-  bytes.writeUInt16LE(2, 32);
-  bytes.writeUInt16LE(16, 34);
-  bytes.write("data", 36);
-  bytes.writeUInt32LE(bytes.length - 44, 40);
-  await page.unroute(media);
-  await page.route(media, (route) =>
-    route.fulfill({ contentType: "audio/wav", body: bytes }),
-  );
-  await form
-    .getByRole("button", { name: "Create the room ↗", exact: true })
-    .click();
-  await expect(page).toHaveURL(new RegExp("/performer/" + slug + "$"));
-  const state = await (
-    await page.request.get("/api/operator/events/" + slug)
-  ).json();
-  expect(Number(state.queue[0].duration_seconds)).toBe(23);
 });

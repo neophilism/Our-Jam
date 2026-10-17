@@ -19,7 +19,8 @@
     "build:web": "vite build",
     "build": "npm run build:server && npm run build:web",
     "test:e2e": "playwright test",
-    "start:worker": "node dist/server/apps/api/src/worker.js"
+    "start:worker": "node dist/server/apps/api/src/worker.js",
+    "test:features": "playwright test --config playwright.features.config.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1149.0",
@@ -28,12 +29,15 @@
     "@fastify/helmet": "^13.1.2",
     "@fastify/rate-limit": "^11.2.1",
     "@fastify/static": "^10.1.6",
+    "@neondatabase/auth": "^0.6.0-beta",
     "@react-three/fiber": "^9.8.1",
     "fastify": "^5.12.5",
+    "jose": "^6.2.12",
     "pg": "^8.23.1",
     "qrcode": "^1.5.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "stripe": "^23.0.0",
     "svix": "^2.8.0",
     "three": "^0.186.1",
     "zod": "^4.6.5"

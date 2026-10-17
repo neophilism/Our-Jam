@@ -55,10 +55,11 @@ export function Account() {
   return (
     <main className="artist-page account-page">
       <span className="eyebrow">YOUR PART OF THE SOUND</span>
-      <h1>Keep your place in the music.</h1>
+      <h1>Keep the music you helped shape.</h1>
       <p>
-        Your profile holds your contributions, liked tracks and followed
-        artists. Save a private recovery key to bring it to another device.
+        Your profile remembers the Sound Waves you shared, the crowd-created
+        tracks you loved, and the artists you follow. Save a recovery key to
+        bring your profile to another device.
       </p>
       {error && (
         <p role="alert" className="notice">
@@ -109,7 +110,7 @@ export function Account() {
             </section>
           ) : (
             <section className="panel">
-              <h2>Make this your profile</h2>
+              <h2>Start your music profile</h2>
               <p>
                 Already have a recovery key? Restore your existing profile
                 below.

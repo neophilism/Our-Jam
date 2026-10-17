@@ -35,6 +35,7 @@ const generation = configuredGeneration(undefined, {
 const app = await createApp(db, {
   origin: "http://127.0.0.1:4173", operatorToken: "browser-test-only-operator-token-123456",
   secureCookies: false, serveWeb: true, email, generation,
+  adminToken: "browser-test-only-platform-admin-token-123456789",
 });
 // Fixture-only endpoints are absent from the production build and public entry point.
 app.get("/__test__/email", async () => ({ messages }));

@@ -1,0 +1,28 @@
+name: Verify live development routing and commit
+on:
+  push:
+    branches: [fix/hosted-route-version-drift, feature/artist-event-payments-sponsor-video]
+    paths:
+      - scripts/check-render-live-routing.mjs
+      - .github/workflows/render-routing-check.yml
+permissions:
+  contents: read
+concurrency:
+  group: ourjam-render-routing-check
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.repository == 'neophilism/Our-Jam' && github.event_name == 'push' && (github.ref == 'refs/heads/fix/hosted-route-version-drift' || github.ref == 'refs/heads/feature/artist-event-payments-sponsor-video')
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Compare Render deployed commit with public live routes
+        env:
+          RENDER_API_KEY: ${{ secrets.OUR_JAM_RENDER_API_KEY }}
+        run: node scripts/check-render-live-routing.mjs

@@ -80,8 +80,8 @@ export function FeedbackNudge() {
   }
   return (
     <aside className="feedback-nudge" aria-label="Track feedback">
-      <small>YOU HEARD THE ROOM'S CREATION</small>
-      <strong>How did “{item.title}” feel?</strong>
+      <small>YOUR CROWD CREATED THIS</small>
+      <strong>Would you like to hear “{item.title}” again?</strong>
       <div>
         <button onClick={() => void rate(1)}>♡ Love it</button>
         <button className="ghost" onClick={() => void rate(-1)}>
