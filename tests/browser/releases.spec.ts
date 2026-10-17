@@ -72,7 +72,25 @@ test("artist holds a result through set end, previews privately and approves pub
   await job
     .getByLabel("Download URL", { exact: true })
     .fill("https://media.example.test/review.wav");
-  await job.getByLabel("Duration (seconds)", { exact: true }).fill("20");
+  await expect(
+    job.getByLabel("Duration (seconds)", { exact: true }),
+  ).toHaveCount(0);
+  const bytes = Buffer.alloc(44 + 8000 * 20 * 2);
+  bytes.write("RIFF");
+  bytes.writeUInt32LE(bytes.length - 8, 4);
+  bytes.write("WAVEfmt ", 8);
+  bytes.writeUInt32LE(16, 16);
+  bytes.writeUInt16LE(1, 20);
+  bytes.writeUInt16LE(1, 22);
+  bytes.writeUInt32LE(8000, 24);
+  bytes.writeUInt32LE(16000, 28);
+  bytes.writeUInt16LE(2, 32);
+  bytes.writeUInt16LE(16, 34);
+  bytes.write("data", 36);
+  bytes.writeUInt32LE(bytes.length - 44, 40);
+  await page.route("https://media.example.test/review.wav", (route) =>
+    route.fulfill({ contentType: "audio/wav", body: bytes }),
+  );
   await job.getByRole("checkbox").check();
   await job
     .getByRole("button", { name: "Prepare for release", exact: true })
@@ -105,4 +123,5 @@ test("artist holds a result through set end, previews privately and approves pub
   ).json();
   expect(published.releases).toHaveLength(1);
   expect(published.releases[0].published_at).toBeTruthy();
+  expect(Number(published.releases[0].duration_seconds)).toBe(20);
 });

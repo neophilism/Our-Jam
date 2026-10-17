@@ -58,7 +58,7 @@ try:
     if chosen.get('state') != 'Booted':
         command(['xcrun', 'simctl', 'boot', device], 60, 'boot.log')
     command(['xcrun', 'simctl', 'bootstatus', device, '-b'], 300, 'boot-status.log')
-    command(build + ['-destination', f'platform=iOS Simulator,id={device}', '-destination-timeout', '90', '-parallel-testing-enabled', 'NO', '-derivedDataPath', 'ios-build', '-resultBundlePath', 'ios-evidence/NativeTests.xcresult', 'CODE_SIGNING_ALLOWED=YES', 'CODE_SIGN_IDENTITY=-', 'test'], 720, 'tests.log')
+    command(build + ['-destination', f'platform=iOS Simulator,id={device}', '-destination-timeout', '90', '-parallel-testing-enabled', 'NO', '-derivedDataPath', 'ios-build', '-resultBundlePath', 'ios-evidence/NativeTests.xcresult', 'CODE_SIGNING_ALLOWED=YES', 'CODE_SIGN_IDENTITY=-', 'test-without-building'], 720, 'tests.log')
 except Exception as error:
     failure = error
 finally:

@@ -1,5 +1,8 @@
+import { revokeBrowserSession, type IdentityConfig } from "./identity.js";
+import type { CommerceConfig } from "./commerce.js";
 import { readPlatformVotePolicy } from "./vote-policy.js";
 import { registerPlatformAdmin } from "./platform-admin.js";
+
 import {
   accountStatus,
   createRecoveryKey,
@@ -94,6 +97,8 @@ const playbackInput = z.object({
 });
 export type AppConfig = {
   origin: string;
+  commerce?: CommerceConfig;
+  identity?: IdentityConfig;
   operatorToken?: string;
   adminToken?: string;
   secureCookies: boolean;
@@ -120,7 +125,13 @@ export async function createApp(db: Database, config: AppConfig) {
         scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "blob:"],
-        connectSrc: ["'self'"],
+        connectSrc: [
+          "'self'",
+          ...(config.identity ? [new URL(config.identity.authUrl).origin] : []),
+        ],
+        frameSrc: config.identity
+          ? [new URL(config.identity.authUrl).origin]
+          : ["'none'"],
         mediaSrc: ["'self'", "https:", "blob:"],
         fontSrc: ["'self'"],
         baseUri: ["'none'"],
@@ -178,7 +189,11 @@ export async function createApp(db: Database, config: AppConfig) {
     if (req.url.startsWith("/api/")) reply.header("Cache-Control", "no-store");
     if (
       !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
-      !(req.method === "POST" && req.url === "/api/webhooks/email")
+      !(
+        req.method === "POST" &&
+        (req.url === "/api/webhooks/email" ||
+          (config.commerce?.enabled && req.url === "/api/webhooks/stripe"))
+      )
     )
       requireThat(
         req.headers.origin === config.origin,
@@ -273,18 +288,23 @@ export async function createApp(db: Database, config: AppConfig) {
   app.get("/api/ready", async () => {
     const rows = (
       await db.query(
-        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql','005_artist_profiles.sql','006_release_controls.sql','007_audience_admission.sql','008_profile_recovery.sql','009_platform_vote_policy.sql')",
+        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql','005_artist_profiles.sql','006_release_controls.sql','007_audience_admission.sql','008_profile_recovery.sql','009_event_commerce_sponsors.sql','010_identity_signin.sql','011_native_identity_handoff.sql','009_platform_vote_policy.sql')",
       )
     ).rows;
     requireThat(
-      rows.length === 9,
+      rows.length === 12,
+
       "schema_not_ready",
       "Required database migrations have not been applied.",
       503,
     );
     return {
       database: "ready",
-      media: config.mediaVerified ? "verified" : config.mediaStore ? "configured" : "not_configured",
+      media: config.mediaVerified
+        ? "verified"
+        : config.mediaStore
+          ? "configured"
+          : "not_configured",
       generation: config.providerReady ? "configured" : "not_configured",
       operator: config.operatorToken ? "configured" : "not_configured",
       email: config.email ? "configured" : "not_configured",
@@ -609,24 +629,38 @@ export async function createApp(db: Database, config: AppConfig) {
         .object({ token: z.string().min(1).max(256) })
         .parse(req.body);
       requireThat(
-        config.operatorToken && config.operatorToken.length >= 32,
+        (config.operatorToken && config.operatorToken.length >= 32) ||
+          config.commerce?.enabled,
         "operator_unconfigured",
         "Performer access has not been configured.",
         503,
       );
-      requireThat(
+      let artistId: string | undefined;
+      if (
+        config.operatorToken &&
         timingSafeEqual(
           Buffer.from(digest(token)),
           Buffer.from(digest(config.operatorToken)),
-        ),
+        )
+      )
+        artistId = "our-jam";
+      else if (config.commerce?.enabled)
+        artistId = (
+          await db.query(
+            "SELECT artist_id FROM artist_access_keys WHERE token_hash=$1 AND NOT revoked",
+            [digest(token)],
+          )
+        ).rows[0]?.artist_id;
+      requireThat(
+        artistId,
         "invalid_credentials",
         "Invalid performer credential.",
         401,
       );
       const raw = randomBytes(32).toString("hex");
       await db.query(
-        "INSERT INTO sessions(token_hash,artist_id,kind,expires_at) VALUES($1,'our-jam','operator',now()+interval '12 hours')",
-        [digest(raw)],
+        "INSERT INTO sessions(token_hash,artist_id,kind,expires_at) VALUES($1,$2,'operator',now()+interval '12 hours')",
+        [digest(raw), artistId],
       );
       setSession(reply, "oj_operator", raw, 43200);
       return { ok: true };
@@ -634,17 +668,22 @@ export async function createApp(db: Database, config: AppConfig) {
   );
   app.post("/api/operator/logout", async (req, reply) => {
     const raw = req.cookies.oj_operator;
-    if (raw)
-      await db.query("DELETE FROM sessions WHERE token_hash=$1", [digest(raw)]);
+    if (raw) await revokeBrowserSession(db, raw);
     reply.clearCookie("oj_operator", { path: "/" });
     return { ok: true };
   });
-  registerPlatformAdmin(app, db, {adminToken:config.adminToken, secureCookies:config.secureCookies});
+  registerPlatformAdmin(app, db, {
+    adminToken: config.adminToken ?? config.commerce?.adminToken,
+    secureCookies: config.secureCookies,
+  });
   app.post("/api/operator/events", async (req) => {
     const op = await session(req, "operator");
     const input = eventInput.parse(req.body);
-    requireThat(input.voteMode !== "weighted", "legacy_voting_unavailable",
-      "New shows use one vote per Sound Wave. Older weighted voting is available only for existing legacy events.");
+    requireThat(
+      input.voteMode !== "weighted",
+      "legacy_voting_unavailable",
+      "New shows use one vote per Sound Wave. Older weighted voting is available only for existing legacy events.",
+    );
     return createEvent(db, op.artist_id, { ...input, voteMode: "single" });
   });
   app.get("/api/operator/vote-policy", async (req) => {
@@ -823,6 +862,7 @@ export async function createApp(db: Database, config: AppConfig) {
       body.expectedRevision,
       body.playback,
       config.providerReady,
+      Boolean(config.commerce?.enabled),
     );
   });
   app.post("/api/operator/events/:id/play-next", async (req) => {

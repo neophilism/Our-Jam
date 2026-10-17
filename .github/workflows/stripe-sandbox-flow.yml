@@ -1,0 +1,32 @@
+name: Stripe sandbox full purchase contract
+on:
+  push:
+    branches: [feature/artist-event-payments-sponsor-video, test/stripe-sandbox-signed-purchase-flow]
+    paths:
+      - scripts/check-stripe-sandbox-flow.mjs
+      - .github/workflows/stripe-sandbox-flow.yml
+      - apps/api/src/commerce.ts
+      - apps/api/src/commerce-policy.ts
+permissions:
+  contents: read
+concurrency:
+  group: ourjam-stripe-sandbox-full-contract
+  cancel-in-progress: false
+jobs:
+  contract:
+    if: github.repository == 'neophilism/Our-Jam' && github.event_name == 'push' && (github.ref == 'refs/heads/feature/artist-event-payments-sponsor-video' || github.ref == 'refs/heads/test/stripe-sandbox-signed-purchase-flow')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Real sandbox Checkout and signed synthetic event contract
+        env:
+          RENDER_API_KEY: ${{ secrets.OUR_JAM_RENDER_API_KEY }}
+        run: node --import tsx scripts/check-stripe-sandbox-flow.mjs

@@ -7,9 +7,10 @@ import {
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+export type MediaContentType = "audio/mpeg" | "video/mp4";
 export type MediaStore = {
-  put(key: string, bytes: Uint8Array, sha256: string): Promise<void>;
-  url(key: string, download: boolean): Promise<string>;
+  put(key: string, bytes: Uint8Array, sha256: string, contentType?: MediaContentType): Promise<void>;
+  url(key: string, download: boolean, contentType?: MediaContentType): Promise<string>;
   verifyRoundTrip?(): Promise<void>;
 };
 export function s3Store(config: {
@@ -31,13 +32,13 @@ export function s3Store(config: {
     },
     maxAttempts: 3,
   });
-  const put: MediaStore["put"] = async (key, bytes, sha256) => {
+  const put: MediaStore["put"] = async (key, bytes, sha256, contentType = "audio/mpeg") => {
       await client.send(
         new PutObjectCommand({
           Bucket: config.bucket,
           Key: key,
           Body: bytes,
-          ContentType: "audio/mpeg",
+          ContentType: contentType,
           Metadata: { sha256 },
           ChecksumSHA256: Buffer.from(sha256, "hex").toString("base64"),
         }),
@@ -101,15 +102,15 @@ export function s3Store(config: {
         }
       }
     },
-    async url(key, download) {
+    async url(key, download, contentType = "audio/mpeg") {
       return getSignedUrl(
         client,
         new GetObjectCommand({
           Bucket: config.bucket,
           Key: key,
-          ResponseContentType: "audio/mpeg",
+          ResponseContentType: contentType,
           ResponseContentDisposition: download
-            ? 'attachment; filename="our-jam-track.mp3"'
+            ? `attachment; filename="${contentType === "video/mp4" ? "our-jam-sponsor.mp4" : "our-jam-track.mp3"}"`
             : "inline",
         }),
         { expiresIn: 300 },

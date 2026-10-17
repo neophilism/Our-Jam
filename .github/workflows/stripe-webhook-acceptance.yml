@@ -1,0 +1,30 @@
+name: Hosted Stripe webhook signature acceptance
+on:
+  push:
+    branches: [feature/artist-event-payments-sponsor-video, test/hosted-stripe-signature-acceptance]
+    paths:
+      - scripts/check-development-stripe-webhook.mjs
+      - .github/workflows/stripe-webhook-acceptance.yml
+permissions:
+  contents: read
+concurrency:
+  group: ourjam-hosted-stripe-webhook
+  cancel-in-progress: false
+jobs:
+  signed-webhook:
+    if: github.repository == 'neophilism/Our-Jam' && github.event_name == 'push' && (github.ref == 'refs/heads/feature/artist-event-payments-sponsor-video' || github.ref == 'refs/heads/test/hosted-stripe-signature-acceptance')
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Validate hosted signed-webhook rejection and isolation
+        env:
+          RENDER_API_KEY: ${{ secrets.OUR_JAM_RENDER_API_KEY }}
+        run: node scripts/check-development-stripe-webhook.mjs
