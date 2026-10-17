@@ -99,6 +99,7 @@ export function validateDevelopmentEnvironment(values) {
       "Development performer and administrator credentials must be distinct and at least 32 characters.",
     );
   if (
+    values.COMMERCE_LIVE_PAYMENTS_ACK ||
     values.STRIPE_LIVE_ACK ||
     (values.STRIPE_SECRET_KEY &&
       !/^(sk|rk)_test_/.test(values.STRIPE_SECRET_KEY))

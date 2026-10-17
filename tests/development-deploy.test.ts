@@ -179,6 +179,7 @@ test("development deployment validates isolated config before resume and pins a 
 test("missing Stripe keys do not block development deploys; a live key, wrong database or unverified media configuration does", async () => {
   for (const changed of [
     { STRIPE_SECRET_KEY: "sk_live_private" },
+    { COMMERCE_LIVE_PAYMENTS_ACK: "our-jam-live-charges-approved" },
     { RUN_MIGRATIONS: "1" },
     { MEDIA_PROBE_ON_START: "0" },
     {
