@@ -3,6 +3,7 @@ import type { Database, Sql } from "./db.js";
 import { requireThat } from "../../../packages/domain/src/index.js";
 import { replay, remember } from "./service.js";
 import { currentComparisonRates } from "./comparison-rates.js";
+import { gpuHostTargets } from "../../../packages/providers/src/gpu-host-routing.js";
 import { COMPARISON_ENGINES, type ComparisonEngineId } from "../../../packages/providers/src/comparison-catalog.js";
 
 const engineId = z.enum(["mureka","stability","ace_step","heartmula","stable_audio_open","musicgen"]);
@@ -16,13 +17,6 @@ export type ComparisonQuote = {
   rateCardId:string|null; rateSnapshot:Record<string,unknown>|null;
 };
 const isSet = (value:string|undefined) => typeof value==="string" && value.trim().length>0;
-const secureRoot=(value:string|undefined)=>{
-  if(!value)return false;
-  try{const url=new URL(value);
-    return url.protocol==="https:" && !url.username && !url.password && !url.search && !url.hash &&
-      url.pathname==="/" && (!url.port || url.port==="443");
-  }catch{return false;}
-};
 /** Presence of an endpoint or a model checkpoint is NOT proof that inference actually works. */
 export function comparisonConfiguration(provider:ComparisonEngineId,purpose:string,env:NodeJS.ProcessEnv=process.env):string|null {
   if(env.COMPARISON_GENERATION_ENABLED!=="1")return "Comparison generation is disabled on this server.";
@@ -31,21 +25,21 @@ export function comparisonConfiguration(provider:ComparisonEngineId,purpose:stri
     return "Commercial comparison rights have not been confirmed for this deployment.";
   if(provider==="mureka")return isSet(env.MUREKA_API_KEY)?null:"Mureka API key is missing.";
   if(provider==="stability")return isSet(env.STABLE_AUDIO_KEY||env.STABILITY_API_KEY)?null:"Stable Audio API key is missing.";
-  if(provider==="ace_step"){
-    if(!secureRoot(env.ACE_STEP_BASE_URL)||!isSet(env.ACE_STEP_TOKEN))
-      return "ACE-Step private HTTPS endpoint/token are missing or invalid.";
-    if(env.ACE_STEP_CHECKPOINT_APPROVED!=="1")return "ACE-Step checkpoint/license not approved.";
-  }else{
-    if(!secureRoot(env.OURJAM_GPU_GATEWAY_URL)||!isSet(env.OURJAM_GPU_GATEWAY_TOKEN))
-      return "Own GPU gateway private HTTPS endpoint/token are missing or invalid.";
-    if(provider==="musicgen"){
-      if(purpose!=="private_research" || env.MUSICGEN_NONCOMMERCIAL_RESEARCH_APPROVED!=="1")
-        return "MusicGen weights are noncommercial and require genuine approved research.";
-    }else if(provider==="heartmula" && env.HEARTMULA_CHECKPOINT_APPROVED!=="1")
-      return "HeartMuLa checkpoint/license not approved.";
-    else if(provider==="stable_audio_open" && env.STABLE_AUDIO_OPEN_LICENSE_APPROVED!=="1")
-      return "Stable Audio gated model license/eligibility not approved.";
-  }
+  if(provider==="ace_step" && env.ACE_STEP_CHECKPOINT_APPROVED!=="1")
+    return "ACE-Step XL-SFT checkpoint/license not approved.";
+  if(provider==="musicgen" && (purpose!=="private_research" ||
+    env.MUSICGEN_NONCOMMERCIAL_RESEARCH_APPROVED!=="1"))
+    return "MusicGen Large weights are research-only; commercial product evaluation is not permitted.";
+  if(provider==="heartmula" && env.HEARTMULA_CHECKPOINT_APPROVED!=="1")
+    return "HeartMuLa checkpoint/license not approved.";
+  if(provider==="stable_audio_open" && env.STABLE_AUDIO_OPEN_LICENSE_APPROVED!=="1")
+    return "Stable Audio gated model license/eligibility not approved.";
+  const model=COMPARISON_ENGINES.find(e=>e.id===provider)?.checkpoint;
+  if(!model)return "Unrecognized self-hosted checkpoint.";
+  try {
+    if(!gpuHostTargets(provider,model,env).length)
+      return "Neither Modal nor Lightning is configured with a private GPU endpoint/token.";
+  }catch{return "GPU host endpoint URL, credential or priority is invalid.";}
   if(!Number.isSafeInteger(Number(env.COMPARISON_GPU_ENFORCED_BILLING_SECONDS))||
      Number(env.COMPARISON_GPU_ENFORCED_BILLING_SECONDS)<30 ||
      Number(env.COMPARISON_GPU_ENFORCED_BILLING_SECONDS)>3600 ||
