@@ -1,7 +1,10 @@
 name: Hosted development acceptance
 on:
   push:
-    branches: [feature/artist-event-payments-sponsor-video]
+    # The exact maintainer-owned acceptance branch can test the already-live
+    # isolated service before merge. Forks and pull_request events never run it.
+    branches:
+      [feature/artist-event-payments-sponsor-video, test/hosted-acceptance-api]
     paths:
       - scripts/check-development-*.mjs
       - .github/workflows/hosted-development.yml
@@ -12,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   hosted:
-    if: github.repository == 'neophilism/Our-Jam' && github.event_name == 'push' && github.ref == 'refs/heads/feature/artist-event-payments-sponsor-video'
+    if: github.repository == 'neophilism/Our-Jam' && github.event_name == 'push' && (github.ref == 'refs/heads/feature/artist-event-payments-sponsor-video' || github.ref == 'refs/heads/test/hosted-acceptance-api')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
