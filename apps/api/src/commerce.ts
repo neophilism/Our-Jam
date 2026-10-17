@@ -88,7 +88,8 @@ export function configuredCommerce(
                 ],
                 success_url: returnUrl + "?payment=processing",
                 cancel_url: returnUrl + "?payment=cancelled",
-                expires_at: Math.floor(Date.now() / 1000) + 1800,
+                // Add margin above Stripe's 30-minute minimum for network transit.
+                expires_at: Math.floor(Date.now() / 1000) + 3600,
               },
               { idempotencyKey: `our-jam-event-${p.id}` },
             );
