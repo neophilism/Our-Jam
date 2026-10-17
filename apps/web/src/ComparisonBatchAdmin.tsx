@@ -31,7 +31,7 @@ export function ComparisonBatchAdmin({ selectionRevision, selectedProviders }: {
   async function prepare(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (includesResearchOnly && (purpose !== "private_research" || !acceptedResearch)) {
-      setError("MusicGen is noncommercial. Select private research and acknowledge that results cannot be released commercially.");
+      setError("MusicGen is noncommercial. Only genuinely noncommercial research is allowed; private commercial product development is not permitted.");
       return;
     }
     setBusy(true);setError("");setSaved("");
@@ -65,7 +65,7 @@ export function ComparisonBatchAdmin({ selectionRevision, selectedProviders }: {
       <fieldset>
         <legend>Intended use</legend>
         <label><input type="radio" name="comparison-purpose" checked={purpose==="commercial_evaluation"} onChange={()=>setPurpose("commercial_evaluation")}/> Commercial evaluation (only appropriately licensed checkpoints)</label>
-        <label><input type="radio" name="comparison-purpose" checked={purpose==="private_research"} onChange={()=>setPurpose("private_research")}/> Private research comparison</label>
+        <label><input type="radio" name="comparison-purpose" checked={purpose==="private_research"} onChange={()=>setPurpose("private_research")}/> Genuinely noncommercial research (not product development)</label>
       </fieldset>
       {includesResearchOnly && <label className="comparison-research-ack">
         <input type="checkbox" checked={acceptedResearch} onChange={e=>setAcceptedResearch(e.target.checked)}/>
