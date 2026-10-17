@@ -16,6 +16,7 @@ import { createApp } from "../apps/api/src/app.ts";
 // Never write credentials, checkout URLs, payment IDs, browser traces, raw
 // provider errors, request bodies, cookies or card fields to logs/artifacts.
 const note = (label) => console.log(label + ": PASS");
+let stage = "initialization";
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function readEnvironment() {
@@ -81,10 +82,15 @@ async function payTestCard(url) {
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage({ locale: "en-US", viewport: { width: 1280, height: 900 } });
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+    stage = "hosted checkout page navigation";
+    const opened = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+    if (!opened?.ok()) throw Error("Checkout page could not be opened");
+    note("Stripe hosted Checkout page loaded");
     // No private browser storage or screenshots are retained.
+    stage = "hosted Checkout email field";
     await fillField(page, ['input[type="email"]', 'input[name="email"]', 'input[autocomplete="email"]'],
       "ourjam-test-" + randomUUID().slice(0, 12) + "@example.com");
+    note("Stripe hosted Checkout test email field");
     // Stripe's dynamic payment methods may initially emphasize Link.
     for (const type of ["radio", "tab", "button"]) {
       const option = page.getByRole(type, { name: /^card$/i }).first();
@@ -93,20 +99,26 @@ async function payTestCard(url) {
         break;
       }
     }
+    stage = "hosted Checkout card number field";
     await fillField(page, [
       'input[autocomplete="cc-number"]', 'input[name="cardNumber"]',
       'input[name="cardnumber"]', 'input[placeholder*="1234"]',
       'input[aria-label*="Card number"]',
     ], "4242424242424242");
+    note("Stripe hosted Checkout test card number accepted");
+    stage = "hosted Checkout expiry field";
     await fillField(page, [
       'input[autocomplete="cc-exp"]', 'input[name="cardExpiry"]',
       'input[name="exp-date"]', 'input[placeholder*="MM"]',
       'input[aria-label*="Expiration"]',
     ], "12 / 30");
+    note("Stripe hosted Checkout expiry field");
+    stage = "hosted Checkout CVC field";
     await fillField(page, [
       'input[autocomplete="cc-csc"]', 'input[name="cardCvc"]',
       'input[name="cvc"]', 'input[placeholder*="CVC"]', 'input[placeholder*="123"]',
     ], "123");
+    note("Stripe hosted Checkout CVC field");
     await fillField(page, [
       'input[autocomplete="cc-name"]', 'input[name="billingName"]',
       'input[placeholder="Full name"]',
@@ -115,6 +127,7 @@ async function payTestCard(url) {
       'input[autocomplete="postal-code"]', 'input[name="billingPostalCode"]',
       'input[placeholder="ZIP"]', 'input[placeholder="ZIP code"]',
     ], "10001", { required: false });
+    stage = "Stripe TEST-mode Checkout submit";
     const payButton = page.getByRole("button", { name: /^pay\b|^complete\b|^place order\b/i }).last();
     if (await payButton.count() && await payButton.isVisible())
       await payButton.click({ timeout: 12000 });
@@ -168,7 +181,9 @@ async function main() {
     sessionId = purchase.session_id;
     assert.equal((await eventAccess(db, event.id)).paid, false);
     note("Actual event-based Stripe Checkout created and isolated");
+    stage = "Hosted Checkout test card UI";
     await payTestCard(checkout.url);
+    stage = "Verify paid Stripe Checkout session";
     let stripeSession;
     for (let attempt = 0; attempt < 30; attempt++) {
       stripeSession = await stripe.checkout.sessions.retrieve(sessionId);
@@ -208,6 +223,7 @@ async function main() {
     assert.equal((await eventAccess(db, event.id)).paid, true);
     note("Real paid Checkout object grants isolated test event access through signed verifier");
 
+    stage = "Real Stripe sandbox refund";
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntent,
       reason: "requested_by_customer",
@@ -253,6 +269,6 @@ async function main() {
 }
 main().catch(() => {
   // Avoid serializing Playwright errors, URLs, cards, Stripe API errors or keys.
-  console.error("Real Stripe sandbox test payment/refund not accepted; private diagnostic details suppressed.");
+  console.error("Real Stripe sandbox acceptance failed at: " + stage + " (private exception details suppressed).");
   process.exitCode = 1;
 });
