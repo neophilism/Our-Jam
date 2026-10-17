@@ -45,7 +45,7 @@ test("artist edits public music links and remote visitors explore the session ar
     .getByRole("link", { name: "Listen & explore", exact: false })
     .click();
   await expect(
-    page.getByRole("heading", { name: "The room has a sound.", exact: true }),
+    page.getByRole("heading", { name: "Listen to the tracks your crowd created.", exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: /Our tracks/ })).toHaveClass(
     "active",
@@ -64,7 +64,7 @@ test("audience voting stops while offline and refreshes before re-enabling after
   await page.getByLabel("What would you mix this with?").fill(text);
   await page.getByRole("button", { name: "Contribute Sound Wave" }).click();
   const support = page.getByRole("button", {
-    name: "Support " + text,
+    name: "Vote for " + text,
     exact: true,
   });
   await expect(support).toBeEnabled();
@@ -79,5 +79,5 @@ test("audience voting stops while offline and refreshes before re-enabling after
   await context.setOffline(false);
   await expect(support).toBeEnabled({ timeout: 15000 });
   await support.click();
-  await expect(page.getByLabel("3 of 5 points remaining")).toBeVisible();
+  await expect(page.getByLabel("3 of 5 votes remaining")).toBeVisible();
 });

@@ -40,10 +40,11 @@ export function ReleaseEmail({
       aria-label="Release email preferences"
     >
       <span className="eyebrow">TAKE THE MUSIC WITH YOU</span>
-      <h2>This room, in your inbox.</h2>
+      <h2>Hear when a new crowd track drops.</h2>
       <p>
-        Choose free-release emails for this event. We’ll confirm your address
-        first. No artist marketing, and you can unsubscribe anytime.
+        Get an email when the artist releases a new track created from your
+        crowd's Sound Waves. We'll confirm your address first. No promotional
+        emails, and you can unsubscribe whenever you like.
       </p>
       {message && <p role="status">{message}</p>}
       {status.state === "verified" ? (

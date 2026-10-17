@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { purchaseLinksInput } from "./purchase-providers.js";
 export const id = z.uuid();
 export const command = z.object({ commandId: id });
 export const profileInput = z.object({
@@ -33,10 +34,15 @@ export const eventInput = z.object({
     .max(60),
   artistName: z.string().trim().min(1).max(100),
   purchaseUrl: httpsUrl.optional(),
+  purchaseLinks: purchaseLinksInput.optional(),
+  purchaseMode: z.enum(["menu", "direct"]).optional(),
+  preferredPurchaseProvider: z.string().max(40).optional(),
   screenLimit: z.number().int().min(4).max(60).default(16),
   minimumRoundSeconds: z.number().int().min(0).max(300).default(60),
   maxWaves: z.number().int().min(1).max(12).default(8),
   maxGenerations: z.number().int().min(0).max(100).default(12),
+  voteMode: z.enum(["single", "weighted"]).optional(),
+  votesPerListener: z.number().int().min(1).max(1000).optional(),
   admissionMode: z.enum(["open", "room_code"]).default("open"),
   participantLimit: z.number().int().min(1).max(100).default(100),
   releaseMode: z.enum(["boundary", "immediate", "review"]).default("boundary"),

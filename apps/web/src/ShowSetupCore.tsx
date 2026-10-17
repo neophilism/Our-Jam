@@ -1,4 +1,9 @@
+import { PurchaseEditor } from "./PurchaseLinks";
 import { measureTrackDuration } from "./track-duration";
+import type {
+  PurchaseLink,
+  PurchaseMode,
+} from "../../../packages/contracts/src/purchase-providers";
 import { useEffect, useRef, useState } from "react";
 import { api, type EventState } from "./api";
 
@@ -13,6 +18,14 @@ export function ShowSetup({
     [busy, setBusy] = useState(false),
     [album, setAlbum] = useState<any[] | null>(null),
     [settings, setSettings] = useState<EventState["event"] | null>(null),
+    [purchaseLinks, setPurchaseLinks] = useState<PurchaseLink[]>([]),
+    [platformVotes, setPlatformVotes] = useState<
+      | { mode: "fixed"; fixedVotes: number }
+      | { mode: "artist"; minVotes: number; maxVotes: number }
+      | null
+    >(null),
+    [purchaseMode, setPurchaseMode] = useState<PurchaseMode>("menu"),
+    [preferredPurchaseProvider, setPreferredPurchaseProvider] = useState(""),
     [checks, setChecks] = useState<Record<string, string>>({});
   const checking = useRef<AbortController | null>(null),
     inputRevision = useRef(data.event.revision);
@@ -24,6 +37,19 @@ export function ShowSetup({
       checking.current?.abort();
     };
   }, [data.event.revision]);
+  useEffect(() => {
+    let live = true;
+    api("/operator/vote-policy")
+      .then((policy) => {
+        if (live) setPlatformVotes(policy);
+      })
+      .catch((e) => {
+        if (live) setError(e.message);
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
   async function action(work: () => Promise<void>) {
     setBusy(true);
     setError("");
@@ -79,20 +105,43 @@ export function ShowSetup({
       )}
       <details
         onToggle={(e) => {
-          if (e.currentTarget.open && !settings)
+          if (e.currentTarget.open && !settings) {
             setSettings(structuredClone(data.event));
+            setPurchaseLinks(
+              (data.event.purchaseLinks as PurchaseLink[]) ??
+                (data.event.purchaseUrl
+                  ? [{ provider: "other", url: data.event.purchaseUrl }]
+                  : []),
+            );
+            setPurchaseMode(data.event.purchaseMode ?? "menu");
+            setPreferredPurchaseProvider(
+              data.event.preferredPurchaseProvider ?? "",
+            );
+          }
         }}
       >
         <summary>Event, screen & participation settings</summary>
         <p className="muted">
-          Screen size and album links update immediately. Generation limits,
-          release timing and participation time apply to newly opened rounds; an
-          active round keeps its original rules.
+          Change what fans see, where they find your music, and how new
+          crowd-created tracks are released. Participation and generation
+          settings take effect when the next song begins.
         </p>
         <button
           className="ghost small"
           disabled={busy}
-          onClick={() => setSettings(structuredClone(data.event))}
+          onClick={() => {
+            setSettings(structuredClone(data.event));
+            setPurchaseLinks(
+              (data.event.purchaseLinks as PurchaseLink[]) ??
+                (data.event.purchaseUrl
+                  ? [{ provider: "other", url: data.event.purchaseUrl }]
+                  : []),
+            );
+            setPurchaseMode(data.event.purchaseMode ?? "menu");
+            setPreferredPurchaseProvider(
+              data.event.preferredPurchaseProvider ?? "",
+            );
+          }}
         >
           Reload settings fields
         </button>
@@ -111,7 +160,18 @@ export function ShowSetup({
                     expectedRevision: settings.revision,
                     title: form.get("title"),
                     artistName: form.get("artistName"),
-                    purchaseUrl: form.get("purchaseUrl") || null,
+                    purchaseUrl: null,
+                    purchaseLinks,
+                    voteMode: "single",
+                    votesPerListener:
+                      platformVotes?.mode === "fixed"
+                        ? platformVotes.fixedVotes
+                        : Number(form.get("votesPerListener")),
+                    purchaseMode,
+                    preferredPurchaseProvider:
+                      purchaseMode === "direct"
+                        ? preferredPurchaseProvider
+                        : null,
                     releaseMode: form.get("releaseMode"),
                     ...Object.fromEntries(
                       [
@@ -162,14 +222,49 @@ export function ShowSetup({
                   <option value="review">Hold for my approval</option>
                 </select>
               </div>
-              <label>
-                Album purchase link
-                <input
-                  name="purchaseUrl"
-                  type="url"
-                  defaultValue={settings.purchaseUrl ?? ""}
-                />
-              </label>
+              {platformVotes?.mode === "artist" ? (
+                <label>
+                  Votes each listener may cast per song
+                  <input
+                    name="votesPerListener"
+                    type="number"
+                    min={platformVotes.minVotes}
+                    max={platformVotes.maxVotes}
+                    step={1}
+                    required
+                    defaultValue={Math.max(
+                      platformVotes.minVotes,
+                      Math.min(
+                        platformVotes.maxVotes,
+                        settings.settings.votesPerListener ??
+                          platformVotes.minVotes,
+                      ),
+                    )}
+                  />
+                  <small className="muted">
+                    The platform lets you choose from {platformVotes.minVotes}{" "}
+                    to {platformVotes.maxVotes}. Each submitted Sound Wave uses
+                    one vote, and listeners can vote once per idea. New settings
+                    take effect on the next song.
+                  </small>
+                </label>
+              ) : (
+                <p className="tiny muted">
+                  {platformVotes?.mode === "fixed"
+                    ? `The platform currently allows ${platformVotes.fixedVotes} votes per listener per song. You cannot change this amount.`
+                    : "Loading voting limits…"}
+                </p>
+              )}
+              <PurchaseEditor
+                links={purchaseLinks}
+                onChange={setPurchaseLinks}
+                disabled={busy}
+                mode={purchaseMode}
+                onModeChange={setPurchaseMode}
+                preferredProvider={preferredPurchaseProvider}
+                onPreferredChange={setPreferredPurchaseProvider}
+              />
+
               {(
                 [
                   ["screenLimit", "Waves visible on screen", 4, 60],
@@ -179,10 +274,15 @@ export function ShowSetup({
                     0,
                     300,
                   ],
-                  ["maxWaves", "Maximum Sound Waves in a generation", 1, 12],
+                  [
+                    "maxWaves",
+                    "Top Sound Waves considered for each new track",
+                    1,
+                    12,
+                  ],
                   [
                     "maxGenerations",
-                    "Maximum generations for this event",
+                    "Maximum crowd-created tracks for this event",
                     0,
                     100,
                   ],
@@ -202,7 +302,9 @@ export function ShowSetup({
                 </label>
               ))}
             </div>
-            <button disabled={busy}>Save show settings</button>
+            <button disabled={busy || !platformVotes}>
+              Save show settings
+            </button>
           </form>
         )}
       </details>
@@ -211,10 +313,11 @@ export function ShowSetup({
           if (e.currentTarget.open && !album) void action(loadAlbum);
         }}
       >
-        <summary>Album files & private signature prompts</summary>
+        <summary>Review your songs and musical descriptions</summary>
         <p className="muted">
-          You can edit a track until its first round starts. Earlier rounds and
-          signature prompts remain fixed.
+          Fix song titles or descriptions before the song starts. Your uploaded
+          audio stays attached. To replace a recording, use Upload album audio
+          in the performer console.
         </p>
         <button
           className="ghost small"
@@ -236,14 +339,9 @@ export function ShowSetup({
                   expectedRevision: inputRevision.current,
                   title: source.title,
                   corePrompt: source.core_prompt,
-                  audioUrl: source.audio_url || undefined,
                   durationSeconds:
-                    source.audio_url &&
-                    !new URL(
-                      source.audio_url,
-                      location.origin,
-                    ).pathname.startsWith("/api/operator/sources/")
-                      ? await measureTrackDuration(source.audio_url, 15)
+                    !source.duration_verified && source.audio_url
+                      ? await measureTrackDuration(source.audio_url)
                       : Number(source.duration_seconds),
                 });
                 setAlbum(null);
@@ -254,11 +352,18 @@ export function ShowSetup({
               {s.title}
               {s.played ? " · already played" : ""}
             </h3>
+            <p className="tiny muted">
+              Track length: {Number(s.duration_seconds).toFixed(1)} seconds.
+              {s.duration_verified
+                ? " Measured automatically from the uploaded audio."
+                : s.audio_url
+                  ? " Detected again when you save this linked track. Upload the file to verify its length for payment."
+                  : " Upload this track to detect and verify its length."}
+            </p>
             {(
               [
                 ["title", "Track title"],
-                ["audio_url", "Track audio URL (HTTPS)"],
-                ["core_prompt", "Private signature prompt"],
+                ["core_prompt", "Describe this song’s signature sound"],
               ] as const
             ).map(([key, label]) => (
               <label key={key}>
@@ -281,8 +386,8 @@ export function ShowSetup({
                 ) : (
                   <input
                     disabled={s.played || busy}
-                    required={key !== "audio_url"}
-                    type={key === "audio_url" ? "url" : "text"}
+                    required
+                    type="text"
                     value={s[key] ?? ""}
                     onChange={(e) =>
                       setAlbum((a) =>
@@ -306,7 +411,7 @@ export function ShowSetup({
         ))}
       </details>
       <div className="section-heading">
-        <h3>Check linked audio</h3>
+        <h3>Check that your songs will play</h3>
         <button className="ghost small" onClick={() => void checkAudio()}>
           Check this device’s audio links
         </button>

@@ -33,10 +33,10 @@ export function Leaderboard({
   return (
     <section className="leaderboard card">
       <span className="eyebrow">THE IDEAS THAT BECAME MUSIC</span>
-      <h2>Your mark on the sound.</h2>
+      <h2>Meet the Sound Wave creators.</h2>
       <p>
-        Credit settles when a track is released. Support counts final points
-        from other people.
+        See whose musical ideas made it into released crowd-created tracks.
+        Votes from other listeners count toward each contributor's ranking.
       </p>
       <div className="form-grid">
         <label>
@@ -50,8 +50,8 @@ export function Leaderboard({
         <label>
           Rank by
           <select value={metric} onChange={(e) => setMetric(e.target.value)}>
-            <option value="included">Waves in released tracks</option>
-            <option value="support">Support from others</option>
+            <option value="included">Sound Waves included in new tracks</option>
+            <option value="support">Votes from other listeners</option>
           </select>
         </label>
         <label>
@@ -77,14 +77,14 @@ export function Leaderboard({
           <div>
             <strong>{p.name}</strong>
             <small>
-              {p.included} waves included · {p.support} points from others
+              {p.included} Sound Waves in released tracks · {p.support} votes from other listeners
             </small>
           </div>
         </div>
       ))}
       {!entries.length && !error && (
         <p className="empty-inline muted">
-          The first released crowd track will put its contributors on the board.
+          Contributors appear here when the artist releases a crowd-created track.
         </p>
       )}
     </section>

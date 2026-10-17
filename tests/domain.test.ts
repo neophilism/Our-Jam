@@ -22,6 +22,20 @@ test("five integer points allow concentration but not overspending, negative or 
   ])
     assert.throws(() => validateAllocations(a as Record<string, number>));
 });
+test("new single-vote rules support ten or a thousand distinct Sound Waves", () => {
+  const policy = { mode: "single" as const, limit: 10 };
+  const ten = Object.fromEntries(Array.from({length:10},(_,i)=>["wave-"+i,1]));
+  validateAllocations(ten,policy);
+  validateAllocations({},policy);
+  assert.throws(()=>validateAllocations({...ten,"eleventh":1},policy),{code:"vote_budget_exceeded"});
+  assert.throws(()=>validateAllocations({a:2},policy),{code:"invalid_allocation"});
+  assert.throws(()=>validateAllocations({a:0},policy),{code:"invalid_allocation"});
+  assert.throws(()=>validateAllocations({a:1},{mode:"single",limit:1001}),{code:"invalid_vote_policy"});
+  const thousand = Object.fromEntries(Array.from({length:1000},(_,i)=>["wave-"+i,1]));
+  validateAllocations(thousand,{mode:"single",limit:1000});
+  assert.throws(()=>validateAllocations({a:6},{mode:"weighted",limit:5}));
+  validateAllocations({a:5},{mode:"weighted",limit:5});
+});
 test("wave normalization prevents visual duplicates and rejects markup and invisible controls", () => {
   assert.deepEqual(normalizeWave("  Warm   ＢＡＳＳ "), {
     text: "Warm BASS",

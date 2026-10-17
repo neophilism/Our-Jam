@@ -9,15 +9,15 @@ type State = {
 };
 const names = { stability: "Stable Audio", mureka: "Mureka" };
 const reasons: Record<string, string> = {
-  approved_budget_zero: "Generation blocked: your approved spending limit is $0. No provider request was sent. Your tags and votes are saved.",
+  approved_budget_zero: "Generation blocked: your approved spending limit is $0. No provider request was sent. Your Sound Waves and votes are saved.",
   approved_budget_exhausted: "The approved generation budget is used up. No new request was sent.",
   provider_insufficient_credits: "The provider rejected generation because its API account has insufficient credits.",
   selected_provider_not_configured: "This provider's key is not configured on the server yet.",
-  provider_not_configured: "Generation is not enabled on this server. Tags and voting remain available.",
+  provider_not_configured: "Generation is not enabled on this server. Fans can still share Sound Waves and vote.",
   provider_price_not_verified: "A current price and spending allowance must be approved before contacting this provider.",
   media_storage_not_configured: "Private audio storage must be configured before generating music.",
   provider_prompt_too_long: "Mureka accepts at most 1,024 prompt characters. This round's saved prompt was not truncated or sent.",
-  no_supported_waves: "This round had no supported sound tags to include.",
+  no_supported_waves: "This round had no voted-on Sound Waves to include.",
   participation_window_too_short: "The participation window was shorter than the show's minimum.",
   reconciliation_requested: "A check of the saved task is queued. No new generation will be submitted.",
   provider_task_not_resumable: "This provider/task cannot be checked automatically. Do not submit a replacement without verifying the original task.",

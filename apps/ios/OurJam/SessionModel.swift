@@ -12,6 +12,7 @@ import SwiftUI
     @Published var profileName = ""
     @Published var anonymous = true
     @Published var clock = Date()
+    @Published var accountEpoch = UUID()
     private(set) var api: JamAPI?
     private var generation = 0
     private var refreshing = false
@@ -31,6 +32,8 @@ import SwiftUI
     }
     var sponsorRemaining: Int { max(0, Int(ceil((state?.round?.sponsorBreak?.durationSeconds ?? 0) - sponsorElapsed))) }
     var canVote: Bool { connected && fresh && !busy && state?.canContribute == true && state?.round?.state == "open" && remaining > 0 && sponsorRemaining == 0 }
+    var voteLimit: Int { max(1, state?.round?.voteLimit ?? 5) }
+    var singleVoteMode: Bool { state?.round?.voteMode == "single" }
     func connect() async {
         guard !busy else { return }; busy = true; error = ""; generation += 1
         do {
@@ -63,6 +66,17 @@ import SwiftUI
     }
     func tick() { clock = Date(); if clock.timeIntervalSince(lastSuccess) > 15 { fresh = false } }
     func suspend() { generation += 1; fresh = false }
+    func accountChanged(using client: JamAPI) async throws {
+        guard api === client, connected else { throw APIError(status: 0, code: "account", message: "Reconnect to this event after signing in.") }
+        generation += 1; fresh = false; state = nil; accountEpoch = UUID()
+        let fence = generation
+        let loaded: EventState = try await client.request("/events/" + eventCode)
+        guard fence == generation, api === client else { return }
+        apply(loaded)
+        let profile: SessionResponse = try await client.request("/session")
+        guard fence == generation, api === client else { return }
+        profileName = profile.profile?.name ?? ""; anonymous = profile.profile?.anonymous ?? true
+    }
     func command(_ path: String, method: String = "POST", body: [String: Any]) async -> Bool {
         guard let api, !busy else { return false }; busy = true; error = ""
         do {
@@ -86,7 +100,8 @@ import SwiftUI
         guard canVote, let round = state?.round else { return }
         var allocations = Dictionary(uniqueKeysWithValues: round.waves.filter { $0.mine > 0 }.map { ($0.id, $0.mine) })
         let value = (allocations[wave.id] ?? 0) + change
-        guard (0...5).contains(value), used + change <= 5 else { return }
+        guard (0...voteLimit).contains(value), used + change <= voteLimit else { return }
+        guard !singleVoteMode || value <= 1 else { return }
         if value == 0 { allocations.removeValue(forKey: wave.id) } else { allocations[wave.id] = value }
         _ = await command("/rounds/" + round.id + "/allocations", method: "PUT", body: ["commandId": UUID().uuidString, "expectedRevision": round.revision, "allocations": allocations])
     }

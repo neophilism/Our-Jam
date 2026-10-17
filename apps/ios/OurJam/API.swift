@@ -95,6 +95,20 @@ struct GuestKeychain {
         catch let error as APIError where error.status == 401 { }
         try GuestKeychain.remove(origin); token = nil
     }
+    func installAccountToken(_ value: String) async throws {
+        guard value.range(of: "^ojm_[a-f0-9]{64}$", options: .regularExpression) != nil else { throw APIError(status: 0, code: "token", message: "The server returned an invalid account credential.") }
+        let previous = token
+        do { try GuestKeychain.write(origin, value) }
+        catch {
+            token = value
+            let _: EmptyResponse? = try? await request("/mobile/session", method: "DELETE")
+            token = previous
+            throw error
+        }
+        // Save the replacement before revoking this device's earlier access.
+        let _: EmptyResponse? = try? await request("/mobile/session", method: "DELETE")
+        token = value
+    }
     func mediaURL(_ raw: String) -> URL? {
         guard let base = URL(string: origin), let url = URL(string: raw, relativeTo: base)?.absoluteURL, url.user == nil, url.password == nil else { return nil }
         if url.scheme == "https" { return url }

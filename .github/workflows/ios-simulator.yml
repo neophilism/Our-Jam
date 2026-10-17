@@ -3,8 +3,7 @@ on:
   pull_request:
     paths: ['apps/ios/**', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', 'scripts/run-native-simulator.py', 'scripts/native-stage-evidence.mjs', '.github/workflows/ios-simulator.yml']
   push:
-    branches: [main]
-    paths: ['apps/ios/**', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', 'scripts/run-native-simulator.py', 'scripts/native-stage-evidence.mjs', '.github/workflows/ios-simulator.yml']
+    branches: [main, feature/artist-event-payments-sponsor-video]
 permissions:
   contents: read
 concurrency:
@@ -47,7 +46,7 @@ jobs:
         timeout-minutes: 15
         run: |
           set -o pipefail
-          xcodebuild -jobs 2 -project apps/ios/OurJam.xcodeproj -scheme OurJam -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-build CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- ONLY_ACTIVE_ARCH=NO build 2>&1 | tee ios-evidence/build.log
+          xcodebuild -jobs 2 -project apps/ios/OurJam.xcodeproj -scheme OurJam -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-build CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- ONLY_ACTIVE_ARCH=NO build-for-testing 2>&1 | tee ios-evidence/build.log
       - name: Verify the Simulator signature
         run: |
           codesign --verify --deep --strict ios-build/Build/Products/Release-iphonesimulator/OurJam.app

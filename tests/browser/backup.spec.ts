@@ -74,7 +74,7 @@ test("prepared local audio survives reload, releases live control and advances w
     .getByRole("button", { name: "Start the first round", exact: false })
     .click();
   await expect(
-    page.getByText("UNTIL THE NEXT WAVE", { exact: true }),
+    page.getByText("TIME LEFT TO VOTE", { exact: true }),
   ).toBeVisible();
   await backup
     .getByRole("button", { name: "Play backup: Backup one", exact: true })
