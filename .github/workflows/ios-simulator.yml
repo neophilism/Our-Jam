@@ -4,6 +4,18 @@ on:
     paths: ['apps/ios/**', 'apps/web/src/Identity.tsx', 'apps/web/src/style.css', 'apps/api/src/identity.ts', 'apps/api/src/native-identity.ts', 'scripts/native-test-server.ts', 'scripts/local-rehearsal.ts', 'scripts/run-native-simulator.py', 'scripts/native-stage-evidence.mjs', '.github/workflows/ios-simulator.yml']
   push:
     branches: [main, feature/artist-event-payments-sponsor-video]
+    # Match ci.yml push paths-ignore so every deployable commit has a native
+    # run on its exact SHA; docs/test-only pushes need no native rebuild.
+    paths-ignore:
+      - 'README.md'
+      - 'PROGRESS.md'
+      - '.gitignore'
+      - 'docs/**'
+      - 'tests/**'
+      - 'scripts/check-development-*.mjs'
+      - 'scripts/check-stripe-sandbox*.mjs'
+      - '.github/workflows/hosted-development.yml'
+      - '.github/workflows/stripe-*.yml'
 permissions:
   contents: read
 concurrency:
