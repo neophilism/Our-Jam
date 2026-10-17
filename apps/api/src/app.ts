@@ -10,10 +10,14 @@ import { configuredGeneration } from "./generation-config.js";
 import { registerGenerationControls } from "./provider-controls.js";
 import { registerAlbumUploads } from "./album-uploads.js";
 import { registerEventStreamShutdown } from "./event-stream-shutdown.js";
+import { registerComparisonAdmin } from "./comparison-admin.js";
+import { registerComparisonRateAdmin } from "./comparison-rate-admin.js";
 export type AppConfig = CoreAppConfig & { generation?: GenerationConfig };
 export async function createApp(db: Database, config: AppConfig) {
   const app = await createCoreApp(db, config);
   registerEventStreamShutdown(app);
+  registerComparisonAdmin(app, db);
+  registerComparisonRateAdmin(app, db);
   registerGenerationControls(
     app,
     db,

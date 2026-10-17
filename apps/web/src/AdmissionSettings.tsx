@@ -24,7 +24,7 @@ export function AdmissionSettings({
     });
   return (
     <section className="card" aria-label="Audience admission">
-      <span className="eyebrow">WHO GETS A VOTE</span>
+      <span className="eyebrow">WHO CAN PARTICIPATE</span>
       <h2>Room access & capacity</h2>
       <p>
         {data.admission.mode === "open"

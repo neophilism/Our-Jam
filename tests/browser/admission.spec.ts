@@ -76,10 +76,10 @@ test("a listener joins without votes, then enters the artist's code to contribut
     .getByRole("button", { name: "Join and vote", exact: false })
     .click();
   await expect(
-    page.getByLabel("What would you mix this with?", { exact: true }),
+    page.getByLabel("What would you add to this song?", { exact: true }),
   ).toBeVisible();
   await page
-    .getByLabel("What would you mix this with?", { exact: true })
+    .getByLabel("What would you add to this song?", { exact: true })
     .fill("Soulful strings");
   await page
     .getByRole("button", { name: "Contribute Sound Wave", exact: false })

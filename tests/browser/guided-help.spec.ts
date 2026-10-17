@@ -37,7 +37,7 @@ test("the fan tutorial points to real voting and released-track controls", async
   await expect(dialog).toContainText("Join to contribute");
   await dialog.getByRole("button", { name: "Skip tutorial" }).click();
   await page.getByRole("button", { name: "I'm in. Let's make music" }).click();
-  await expect(page.getByLabel("What would you mix this with?")).toBeVisible();
+  await expect(page.getByLabel("What would you add to this song?")).toBeVisible();
   await page.getByRole("button", { name: "Replay tour" }).click();
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Skip tutorial" }).click();

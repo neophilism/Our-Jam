@@ -77,7 +77,7 @@ export function Leaderboard({
           <div>
             <strong>{p.name}</strong>
             <small>
-              {p.included} Sound Waves in released tracks · {p.support} votes from other listeners
+              {p.included} {p.included === 1 ? "Sound Wave" : "Sound Waves"} in released tracks · {p.support} {p.support === 1 ? "vote" : "votes"} from other listeners
             </small>
           </div>
         </div>

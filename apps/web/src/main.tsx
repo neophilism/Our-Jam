@@ -155,7 +155,7 @@ function Home() {
             </h1>
             <p>
               Hear a song. Imagine a new direction. Add your own musical idea—a
-              Sound Wave—and vote on the crowd's favorites. Together, shape what
+              Sound Wave—and vote for the ideas you want to hear. Together, shape what
               the music becomes next.
             </p>
             <form
@@ -673,7 +673,7 @@ function Audience({ slug }: { slug: string }) {
                     }}
                   >
                     <label htmlFor="wave-input">
-                      What would you mix this with?
+                      What would you add to this song?
                     </label>
                     <div className="input-action">
                       <input
@@ -1163,7 +1163,7 @@ function Screen({ slug }: { slug: string }) {
         <div>
           <span className="eyebrow">{data.event.artistName} PRESENTS</span>
           <h1>{data.current?.title ?? data.event.title}</h1>
-          <p>What would you mix this with?</p>
+          <p>What would you add to this song?</p>
         </div>
         <Countdown data={data} />
       </div>
