@@ -71,7 +71,7 @@ export async function comparisonPreflight(sql:Sql,batchId:string,env:NodeJS.Proc
       reason="Configure a GPU machine SKU for "+gpuHost+" and a matching rate card.";
     if(provider==="musicgen" && Number(batch.duration_seconds)>30)
       reason="MusicGen Large research model supports at most 30 seconds in this runner. Choose 30 seconds or deselect MusicGen.";
-    if(!reason && run.settings_snapshot?.modelCheckpoint && run.settings_snapshot.modelCheckpoint!==engine.checkpoint)
+    if(!reason && (run.checkpoint!==engine.checkpoint || (run.settings_snapshot?.modelCheckpoint && run.settings_snapshot.modelCheckpoint!==engine.checkpoint)))
       reason="This batch uses an older checkpoint. Prepare a new batch for the selected highest-quality model.";
     if(!reason && !rate)reason=eligible.length>1?"Multiple GPU rates match; configure a single GPU SKU.":"Verified operator rate is missing for this provider.";
     if(!reason && run.state!=="prepared")reason="Provider run is already "+run.state+".";
