@@ -218,14 +218,18 @@ def make_handler(gateway:Gateway):
             self.wfile.write(data)
     return Handler
 
+def bind_permitted(host:str,env:dict[str,str])->bool:
+    if host in ("127.0.0.1","::1"):return True
+    return (host=="0.0.0.0" and env.get("GPU_GATEWAY_EDGE_PROVIDER") in ("modal","lightning")
+        and env.get("GPU_GATEWAY_EDGE_TLS_ACK")=="1" and len(env.get("GPU_GATEWAY_TOKEN",""))>=32)
+
 def main():
     token=os.environ.get("GPU_GATEWAY_TOKEN","")
     if len(token)<32:raise SystemExit("Set a strong GPU_GATEWAY_TOKEN on the private host.")
     host=os.environ.get("GPU_GATEWAY_BIND","127.0.0.1")
-    if host not in ("127.0.0.1","::1"):
-        if host != "0.0.0.0" or os.environ.get("GPU_GATEWAY_EDGE_PROVIDER") not in ("modal","lightning") or os.environ.get("GPU_GATEWAY_EDGE_TLS_ACK") != "1":
-            raise SystemExit("External binding requires a named Modal/Lightning TLS proxy and explicit security acknowledgment.")
-        # The edge provider terminates HTTPS. The API itself still requires a strong bearer token.
+    if not bind_permitted(host,dict(os.environ)):
+        raise SystemExit("External binding requires an acknowledged Modal/Lightning HTTPS proxy and strong token.")
+    # The edge provider terminates HTTPS, and every request still requires the bearer secret.
     port=int(os.environ.get("GPU_GATEWAY_PORT","8085"))
     gateway=Gateway(Path(os.environ.get("GPU_GATEWAY_DATA_DIR","./.private-gpu-gateway")))
     gateway.start()
