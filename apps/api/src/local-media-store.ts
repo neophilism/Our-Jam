@@ -22,7 +22,8 @@ export async function localMediaStore(root: string, origin: string, secret: stri
   await mkdir(root, { recursive: true, mode: 0o700 });
   const signature = (key: string, until: number, download: boolean) => createHmac("sha256", secret).update(JSON.stringify([key, until, download])).digest("hex");
   const store: MediaStore = {
-    async put(key, bytes, sha) {
+    async put(key, bytes, sha, contentType = "audio/mpeg") {
+      requireThat(contentType === "audio/mpeg", "invalid_media", "Local rehearsal storage supports MP3 audio only.");
       requireThat(keyPattern.test(key), "invalid_media_key", "Invalid private media identity.");
       requireThat(bytes.length <= 32 * 1024 * 1024 && createHash("sha256").update(bytes).digest("hex") === sha, "invalid_media", "Audio integrity verification failed.");
       const destination = path.join(root, key);
@@ -38,7 +39,8 @@ export async function localMediaStore(root: string, origin: string, secret: stri
       const saved = await readFile(destination);
       requireThat(createHash("sha256").update(saved).digest("hex") === sha, "invalid_media", "Stored audio failed its integrity check.");
     },
-    async url(key, download) {
+    async url(key, download, contentType = "audio/mpeg") {
+      requireThat(contentType === "audio/mpeg", "invalid_media", "Local rehearsal storage supports MP3 audio only.");
       requireThat(keyPattern.test(key), "invalid_media_key", "Invalid private media identity.");
       const until = Math.floor(Date.now() / 1000) + 600;
       // Each validated segment is shorter than the router's parameter limit.
