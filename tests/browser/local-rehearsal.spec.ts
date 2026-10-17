@@ -69,14 +69,14 @@ test("empty local deployment accepts a song, shows real participation and persis
     const audience = await guest.newPage(), androidAudience = await androidGuest.newPage(), screen = await display.newPage();
     await screen.goto("/screen/" + slug); await audience.goto("/event/" + slug);
     await audience.getByRole("button", { name: /^I'm in\. Let's make music/ }).click();
-    await expect(audience.getByLabel("What would you mix this with?")).toBeEnabled();
-    await audience.getByLabel("What would you mix this with?").fill("Local brass section");
+    await expect(audience.getByLabel("What would you add to this song?")).toBeEnabled();
+    await audience.getByLabel("What would you add to this song?").fill("Local brass section");
     await audience.getByRole("button", { name: "Contribute Sound Wave" }).click();
     await expect(screen.getByText("Local brass section", { exact: true }).first()).toBeVisible();
     await androidAudience.goto("/event/" + slug);
     await androidAudience.getByRole("button", { name: /^I'm in\. Let's make music/ }).click();
-    await expect(androidAudience.getByLabel("What would you mix this with?")).toBeEnabled();
-    await androidAudience.getByLabel("What would you mix this with?").fill("Android cello section");
+    await expect(androidAudience.getByLabel("What would you add to this song?")).toBeEnabled();
+    await androidAudience.getByLabel("What would you add to this song?").fill("Android cello section");
     await androidAudience.getByRole("button", { name: "Contribute Sound Wave" }).click();
     await expect(screen.getByText("Android cello section", { exact: true }).first()).toBeVisible();
     await expect(screen.getByText("Local brass section", { exact: true }).first()).toBeVisible();
