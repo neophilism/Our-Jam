@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import { ComparisonAudition } from "./ComparisonAudition";
 
 type BatchSummary = {
   id: string; purpose: "private_research" | "commercial_evaluation";
@@ -21,6 +22,7 @@ export function ComparisonBatchAdmin({ selectionRevision, selectedProviders }: {
   const [list, setList] = useState<BatchSummary[]>([]);
   const [detail, setDetail] = useState<BatchDetail | null>(null);
   const [preflight, setPreflight] = useState<Preflight | null>(null);
+  const [blindAudition, setBlindAudition] = useState(true);
   const [ceilingUsd, setCeilingUsd] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -136,15 +138,16 @@ export function ComparisonBatchAdmin({ selectionRevision, selectedProviders }: {
             {!preflight.allReady && <p className="muted">Generation cannot start until each selected engine has a valid rate, server configuration and applicable license approval.</p>}
           </div>}
         </>}
-        <div className="comparison-result-grid">
+        <ComparisonAudition batchId={detail.id} runs={detail.runs} onBlindChange={setBlindAudition}/>
+        {(!blindAudition || !detail.runs.some(r=>r.state==="succeeded")) && <div className="comparison-result-grid">
           {detail.runs.map(r => <div className="comparison-result" key={r.id}>
             <strong>{r.provider.replaceAll("_"," ")}</strong>
             <span>{r.checkpoint}</span>
             <span>Status: {r.state}{r.reason ? " · "+r.reason : ""}</span>
             <span>Generation cost: {r.costCertainty==="unknown" || r.actualCostMicroUsd===null ? "Not measured" : "$"+(r.actualCostMicroUsd/1000000).toFixed(4)}</span>
-            <span>{r.state==="succeeded" ? "Audio audition to be connected" : "No playable audio yet"}</span>
+            <span>{r.state==="succeeded" ? "Private audio available in the listening panel" : "No playable audio yet"}</span>
           </div>)}
-        </div>
+        </div>}
       </div>}
     </details>
   </section>;
