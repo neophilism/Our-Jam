@@ -2,10 +2,10 @@
 export const COMPARISON_ENGINES = [
   { id: "mureka", label: "Mureka API", execution: "paid_api", rights: "commercial_approval_required", output: "instrumental", checkpoint: "mureka-9.5" },
   { id: "stability", label: "Stable Audio API", execution: "paid_api", rights: "commercial_approval_required", output: "instrumental", checkpoint: "stable-audio-2.5" },
-  { id: "ace_step", label: "ACE-Step 1.5", execution: "self_hosted", rights: "checkpoint_review_required", output: "instrumental", checkpoint: "ace-step-1.5" },
-  { id: "heartmula", label: "HeartMuLa", execution: "self_hosted", rights: "checkpoint_review_required", output: "instrumental", checkpoint: "heartmula" },
+  { id: "ace_step", label: "ACE-Step 1.5 XL-SFT", execution: "self_hosted", rights: "checkpoint_review_required", output: "instrumental", checkpoint: "acestep-v15-xl-sft" },
+  { id: "heartmula", label: "HeartMuLa (3B Happy New Year)", execution: "self_hosted", rights: "checkpoint_review_required", output: "instrumental", checkpoint: "HeartMuLa-oss-3B-happy-new-year" },
   { id: "stable_audio_open", label: "Stable Audio 3 Medium (open weights)", execution: "self_hosted", rights: "community_license_eligibility_required", output: "instrumental", checkpoint: "stable-audio-3-medium" },
-  { id: "musicgen", label: "MusicGen (research only)", execution: "self_hosted", rights: "noncommercial_only", output: "instrumental", checkpoint: "facebook/musicgen-small" },
+  { id: "musicgen", label: "MusicGen Large (research only)", execution: "self_hosted", rights: "noncommercial_only", output: "instrumental", checkpoint: "facebook/musicgen-large" },
 ] as const;
 export type ComparisonEngineId = (typeof COMPARISON_ENGINES)[number]["id"];
 export type ComparisonEngine = (typeof COMPARISON_ENGINES)[number];
