@@ -79,6 +79,22 @@ export async function checkDevelopmentSessions({
     }
     const setup = await data("/api/admin/commerce", cookies.admin);
     await data("/api/admin/voting", cookies.admin);
+    const comparison = await data("/api/admin/comparison/settings", cookies.admin);
+    check(
+      Array.isArray(comparison.providers) &&
+        comparison.providers.length === 6 &&
+        Array.isArray(comparison.selectedProviders) &&
+        comparison.selectedProviders.length >= 1 &&
+        Number.isInteger(comparison.revision),
+      "Integrated comparison engine settings",
+    );
+    const batches = await data("/api/admin/comparisons", cookies.admin);
+    check(Array.isArray(batches.batches), "Integrated comparison batch listing");
+    const rates = await data("/api/admin/comparison/rates", cookies.admin);
+    check(
+      Array.isArray(rates.rates) && typeof rates.warning === "string",
+      "Integrated comparison cost rate listing",
+    );
     check(
       (await data("/api/admin/session", cookies.admin)).admin === true,
       "Administrator session restoration",
@@ -132,6 +148,21 @@ export async function checkDevelopmentSessions({
         "/api/admin/voting",
         cookies.operator,
         "Performer cannot access voting administration",
+      ],
+      [
+        "/api/admin/comparison/settings",
+        cookies.operator,
+        "Performer cannot access comparison engine administration",
+      ],
+      [
+        "/api/admin/comparisons",
+        cookies.operator,
+        "Performer cannot access private comparison batches",
+      ],
+      [
+        "/api/admin/comparison/rates",
+        cookies.operator,
+        "Performer cannot access comparison rate cards",
       ],
     ])
       check((await request(path, { cookie })).status === 401, name);
