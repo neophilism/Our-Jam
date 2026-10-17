@@ -2,12 +2,15 @@ import { z } from "zod";
 import type { Database, Sql } from "./db.js";
 import { requireThat } from "../../../packages/domain/src/index.js";
 import { replay, remember } from "./service.js";
-import { COMPARISON_ENGINES, uniqueComparisonSelection } from "../../../packages/providers/src/comparison-catalog.js";
+import { COMPARISON_ENGINES, COMPARISON_ENGINE_IDS, uniqueComparisonSelection } from "../../../packages/providers/src/comparison-catalog.js";
 
 export const comparisonSelectionInput = z.object({
   commandId: z.uuid(),
   expectedRevision: z.number().int().nonnegative(),
-  selectedProviders: z.array(z.string()).min(1).max(6),
+  selectedProviders: z.array(z.string()).min(1).max(6).refine(
+    values => new Set(values).size === values.length && values.every(value => COMPARISON_ENGINE_IDS.includes(value as typeof COMPARISON_ENGINE_IDS[number])),
+    { message: "Choose unique providers from the six supported engines." },
+  ),
 }).strict();
 
 export async function readComparisonSelection(sql: Sql, lock = false) {
