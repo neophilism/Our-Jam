@@ -33,7 +33,7 @@ export async function leaderboard(
     entries: rows.map((p) => ({
       id: digest(artistId + ":" + p.id),
       name: p.anonymous ? "Anonymous" : p.name,
-      avatarSeed: p.avatar_seed,
+      avatarSeed: p.anonymous ? "anonymous" : p.avatar_seed,
       included: p.included,
       points: p.points,
       support: p.support,
@@ -51,7 +51,7 @@ export async function releaseCredits(db: Sql, releaseId: string) {
   return {
     credits: (
       await db.query(
-        `SELECT w.value->>'text' text,(w.value->>'votes')::integer points,CASE WHEN p.anonymous THEN 'Anonymous' ELSE p.name END name,p.avatar_seed
+        `SELECT w.value->>'text' text,(w.value->>'votes')::integer points,CASE WHEN p.anonymous THEN 'Anonymous' ELSE p.name END name,CASE WHEN p.anonymous THEN 'anonymous' ELSE p.avatar_seed END avatar_seed
  FROM releases r JOIN generation_jobs j ON j.id=r.job_id CROSS JOIN LATERAL jsonb_array_elements(j.snapshot->'selected') WITH ORDINALITY w(value,rank)
  JOIN participants p ON p.id=(w.value->>'authorId')::uuid WHERE r.id=$1 ORDER BY w.rank`,
         [releaseId],
