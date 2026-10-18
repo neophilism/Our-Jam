@@ -42,12 +42,15 @@ export async function moderate(
     ).rows[0];
     requireThat(record, "not_found", "Entry not found.", 404);
     await ownedEvent(tx, record.event_id, artistId, true);
-    await tx.query(
+    // An author may delete a comment after the ownership lookup but before
+    // the update. Do not record a successful moderation of a missing item.
+    const updated = await tx.query(
       kind === "comment"
-        ? "UPDATE comments SET hidden=$1 WHERE id=$2"
-        : "UPDATE releases SET hidden=$1 WHERE id=$2",
+        ? "UPDATE comments SET hidden=$1 WHERE id=$2 RETURNING id"
+        : "UPDATE releases SET hidden=$1 WHERE id=$2 RETURNING id",
       [hidden, subjectId],
     );
+    requireThat(updated.rows.length === 1, "not_found", "Entry not found.", 404);
     await tx.query(
       "INSERT INTO audit_log(artist_id,event_id,action,subject_id) VALUES($1,$2,$3,$4)",
       [
