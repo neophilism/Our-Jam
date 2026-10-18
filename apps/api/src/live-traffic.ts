@@ -82,6 +82,8 @@ export class RoomStreams {
   }
   add(room: string, stream: StreamWriter) {
     let streams = this.rooms.get(room);
+    // Re-registering the same writer must not consume another connection slot.
+    if (streams?.has(stream)) return () => this.remove(room, stream);
     if ((streams?.size ?? 0) >= this.perRoom || this.total >= this.maximum)
       throw new DomainError(
         "stream_limit",

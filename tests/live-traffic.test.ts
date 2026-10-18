@@ -87,6 +87,8 @@ test("slow or closed event streams disconnect while room and process caps recove
     slow = create(false),
     other = create();
   const remove = rooms.add("one", fast);
+  const duplicateRemoval = rooms.add("one", fast);
+  assert.equal(rooms.stats.connections, 1, "duplicate writer registration must not inflate capacity");
   rooms.add("one", slow);
   assert.throws(() => rooms.add("one", create()), { code: "stream_limit" });
   rooms.add("two", other);
@@ -97,7 +99,9 @@ test("slow or closed event streams disconnect while room and process caps recove
   assert.equal(rooms.stats.connections, 2);
   rooms.add("three", create());
   remove();
+  duplicateRemoval();
   remove();
+  assert.equal(rooms.stats.connections, 2, "duplicate cleanup does not release unrelated writers");
   rooms.reconnect();
   assert.match(other.messages[0], /reconnect/);
   rooms.close();
