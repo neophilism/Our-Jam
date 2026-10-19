@@ -8,6 +8,15 @@ export async function moderationQueue(
 ) {
   await ownedEvent(db, eventId, artistId);
   return {
+    waves: (
+      await db.query(
+        `SELECT w.id,w.text,w.moderated,w.created_at,r.id AS round_id
+         FROM sound_waves w JOIN rounds r ON r.id=w.round_id
+         WHERE r.event_id=$1 AND r.state IN ('open','paused')
+         ORDER BY w.created_at DESC,w.id LIMIT 100`,
+        [eventId],
+      )
+    ).rows,
     comments: (
       await db.query(
         `SELECT c.id,c.body,c.hidden,c.created_at,r.title,
@@ -42,12 +51,15 @@ export async function moderate(
     ).rows[0];
     requireThat(record, "not_found", "Entry not found.", 404);
     await ownedEvent(tx, record.event_id, artistId, true);
-    await tx.query(
+    // An author may delete a comment after the ownership lookup but before
+    // the update. Do not record a successful moderation of a missing item.
+    const updated = await tx.query(
       kind === "comment"
-        ? "UPDATE comments SET hidden=$1 WHERE id=$2"
-        : "UPDATE releases SET hidden=$1 WHERE id=$2",
+        ? "UPDATE comments SET hidden=$1 WHERE id=$2 RETURNING id"
+        : "UPDATE releases SET hidden=$1 WHERE id=$2 RETURNING id",
       [hidden, subjectId],
     );
+    requireThat(updated.rows.length === 1, "not_found", "Entry not found.", 404);
     await tx.query(
       "INSERT INTO audit_log(artist_id,event_id,action,subject_id) VALUES($1,$2,$3,$4)",
       [

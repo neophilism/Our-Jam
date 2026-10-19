@@ -75,6 +75,7 @@ import {
   profileInput,
   releaseInput,
   waveInput,
+  waveEditInput,
 } from "../../../packages/contracts/src/index.js";
 import {
   advance,
@@ -84,6 +85,7 @@ import {
   ownedEvent,
   snapshot,
   submitWave,
+  editWave,
 } from "./service.js";
 
 import { claimPlayback, heartbeat, pausePlayback } from "./playback.js";
@@ -753,6 +755,12 @@ export async function createApp(db: Database, config: AppConfig) {
       waveInput.parse(req.body),
     );
   });
+  app.patch("/api/rounds/:roundId/waves/:waveId", async (req) => {
+    const s = await session(req, "guest");
+    const params = req.params as { roundId: string; waveId: string };
+    return editWave(db, { participantId: s.participant_id },
+      id.parse(params.roundId), id.parse(params.waveId), waveEditInput.parse(req.body));
+  });
   app.post("/api/operator/events/:id/playback/claim", async (req) => {
     const op = await session(req, "operator");
     const body = z
@@ -907,11 +915,17 @@ export async function createApp(db: Database, config: AppConfig) {
         ])
       ).rows[0];
       requireThat(
-        r.state === "open",
+        r.state === "open" || r.state === "paused",
         "round_closed",
         "Closed snapshots cannot be edited.",
         409,
       );
+      const wave = (await tx.query(
+        "SELECT moderated FROM sound_waves WHERE id=$1 AND round_id=$2 FOR UPDATE",
+        [waveId, found.round_id],
+      )).rows[0];
+      requireThat(wave, "not_found", "Wave not found.", 404);
+      if (wave.moderated) return { ok: true, replay: true };
       await tx.query(
         "UPDATE ballots SET revision=revision+1 WHERE round_id=$1 AND participant_id IN (SELECT participant_id FROM allocations WHERE wave_id=$2)",
         [found.round_id, waveId],

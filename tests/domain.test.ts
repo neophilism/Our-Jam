@@ -41,7 +41,7 @@ test("wave normalization prevents visual duplicates and rejects markup and invis
     text: "Warm BASS",
     normalized: "warm bass",
   });
-  for (const s of ["x", "<script>", "a\u200bb", "a".repeat(49)])
+  for (const s of ["x", "<script>", "a\u200bb", "a".repeat(49), "visit https://example.org", "email me@real.test", "call 555-234-6789"])
     assert.throws(() => normalizeWave(s));
 });
 const waves = [

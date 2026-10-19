@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
 export function Moderation({ eventId }: { eventId: string }) {
-  const [data, setData] = useState<{ comments: any[]; releases: any[] } | null>(
+  const [data, setData] = useState<{ waves: any[]; comments: any[]; releases: any[] } | null>(
       null,
     ),
     [error, setError] = useState(""),
@@ -32,6 +32,18 @@ export function Moderation({ eventId }: { eventId: string }) {
       setBusy(false);
     }
   }
+  async function hideWave(id: string) {
+    setBusy(true);
+    try {
+      await api(`/operator/waves/${id}/hide`, "POST", {});
+      setError("");
+      await refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <section className="card moderation">
       <span className="eyebrow">LOOK AFTER THE ROOM</span>
@@ -41,6 +53,19 @@ export function Moderation({ eventId }: { eventId: string }) {
           {error}
         </p>
       )}
+      <h3>Live Sound Waves</h3>
+      <p className="tiny muted">Hiding a phrase removes its votes and returns them to listeners
+        for reallocation while the round is open.</p>
+      {data?.waves.map((wave) => (
+        <article className="review-item" key={wave.id}>
+          <strong>{wave.text}</strong>
+          {wave.moderated ? <span>Hidden</span> : (
+            <button className="ghost small" disabled={busy}
+              onClick={() => void hideWave(wave.id)}>Hide Sound Wave</button>
+          )}
+        </article>
+      ))}
+      {data && !data.waves.length && <p className="muted">No Sound Waves in the live round.</p>}
       <h3>Reported & hidden comments</h3>
       {data?.comments.map((c) => (
         <article className="review-item" key={c.id}>

@@ -11,6 +11,10 @@ export const waveInput = command.extend({
   expectedRevision: z.number().int().nonnegative(),
   moveFrom: id.optional(),
 });
+export const waveEditInput = command.extend({
+  text: z.string().max(192),
+  expectedRevision: z.number().int().nonnegative(),
+});
 export const allocationInput = command.extend({
   expectedRevision: z.number().int().nonnegative(),
   allocations: z.record(id, z.number().int().positive().max(5)),
@@ -41,6 +45,7 @@ export const eventInput = z.object({
   minimumRoundSeconds: z.number().int().min(0).max(300).default(60),
   maxWaves: z.number().int().min(1).max(12).default(8),
   maxGenerations: z.number().int().min(0).max(100).default(12),
+  waveExclusions: z.array(z.string().max(48)).max(24).optional(),
   voteMode: z.enum(["single", "weighted"]).optional(),
   votesPerListener: z.number().int().min(1).max(1000).optional(),
   admissionMode: z.enum(["open", "room_code"]).default("open"),

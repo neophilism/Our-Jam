@@ -41,6 +41,11 @@ export function normalizeWave(value: string): {
     "invalid_wave",
     "Use between 2 and 48 characters.",
   );
+  requireThat(
+    !/(?:https?:\/\/|www\.|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|\b\d{3}[-. ]\d{3}[-. ]\d{4}\b)/i.test(text),
+    "invalid_wave",
+    "Sound Waves cannot contain links or personal contact details.",
+  );
   return { text, normalized: text.toLocaleLowerCase("en-US") };
 }
 export type VotePolicy = { mode: "single" | "weighted"; limit: number };

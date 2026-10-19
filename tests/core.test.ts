@@ -44,6 +44,7 @@ test("production API: persistent multiuser voting, isolation, conflicts, closing
     slug,
     artistName: "Test Artist",
     minimumRoundSeconds: 0,
+    waveExclusions: ["forbidden drone"],
     sources: [
       { title: "First track", corePrompt: "PRIVATE_SIGNATURE_PROMPT", durationSeconds: 180 },
       { title: "Second track", corePrompt: "PRIVATE_SECOND", durationSeconds: 120 },
@@ -104,6 +105,9 @@ test("production API: persistent multiuser voting, isolation, conflicts, closing
   );
   assert.equal(start.statusCode, 200, start.body);
   const round = start.json().roundId;
+  const blocked = await request("POST", `/api/rounds/${round}/waves`,
+    { commandId: randomUUID(), text: "Use a forbidden drone now", expectedRevision: 0 }, a);
+  assert.equal(blocked.statusCode, 400, blocked.body);
   const commandId = randomUUID();
   const submission = { commandId, text: "Warm brass", expectedRevision: 0 };
   const first = await request(
@@ -187,6 +191,7 @@ test("production API: persistent multiuser voting, isolation, conflicts, closing
       assert.equal(r.json().round.seed, undefined);
       assert.equal(r.json().queue, undefined);
       assert.equal(r.json().round.revision, 2);
+      assert.deepEqual(r.json().round.waveExclusions, ["forbidden drone"]);
       assert.equal(r.json().round.waves[0].supporters, 2);
     },
   );
@@ -286,6 +291,50 @@ test("production API: persistent multiuser voting, isolation, conflicts, closing
       assert.equal(r.statusCode, 400);
     },
   );
+  await t.test("only an unsupported creator may edit a live Sound Wave", async () => {
+    const liveRound = end.json().roundId;
+    const own = await request("POST", `/api/rounds/${liveRound}/waves`,
+      { commandId: randomUUID(), text: "Blue piano", expectedRevision: 0 }, a);
+    assert.equal(own.statusCode, 200, own.body);
+    const ownId = own.json().waveId;
+    const other = await request("POST", `/api/rounds/${liveRound}/waves`,
+      { commandId: randomUUID(), text: "Warm cello", expectedRevision: 0 }, b);
+    assert.equal(other.statusCode, 200, other.body);
+    const path = `/api/rounds/${liveRound}/waves/${ownId}`;
+    const edit = (text: string, expectedRevision: number, cookie = a) =>
+      request("PATCH", path, { commandId: randomUUID(), text, expectedRevision }, cookie);
+    assert.equal((await edit("Warm cello", 1)).statusCode, 409);
+    assert.equal((await edit("<script>", 1)).statusCode, 400);
+    assert.equal((await edit("Forbidden drone", 1)).statusCode, 400);
+    assert.equal((await edit("Soft piano", 1, b)).statusCode, 404);
+    const editCommand = { commandId: randomUUID(), text: "Soft piano", expectedRevision: 1 };
+    const changed = await request("PATCH", path, editCommand, a);
+    assert.equal(changed.statusCode, 200, changed.body);
+    assert.equal(changed.json().revision, 2);
+    assert.deepEqual((await request("PATCH", path, editCommand, a)).json(), changed.json());
+    assert.equal((await edit("Late piano", 1)).statusCode, 409);
+    const support = await request("POST", `/api/rounds/${liveRound}/waves`,
+      { commandId: randomUUID(), text: "Soft piano", expectedRevision: 1 }, b);
+    assert.equal(support.statusCode, 200, support.body);
+    assert.equal(support.json().waveId, ownId);
+    assert.equal((await edit("Sharp piano", 2)).statusCode, 409);
+    const visible = (await request("GET", `/api/events/${slug}`, undefined, a)).json();
+    assert.ok(visible.round.waves.some((wave: any) => wave.id === ownId && wave.text === "Soft piano"));
+    await db.query("UPDATE rounds SET state='paused',paused_at=now() WHERE id=$1", [liveRound]);
+    const queue = await request("GET", `/api/operator/events/${event.id}/moderation`, undefined, op);
+    assert.ok(queue.json().waves.some((wave: any) => wave.id === ownId));
+    assert.equal((await request("POST", `/api/operator/waves/${ownId}/hide`, {}, a)).statusCode, 401);
+    const hidden = await request("POST", `/api/operator/waves/${ownId}/hide`, {}, op);
+    assert.equal(hidden.statusCode, 200, hidden.body);
+    assert.equal((await request("POST", `/api/operator/waves/${ownId}/hide`, {}, op)).json().replay, true);
+    const afterHide = (await request("GET", `/api/events/${slug}`, undefined, a)).json();
+    assert.ok(!afterHide.round.waves.some((wave: any) => wave.id === ownId));
+    assert.equal((await db.query("SELECT count(*)::integer n FROM allocations WHERE wave_id=$1", [ownId])).rows[0].n, 0);
+    await db.query("UPDATE rounds SET state='open',paused_at=NULL WHERE id=$1", [liveRound]);
+    const ballotRevisions = await db.query("SELECT participant_id,revision FROM ballots WHERE round_id=$1", [liveRound]);
+    assert.ok(ballotRevisions.rows.every(row => row.revision === 3),
+      "hiding must return points and advance every affected listener's ballot revision");
+  });
   await t.test(
     "artist supplied asset is distinct from provider generation and publishes at boundary",
     async () => {

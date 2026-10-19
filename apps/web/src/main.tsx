@@ -380,6 +380,8 @@ function Audience({ slug }: { slug: string }) {
         : "waves",
     ),
     [text, setText] = useState(""),
+    [editingWaveId, setEditingWaveId] = useState<string | null>(null),
+    [editingWaveText, setEditingWaveText] = useState(""),
     [busy, setBusy] = useState(false),
     [profile, setProfile] = useState(false),
     [moveFrom, setMoveFrom] = useState(""),
@@ -676,6 +678,11 @@ function Audience({ slug }: { slug: string }) {
                     <p className="tiny muted">
                       Suggest an instrument, rhythm, style, or mood. Each Sound Wave you submit uses one vote; use the rest to vote for other listeners' ideas.
                     </p>
+                    {!!round?.waveExclusions?.length && (
+                      <p className="tiny muted">
+                        Please avoid these artist exclusions: {round.waveExclusions.join(", ")}.
+                      </p>
+                    )}
                   </form>
                   <div className="wave-list">
                     {waves.map((w, i) => (
@@ -695,6 +702,37 @@ function Audience({ slug }: { slug: string }) {
                             {w.votes} {w.votes === 1 ? "vote" : "votes"} · {w.supporters} {w.supporters === 1 ? "listener" : "listeners"}
                           </small>
                         </div>
+                        {w.own && open && w.supporters === (w.mine > 0 ? 1 : 0) && (
+                          <div className="wave-edit">
+                            {editingWaveId === w.id ? (
+                              <form onSubmit={(e) => {
+                                e.preventDefault();
+                                void action(async () => {
+                                  await api(`/rounds/${round!.id}/waves/${w.id}`, "PATCH", {
+                                    commandId: crypto.randomUUID(),
+                                    expectedRevision: round!.revision,
+                                    text: editingWaveText,
+                                  });
+                                  setEditingWaveId(null);
+                                });
+                              }}>
+                                <label>
+                                  Edit your Sound Wave
+                                  <input value={editingWaveText} maxLength={48}
+                                    onChange={(e) => setEditingWaveText(e.target.value)}
+                                    disabled={busy} />
+                                </label>
+                                <button disabled={busy || editingWaveText.trim().length < 2}>Save</button>
+                                <button type="button" className="ghost" onClick={() => setEditingWaveId(null)}>Cancel</button>
+                              </form>
+                            ) : (
+                              <button type="button" className="ghost small"
+                                onClick={() => { setEditingWaveId(w.id); setEditingWaveText(w.text); }}>
+                                Edit phrase
+                              </button>
+                            )}
+                          </div>
+                        )}
                         <div className="vote-controls">
                           <button
                             className="ghost"
