@@ -49,7 +49,7 @@ import {
 } from "./show-setup.js";
 import { leaderboard, releaseCredits } from "./recognition.js";
 import Fastify from "fastify";
-import { SnapshotReads, RoomStreams } from "./live-traffic.js";
+import { SnapshotReads, RoomStreams, pollRoomChanges } from "./live-traffic.js";
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
@@ -1220,21 +1220,17 @@ export async function createApp(db: Database, config: AppConfig) {
     await session(req, "operator");
     return { snapshots: snapshotReads.stats, streams: roomStreams.stats };
   });
-  let lastSequence = 0;
+  const seenRoomChanges = new Map<string, string>();
   let polling = false;
   const poll = setInterval(async () => {
-    if (polling || !roomStreams.stats.connections) return;
+    if (polling) return;
+    if (!roomStreams.stats.connections) {
+      seenRoomChanges.clear();
+      return;
+    }
     polling = true;
     try {
-      const entries = (
-        await db.query(
-          "SELECT sequence,event_id FROM event_log WHERE sequence>$1 ORDER BY sequence LIMIT 2000",
-          [lastSequence],
-        )
-      ).rows;
-      const affected = new Set(entries.map((e) => e.event_id));
-      for (const entry of entries) lastSequence = Number(entry.sequence);
-      for (const eventId of affected) roomStreams.update(eventId);
+      await pollRoomChanges(db, roomStreams, seenRoomChanges);
     } catch {
       roomStreams.reconnect();
     } finally {

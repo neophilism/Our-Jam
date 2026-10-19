@@ -20,3 +20,14 @@ Public event snapshots run at most four at once, leaving pool capacity for comma
 Invalidation streams carry no private payload. Limits are 1,000 streams per room and 2,000 per process. A slow socket whose write buffer fills is disconnected instead of accumulating unlimited updates. Reconnects obtain authoritative snapshots; the durable event log remains the source of changes. A read-only authenticated `/api/operator/traffic` endpoint reports queue and connection counts, without room identifiers or participant data.
 
 Tests simulate 100 arriving guest identities at one address, create real database memberships, read personalized snapshots concurrently and verify separate budgets, fake-cookie rejection, unchanged login throttling and private-prompt omission. Additional tests cover bounded queues, timeout cleanup, read failures and slow-stream disconnection. This is deterministic API/SQL evidence, not 100 physical phones or deployed latency/throughput certification. Run the venue load and network-loss rehearsal before declaring a show capacity.
+
+## Multi-instance invalidation
+
+Each committed event mutation increments an event-scoped change counter in the same
+transaction as its durable log entry. Every API instance polls counters only for
+rooms with connected streams, so a delayed commit cannot be skipped by a
+global event-log high-water mark. The stream still carries only a refresh
+hint; clients fetch an authorized snapshot and use periodic fallback reads
+after disconnection. Deploy additive migration 023 before this application
+revision. This is software fanout evidence; venue load and network-loss
+rehearsal remain pending.
