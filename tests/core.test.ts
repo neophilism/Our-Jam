@@ -320,6 +320,7 @@ test("production API: persistent multiuser voting, isolation, conflicts, closing
     assert.equal((await edit("Sharp piano", 2)).statusCode, 409);
     const visible = (await request("GET", `/api/events/${slug}`, undefined, a)).json();
     assert.ok(visible.round.waves.some((wave: any) => wave.id === ownId && wave.text === "Soft piano"));
+    await db.query("UPDATE rounds SET state='paused',paused_at=now() WHERE id=$1", [liveRound]);
     const queue = await request("GET", `/api/operator/events/${event.id}/moderation`, undefined, op);
     assert.ok(queue.json().waves.some((wave: any) => wave.id === ownId));
     assert.equal((await request("POST", `/api/operator/waves/${ownId}/hide`, {}, a)).statusCode, 401);
@@ -329,6 +330,7 @@ test("production API: persistent multiuser voting, isolation, conflicts, closing
     const afterHide = (await request("GET", `/api/events/${slug}`, undefined, a)).json();
     assert.ok(!afterHide.round.waves.some((wave: any) => wave.id === ownId));
     assert.equal((await db.query("SELECT count(*)::integer n FROM allocations WHERE wave_id=$1", [ownId])).rows[0].n, 0);
+    await db.query("UPDATE rounds SET state='open',paused_at=NULL WHERE id=$1", [liveRound]);
     const ballotRevisions = await db.query("SELECT participant_id,revision FROM ballots WHERE round_id=$1", [liveRound]);
     assert.ok(ballotRevisions.rows.every(row => row.revision === 3),
       "hiding must return points and advance every affected listener's ballot revision");
