@@ -703,9 +703,9 @@ function Audience({ slug }: { slug: string }) {
                               <form onSubmit={(e) => {
                                 e.preventDefault();
                                 void action(async () => {
-                                  await api(`/rounds/${round.id}/waves/${w.id}`, "PATCH", {
+                                  await api(`/rounds/${round!.id}/waves/${w.id}`, "PATCH", {
                                     commandId: crypto.randomUUID(),
-                                    expectedRevision: round.revision,
+                                    expectedRevision: round!.revision,
                                     text: editingWaveText,
                                   });
                                   setEditingWaveId(null);
