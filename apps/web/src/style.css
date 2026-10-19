@@ -600,6 +600,7 @@ footer {
 }
 .wave-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   padding: 15px 0;
@@ -632,6 +633,18 @@ footer {
   color: var(--lime);
   margin-left: 6px;
 }
+.wave-edit {
+  flex-basis: 100%;
+  order: 4;
+  margin-left: 26px;
+}
+.wave-edit form {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.wave-edit input { max-width: min(100%, 260px); }
 .vote-controls {
   display: flex;
   align-items: center;
