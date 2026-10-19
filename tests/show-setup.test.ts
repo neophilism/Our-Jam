@@ -127,6 +127,10 @@ test("show edits fence stale commands, preserve current rounds, and reorder only
   });
   await updateSettings(db, "our-jam", event.id, settings);
   await updateSettings(db, "our-jam", event.id, settings);
+  await assert.rejects(updateSettings(db, "our-jam", event.id, {
+    ...settings, commandId: randomUUID(), expectedRevision: await revision(),
+    waveExclusions: ["Muted trumpet", "muted  TRUMPET"],
+  }), { code: "duplicate_exclusion" });
   assert.equal(
     (await round()).settings.maxWaves,
     8,

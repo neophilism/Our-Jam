@@ -108,7 +108,7 @@ function allowedWave(r: Record<string, any>, normalized: string) {
     typeof item === "string" && phrase.includes(" " + item + " ")),
     "wave_excluded", "This phrase conflicts with the artist's Sound Wave exclusions.", 400);
 }
-function normalizedExclusions(values: string[] | undefined): string[] {
+export function normalizedExclusions(values: string[] | undefined): string[] {
   const normalized = (values ?? []).map(value => normalizeWave(value).normalized);
   requireThat(new Set(normalized).size === normalized.length,
     "duplicate_exclusion", "Each excluded phrase must be unique.");
