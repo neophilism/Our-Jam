@@ -49,6 +49,7 @@ export type EventState = {
     id: string;
     voteLimit?: number;
     voteMode?: "single" | "weighted";
+    waveExclusions?: string[];
     sourceTitle: string;
     state: string;
     openedAt: string;

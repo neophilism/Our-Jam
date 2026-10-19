@@ -762,6 +762,7 @@ export async function snapshot(
         id: round.id,
         voteLimit: votePolicy(round).limit,
         voteMode: votePolicy(round).mode,
+        waveExclusions: round.settings?.waveExclusions ?? [],
         sourceTitle: round.source_title,
         state: round.state,
         openedAt: round.opened_at,

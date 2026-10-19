@@ -191,6 +191,7 @@ test("production API: persistent multiuser voting, isolation, conflicts, closing
       assert.equal(r.json().round.seed, undefined);
       assert.equal(r.json().queue, undefined);
       assert.equal(r.json().round.revision, 2);
+      assert.deepEqual(r.json().round.waveExclusions, ["forbidden drone"]);
       assert.equal(r.json().round.waves[0].supporters, 2);
     },
   );

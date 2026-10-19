@@ -678,6 +678,11 @@ function Audience({ slug }: { slug: string }) {
                     <p className="tiny muted">
                       Suggest an instrument, rhythm, style, or mood. Each Sound Wave you submit uses one vote; use the rest to vote for other listeners' ideas.
                     </p>
+                    {!!round?.waveExclusions?.length && (
+                      <p className="tiny muted">
+                        Please avoid these artist exclusions: {round.waveExclusions.join(", ")}.
+                      </p>
+                    )}
                   </form>
                   <div className="wave-list">
                     {waves.map((w, i) => (
