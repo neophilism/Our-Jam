@@ -75,6 +75,7 @@ import {
   profileInput,
   releaseInput,
   waveInput,
+  waveEditInput,
 } from "../../../packages/contracts/src/index.js";
 import {
   advance,
@@ -84,6 +85,7 @@ import {
   ownedEvent,
   snapshot,
   submitWave,
+  editWave,
 } from "./service.js";
 
 import { claimPlayback, heartbeat, pausePlayback } from "./playback.js";
@@ -752,6 +754,12 @@ export async function createApp(db: Database, config: AppConfig) {
       id.parse((req.params as any).id),
       waveInput.parse(req.body),
     );
+  });
+  app.patch("/api/rounds/:roundId/waves/:waveId", async (req) => {
+    const s = await session(req, "guest");
+    const params = req.params as { roundId: string; waveId: string };
+    return editWave(db, { participantId: s.participant_id },
+      id.parse(params.roundId), id.parse(params.waveId), waveEditInput.parse(req.body));
   });
   app.post("/api/operator/events/:id/playback/claim", async (req) => {
     const op = await session(req, "operator");

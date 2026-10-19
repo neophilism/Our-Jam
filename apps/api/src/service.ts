@@ -18,6 +18,7 @@ import {
 import {
   eventInput,
   waveInput,
+  waveEditInput,
   allocationInput,
 } from "../../../packages/contracts/src/index.js";
 
@@ -370,6 +371,57 @@ export async function submitWave(
       result,
     );
     await logEvent(tx, r.event_id, "wave.contributed");
+    return result;
+  });
+}
+/** A creator may revise a phrase only while nobody else supports it. */
+export async function editWave(
+  db: Database,
+  actor: Actor,
+  roundId: string,
+  waveId: string,
+  input: z.infer<typeof waveEditInput>,
+) {
+  const text = normalizeWave(input.text);
+  return db.transaction(async (tx) => {
+    const r = await lockedRound(tx, roundId, actor);
+    const cache = await replay(tx, actor.participantId, input.commandId, {
+      type: "edit_wave", roundId, waveId, ...input,
+    });
+    if (cache.response) return cache.response;
+    open(r);
+    await ballot(tx, roundId, actor.participantId, input.expectedRevision);
+    const wave = (await tx.query(
+      "SELECT author_id,moderated,normalized FROM sound_waves WHERE id=$1 AND round_id=$2 FOR UPDATE",
+      [waveId, roundId],
+    )).rows[0];
+    requireThat(wave && wave.author_id === actor.participantId && !wave.moderated,
+      "not_found", "Sound Wave not available for editing.", 404);
+    const supporters = (await tx.query(
+      "SELECT count(*)::integer n FROM allocations WHERE round_id=$1 AND wave_id=$2 AND participant_id<>$3",
+      [roundId, waveId, actor.participantId],
+    )).rows[0].n;
+    requireThat(supporters === 0, "wave_supported",
+      "Other listeners support this Sound Wave, so its meaning cannot change.", 409);
+    if (wave.normalized !== text.normalized) {
+      const duplicate = (await tx.query(
+        "SELECT id FROM sound_waves WHERE round_id=$1 AND normalized=$2 AND id<>$3",
+        [roundId, text.normalized, waveId],
+      )).rows[0];
+      requireThat(!duplicate, "duplicate_wave",
+        "This Sound Wave already exists. Vote for it instead.", 409);
+    }
+    await tx.query(
+      "UPDATE sound_waves SET text=$1,normalized=$2 WHERE id=$3 AND round_id=$4",
+      [text.text, text.normalized, waveId, roundId],
+    );
+    await tx.query(
+      "UPDATE ballots SET revision=revision+1 WHERE round_id=$1 AND participant_id=$2",
+      [roundId, actor.participantId],
+    );
+    const result = { revision: input.expectedRevision + 1, waveId };
+    await remember(tx, actor.participantId, input.commandId, cache.hash, result);
+    await logEvent(tx, r.event_id, "wave.edited");
     return result;
   });
 }

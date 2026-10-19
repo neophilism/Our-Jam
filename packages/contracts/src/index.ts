@@ -11,6 +11,10 @@ export const waveInput = command.extend({
   expectedRevision: z.number().int().nonnegative(),
   moveFrom: id.optional(),
 });
+export const waveEditInput = command.extend({
+  text: z.string().max(192),
+  expectedRevision: z.number().int().nonnegative(),
+});
 export const allocationInput = command.extend({
   expectedRevision: z.number().int().nonnegative(),
   allocations: z.record(id, z.number().int().positive().max(5)),

@@ -286,6 +286,33 @@ test("production API: persistent multiuser voting, isolation, conflicts, closing
       assert.equal(r.statusCode, 400);
     },
   );
+  await t.test("only an unsupported creator may edit a live Sound Wave", async () => {
+    const liveRound = end.json().roundId;
+    const own = await request("POST", `/api/rounds/${liveRound}/waves`,
+      { commandId: randomUUID(), text: "Blue piano", expectedRevision: 0 }, a);
+    assert.equal(own.statusCode, 200, own.body);
+    const ownId = own.json().waveId;
+    const other = await request("POST", `/api/rounds/${liveRound}/waves`,
+      { commandId: randomUUID(), text: "Warm cello", expectedRevision: 0 }, b);
+    assert.equal(other.statusCode, 200, other.body);
+    const path = `/api/rounds/${liveRound}/waves/${ownId}`;
+    const edit = (text: string, expectedRevision: number, cookie = a) =>
+      request("PATCH", path, { commandId: randomUUID(), text, expectedRevision }, cookie);
+    assert.equal((await edit("Warm cello", 1)).statusCode, 409);
+    assert.equal((await edit("<script>", 1)).statusCode, 400);
+    assert.equal((await edit("Soft piano", 1, b)).statusCode, 404);
+    const changed = await edit("Soft piano", 1);
+    assert.equal(changed.statusCode, 200, changed.body);
+    assert.equal(changed.json().revision, 2);
+    assert.equal((await edit("Late piano", 1)).statusCode, 409);
+    const support = await request("POST", `/api/rounds/${liveRound}/waves`,
+      { commandId: randomUUID(), text: "Soft piano", expectedRevision: 1 }, b);
+    assert.equal(support.statusCode, 200, support.body);
+    assert.equal(support.json().waveId, ownId);
+    assert.equal((await edit("Sharp piano", 2)).statusCode, 409);
+    const visible = (await request("GET", `/api/events/${slug}`, undefined, a)).json();
+    assert.ok(visible.round.waves.some((wave: any) => wave.id === ownId && wave.text === "Soft piano"));
+  });
   await t.test(
     "artist supplied asset is distinct from provider generation and publishes at boundary",
     async () => {
