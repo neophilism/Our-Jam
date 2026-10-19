@@ -307,9 +307,11 @@ test("production API: persistent multiuser voting, isolation, conflicts, closing
     assert.equal((await edit("<script>", 1)).statusCode, 400);
     assert.equal((await edit("Forbidden drone", 1)).statusCode, 400);
     assert.equal((await edit("Soft piano", 1, b)).statusCode, 404);
-    const changed = await edit("Soft piano", 1);
+    const editCommand = { commandId: randomUUID(), text: "Soft piano", expectedRevision: 1 };
+    const changed = await request("PATCH", path, editCommand, a);
     assert.equal(changed.statusCode, 200, changed.body);
     assert.equal(changed.json().revision, 2);
+    assert.deepEqual((await request("PATCH", path, editCommand, a)).json(), changed.json());
     assert.equal((await edit("Late piano", 1)).statusCode, 409);
     const support = await request("POST", `/api/rounds/${liveRound}/waves`,
       { commandId: randomUUID(), text: "Soft piano", expectedRevision: 1 }, b);
@@ -327,6 +329,9 @@ test("production API: persistent multiuser voting, isolation, conflicts, closing
     const afterHide = (await request("GET", `/api/events/${slug}`, undefined, a)).json();
     assert.ok(!afterHide.round.waves.some((wave: any) => wave.id === ownId));
     assert.equal((await db.query("SELECT count(*)::integer n FROM allocations WHERE wave_id=$1", [ownId])).rows[0].n, 0);
+    const ballotRevisions = await db.query("SELECT participant_id,revision FROM ballots WHERE round_id=$1", [liveRound]);
+    assert.ok(ballotRevisions.rows.every(row => row.revision === 3),
+      "hiding must return points and advance every affected listener's ballot revision");
   });
   await t.test(
     "artist supplied asset is distinct from provider generation and publishes at boundary",
