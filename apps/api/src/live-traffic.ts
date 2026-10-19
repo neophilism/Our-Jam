@@ -1,4 +1,5 @@
 import { DomainError } from "../../../packages/domain/src/index.js";
+import type { Sql } from "./db.js";
 
 /** Coalesce only simultaneous identical reads. No completed or private data cache. */
 export class SnapshotReads {
@@ -80,6 +81,9 @@ export class RoomStreams {
   get stats() {
     return { rooms: this.rooms.size, connections: this.total };
   }
+  activeRooms() {
+    return [...this.rooms.keys()];
+  }
   add(room: string, stream: StreamWriter) {
     let streams = this.rooms.get(room);
     // Re-registering the same writer must not consume another connection slot.
@@ -123,5 +127,25 @@ export class RoomStreams {
       for (const stream of streams) stream.end();
     this.rooms.clear();
     this.total = 0;
+  }
+}
+
+/** Poll committed room counters, not globally allocated event-log IDs: a
+ * slower transaction may commit an older log ID after a newer one. */
+export async function pollRoomChanges(db: Sql, streams: RoomStreams, seen: Map<string, string>) {
+  const rooms = streams.activeRooms();
+  const active = new Set(rooms);
+  for (const room of seen.keys()) if (!active.has(room)) seen.delete(room);
+  if (!rooms.length) return;
+  const rows = (await db.query(
+    "SELECT id::text,change_seq::text FROM events WHERE id=ANY($1::uuid[])",
+    [rooms],
+  )).rows;
+  for (const row of rows) {
+    const id = String(row.id), sequence = String(row.change_seq);
+    if (seen.get(id) !== sequence) {
+      seen.set(id, sequence);
+      streams.update(id);
+    }
   }
 }

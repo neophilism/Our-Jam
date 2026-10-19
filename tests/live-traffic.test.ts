@@ -1,7 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { SnapshotReads, RoomStreams } from "../apps/api/src/live-traffic.js";
+import { SnapshotReads, RoomStreams, pollRoomChanges } from "../apps/api/src/live-traffic.js";
+import { createEvent, logEvent } from "../apps/api/src/service.js";
+import { eventInput } from "../packages/contracts/src/index.js";
 import { publicOrigin } from "../apps/api/src/runtime-config.js";
 import { createApp } from "../apps/api/src/app.js";
 import { testDatabase } from "./database.js";
@@ -300,4 +302,38 @@ test("production origin uses only explicit config or Render's verified environme
       RENDER_EXTERNAL_URL: "https://untrusted.example",
     }),
   );
+});
+
+test("committed per-room changes reach two stream managers despite other room traffic", async (t) => {
+  const db = await testDatabase();
+  t.after(() => db.close());
+  const create = async (name: string) => createEvent(db, "our-jam", eventInput.parse({
+    slug: name + "-" + randomUUID(), title: name, artistName: "Artist",
+    sources: [{ title: "Track", corePrompt: "Private signature", durationSeconds: 120 }],
+  }));
+  const event = await create("fanout"), other = await create("other");
+  const first = new RoomStreams(), second = new RoomStreams();
+  const eventsA: string[] = [], eventsB: string[] = [];
+  const writer = (events: string[]) => ({
+    write(chunk: string) { events.push(chunk); return true; },
+    destroy() {}, end() {},
+  });
+  first.add(event.id, writer(eventsA));
+  second.add(event.id, writer(eventsB));
+  const seenA = new Map<string, string>(), seenB = new Map<string, string>();
+  await pollRoomChanges(db, first, seenA);
+  await pollRoomChanges(db, second, seenB);
+  assert.equal(eventsA.length, 1);
+  assert.equal(eventsB.length, 1);
+  await db.transaction(tx => logEvent(tx, other.id, "votes.changed"));
+  await pollRoomChanges(db, first, seenA);
+  assert.equal(eventsA.length, 1, "unrelated room changes do not invalidate this room");
+  await db.transaction(tx => logEvent(tx, event.id, "votes.changed"));
+  await pollRoomChanges(db, first, seenA);
+  await pollRoomChanges(db, second, seenB);
+  assert.equal(eventsA.length, 2);
+  assert.equal(eventsB.length, 2);
+  first.close();
+  await pollRoomChanges(db, first, seenA);
+  assert.equal(seenA.size, 0, "inactive rooms do not retain counters");
 });
