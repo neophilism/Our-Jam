@@ -915,7 +915,7 @@ export async function createApp(db: Database, config: AppConfig) {
         ])
       ).rows[0];
       requireThat(
-        r.state === "open",
+        r.state === "open" || r.state === "paused",
         "round_closed",
         "Closed snapshots cannot be edited.",
         409,

@@ -12,7 +12,7 @@ export async function moderationQueue(
       await db.query(
         `SELECT w.id,w.text,w.moderated,w.created_at,r.id AS round_id
          FROM sound_waves w JOIN rounds r ON r.id=w.round_id
-         WHERE r.event_id=$1 AND r.state='open'
+         WHERE r.event_id=$1 AND r.state IN ('open','paused')
          ORDER BY w.created_at DESC,w.id LIMIT 100`,
         [eventId],
       )
