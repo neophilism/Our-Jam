@@ -40,6 +40,7 @@ export type EventState = {
       maxWaves: number;
       minimumRoundSeconds: number;
       maxGenerations: number;
+      waveExclusions?: string[];
       releaseMode?: "boundary" | "immediate" | "review";
     };
     revision: number;
