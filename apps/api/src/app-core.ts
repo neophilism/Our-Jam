@@ -1223,7 +1223,11 @@ export async function createApp(db: Database, config: AppConfig) {
   const seenRoomChanges = new Map<string, string>();
   let polling = false;
   const poll = setInterval(async () => {
-    if (polling || !roomStreams.stats.connections) return;
+    if (polling) return;
+    if (!roomStreams.stats.connections) {
+      seenRoomChanges.clear();
+      return;
+    }
     polling = true;
     try {
       await pollRoomChanges(db, roomStreams, seenRoomChanges);
