@@ -1,6 +1,6 @@
 import { readPlatformVotePolicy, resolveVoteLimit, effectiveVoteLimit } from "./vote-policy.js";
 import { z } from "zod";
-import { VOTE_BUDGET } from "../../../packages/domain/src/index.js";
+import { VOTE_BUDGET, normalizeWave } from "../../../packages/domain/src/index.js";
 import { purchaseLinksInput, publicPurchaseLinks, preferredPurchaseUrl, purchaseModeInput } from "../../../packages/contracts/src/purchase-providers.js";
 import type { Database } from "./db.js";
 import { ownedEvent, replay, remember, logEvent } from "./service.js";
@@ -127,6 +127,7 @@ export async function updateSettings(
       minimumRoundSeconds: input.minimumRoundSeconds,
       maxWaves: input.maxWaves,
       maxGenerations: input.maxGenerations,
+      waveExclusions: input.waveExclusions === undefined ? event.settings.waveExclusions ?? [] : input.waveExclusions.map(value => normalizeWave(value).normalized),
       voteMode: requestedVoteMode,
       votesPerListener: voteLimit,
       releaseMode: input.releaseMode,

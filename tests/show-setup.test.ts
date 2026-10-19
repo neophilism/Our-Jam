@@ -23,6 +23,7 @@ test("show edits fence stale commands, preserve current rounds, and reorder only
     artistName: "Artist",
     slug: "setup-" + randomUUID(),
     minimumRoundSeconds: 0,
+    waveExclusions: ["Muted trumpet"],
     sources: [1, 2, 3].map((n) => ({
       title: `Track ${n}`,
       corePrompt: `Signature ${n}`,
@@ -120,6 +121,7 @@ test("show edits fence stale commands, preserve current rounds, and reorder only
     maxWaves: 2,
     minimumRoundSeconds: 15,
     maxGenerations: 3,
+    waveExclusions: ["Bright violin"],
     commandId: randomUUID(),
     expectedRevision: await revision(),
   });
@@ -131,6 +133,7 @@ test("show edits fence stale commands, preserve current rounds, and reorder only
     "open rounds keep their original rules",
   );
   assert.equal((await round()).settings.minimumRoundSeconds, 0);
+  assert.deepEqual((await round()).settings.waveExclusions, ["muted trumpet"]);
   assert.equal(
     (await sources(db, "our-jam", event.id)).sources.find(
       (s) => s.id === before[2].source_id,

@@ -124,6 +124,7 @@ export function ShowSetup({
                     purchaseMode,
                     preferredPurchaseProvider: purchaseMode === "direct" ? preferredPurchaseProvider : null,
                     releaseMode: form.get("releaseMode"),
+                    waveExclusions: String(form.get("waveExclusions") ?? "").split(/\r?\n/).map(x => x.trim()).filter(Boolean),
                     ...Object.fromEntries(
                       [
                         "screenLimit",
@@ -181,6 +182,12 @@ export function ShowSetup({
               </label> : <p className="tiny muted">
                 {platformVotes?.mode === "fixed" ? `The platform currently allows ${platformVotes.fixedVotes} votes per listener per song. You cannot change this amount.` : "Loading voting limits…"}
               </p>}
+              <label>
+                Sound Wave exclusions (one phrase per line)
+                <textarea name="waveExclusions" rows={3} maxLength={1200}
+                  defaultValue={(settings.settings.waveExclusions ?? []).join("\n")} />
+                <small className="muted">Exclusions apply to the next song. List phrases the crowd must not add to this artist's sound.</small>
+              </label>
                             <PurchaseEditor links={purchaseLinks} onChange={setPurchaseLinks} disabled={busy} mode={purchaseMode} onModeChange={setPurchaseMode} preferredProvider={preferredPurchaseProvider} onPreferredChange={setPreferredPurchaseProvider}/>
               {(
                 [

@@ -44,6 +44,7 @@ test("production API: persistent multiuser voting, isolation, conflicts, closing
     slug,
     artistName: "Test Artist",
     minimumRoundSeconds: 0,
+    waveExclusions: ["forbidden drone"],
     sources: [
       { title: "First track", corePrompt: "PRIVATE_SIGNATURE_PROMPT", durationSeconds: 180 },
       { title: "Second track", corePrompt: "PRIVATE_SECOND", durationSeconds: 120 },
@@ -104,6 +105,9 @@ test("production API: persistent multiuser voting, isolation, conflicts, closing
   );
   assert.equal(start.statusCode, 200, start.body);
   const round = start.json().roundId;
+  const blocked = await request("POST", `/api/rounds/${round}/waves`,
+    { commandId: randomUUID(), text: "Use a forbidden drone now", expectedRevision: 0 }, a);
+  assert.equal(blocked.statusCode, 400, blocked.body);
   const commandId = randomUUID();
   const submission = { commandId, text: "Warm brass", expectedRevision: 0 };
   const first = await request(
@@ -300,6 +304,7 @@ test("production API: persistent multiuser voting, isolation, conflicts, closing
       request("PATCH", path, { commandId: randomUUID(), text, expectedRevision }, cookie);
     assert.equal((await edit("Warm cello", 1)).statusCode, 409);
     assert.equal((await edit("<script>", 1)).statusCode, 400);
+    assert.equal((await edit("Forbidden drone", 1)).statusCode, 400);
     assert.equal((await edit("Soft piano", 1, b)).statusCode, 404);
     const changed = await edit("Soft piano", 1);
     assert.equal(changed.statusCode, 200, changed.body);

@@ -100,6 +100,20 @@ async function lockedRound(tx: Sql, id: string, actor: Actor) {
     lease && new Date(lease.expires_at) > new Date(r.server_time);
   return r;
 }
+function allowedWave(r: Record<string, any>, normalized: string) {
+  const exclusions = r.settings?.waveExclusions;
+  if (!Array.isArray(exclusions)) return;
+  const phrase = " " + normalized + " ";
+  requireThat(!exclusions.some((item: unknown) =>
+    typeof item === "string" && phrase.includes(" " + item + " ")),
+    "wave_excluded", "This phrase conflicts with the artist's Sound Wave exclusions.", 400);
+}
+function normalizedExclusions(values: string[] | undefined): string[] {
+  const normalized = (values ?? []).map(value => normalizeWave(value).normalized);
+  requireThat(new Set(normalized).size === normalized.length,
+    "duplicate_exclusion", "Each excluded phrase must be unique.");
+  return normalized;
+}
 function open(r: Record<string, any>) {
   requireThat(
     r.state === "open" &&
@@ -298,6 +312,7 @@ export async function submitWave(
     });
     if (cache.response) return cache.response;
     open(r);
+    allowedWave(r, text.normalized);
     await ballot(tx, roundId, actor.participantId, input.expectedRevision);
     const allocation: Record<string, number> = {};
     for (const row of (
@@ -390,6 +405,7 @@ export async function editWave(
     });
     if (cache.response) return cache.response;
     open(r);
+    allowedWave(r, text.normalized);
     await ballot(tx, roundId, actor.participantId, input.expectedRevision);
     const wave = (await tx.query(
       "SELECT author_id,moderated,normalized FROM sound_waves WHERE id=$1 AND round_id=$2 FOR UPDATE",
@@ -444,6 +460,7 @@ export async function createEvent(
       minimumRoundSeconds: input.minimumRoundSeconds,
       maxWaves: input.maxWaves,
       maxGenerations: input.maxGenerations,
+      waveExclusions: normalizedExclusions(input.waveExclusions),
       voteMode: input.voteMode ?? "weighted",
       votesPerListener: input.voteMode === "single" ? resolveVoteLimit(platform, input.votesPerListener) : VOTE_BUDGET,
       promptLimit: 3500,
