@@ -920,6 +920,12 @@ export async function createApp(db: Database, config: AppConfig) {
         "Closed snapshots cannot be edited.",
         409,
       );
+      const wave = (await tx.query(
+        "SELECT moderated FROM sound_waves WHERE id=$1 AND round_id=$2 FOR UPDATE",
+        [waveId, found.round_id],
+      )).rows[0];
+      requireThat(wave, "not_found", "Wave not found.", 404);
+      if (wave.moderated) return { ok: true, replay: true };
       await tx.query(
         "UPDATE ballots SET revision=revision+1 WHERE round_id=$1 AND participant_id IN (SELECT participant_id FROM allocations WHERE wave_id=$2)",
         [found.round_id, waveId],
