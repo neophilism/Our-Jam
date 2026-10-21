@@ -83,6 +83,9 @@ struct LiveView: View {
                             Spacer(); Text("\(state.people) in this session")
                         }.font(.caption)
                         Text(state.round?.state == "paused" ? "Voting paused with playback" : state.round?.state == "open" ? "\(model.remaining / 60):\(String(format: "%02d", model.remaining % 60)) remaining" : state.event.state == "ended" ? "This session has ended" : "Waiting for the performer").font(.title3.monospacedDigit())
+                        if model.sponsorRemaining > 0, let opening = state.round?.sponsorBreak, ["open", "paused"].contains(state.round?.state ?? "") {
+                            NativeSponsorOpening(opening: opening, remaining: model.sponsorRemaining, elapsed: model.sponsorElapsed, origin: model.origin)
+                        }
                         if !state.canContribute {
                             GroupBox("Join the collaboration") {
                                 VStack(alignment: .leading, spacing: 12) {
@@ -184,7 +187,9 @@ struct ProfileView: View {
                     Toggle("Keep my credit anonymous", isOn: $model.anonymous)
                     Button("Save profile") { editingName = false; Task { await model.saveProfile() } }.disabled(model.busy).accessibilityIdentifier("saveProfile")
                 }
+                NativeAccountSignIn(model: model, onSignedIn: eraseDisclosure)
                 NativeAccountControls(model: model, issuedKey: $issuedKey, disclosureEpoch: $disclosureEpoch)
+                    .id(model.accountEpoch)
                 Section("Connected event") {
                     Text(model.state?.event.title ?? model.eventCode)
                     Text(model.origin).font(.caption).textSelection(.enabled)

@@ -9,7 +9,7 @@ CREATE TABLE platform_vote_policy (
  CHECK(min_votes<=max_votes)
 );
 INSERT INTO platform_vote_policy(id,mode,fixed_votes,min_votes,max_votes) VALUES(1,'fixed',5,3,20);
-CREATE TABLE platform_admin_sessions (
+CREATE TABLE IF NOT EXISTS platform_admin_sessions (
  token_hash text PRIMARY KEY,
  expires_at timestamptz NOT NULL
 );

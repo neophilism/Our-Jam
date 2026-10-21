@@ -50,14 +50,19 @@ export function validateAllocations(
   policy: VotePolicy = { mode: "weighted", limit: VOTE_BUDGET },
 ): void {
   requireThat(
-    Number.isSafeInteger(policy.limit) && policy.limit >= 1 && policy.limit <= MAX_VOTE_CHOICES,
+    Number.isSafeInteger(policy.limit) &&
+      policy.limit >= 1 &&
+      policy.limit <= MAX_VOTE_CHOICES,
     "invalid_vote_policy",
     "This event has an invalid voting limit.",
   );
   const votes = Object.values(values);
   const perIdeaLimit = policy.mode === "single" ? 1 : VOTE_BUDGET;
   requireThat(
-    votes.every((count) => Number.isSafeInteger(count) && count > 0 && count <= perIdeaLimit),
+    votes.every(
+      (count) =>
+        Number.isSafeInteger(count) && count > 0 && count <= perIdeaLimit,
+    ),
     "invalid_allocation",
     policy.mode === "single"
       ? "You can cast one vote per Sound Wave."

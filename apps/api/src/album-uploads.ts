@@ -49,7 +49,7 @@ export async function ingestAlbumAudio(db: Database, artistId: string, sourceId:
     const key = `albums/${event.id}/${sourceId}/${sha}.mp3`;
     await store.put(key, media.bytes, sha);
     const audioUrl = audioRoute(origin, sourceId, sha);
-    await tx.query("UPDATE source_tracks SET audio_url=$1,duration_seconds=$2 WHERE id=$3", [audioUrl, Math.ceil(media.durationSeconds), sourceId]);
+    await tx.query("UPDATE source_tracks SET audio_url=$1,duration_seconds=$2,duration_verified=true WHERE id=$3", [audioUrl, Math.ceil(media.durationSeconds), sourceId]);
     await tx.query("INSERT INTO audit_log(artist_id,event_id,action,subject_id) VALUES($1,$2,'album.upload',$3)", [artistId, event.id, sourceId]);
     await logEvent(tx, event.id, "setup.changed");
     const response = { ok: true, audioUrl, durationSeconds: media.durationSeconds, sha256: sha, bytes: media.bytes.length, format: "audio/mpeg" };

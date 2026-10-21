@@ -1,5 +1,19 @@
-import { readPlatformVotePolicy, resolveVoteLimit, effectiveVoteLimit } from "./vote-policy.js";
-import { publicPurchaseLinks, preferredPurchaseUrl } from "../../../packages/contracts/src/purchase-providers.js";
+import {
+  freezeSponsorPlan,
+  requireEventAccess,
+  requireParticipationStarted,
+  sponsorElapsed,
+} from "./commerce-policy.js";
+import {
+  publicPurchaseLinks,
+  preferredPurchaseUrl,
+} from "../../../packages/contracts/src/purchase-providers.js";
+import {
+  readPlatformVotePolicy,
+  resolveVoteLimit,
+  effectiveVoteLimit,
+} from "./vote-policy.js";
+
 import { randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Database, Sql } from "./db.js";
@@ -100,6 +114,7 @@ async function lockedRound(tx: Sql, id: string, actor: Actor) {
   return r;
 }
 function open(r: Record<string, any>) {
+  requireParticipationStarted(r);
   requireThat(
     r.state === "open" &&
       r.controllerAlive &&
@@ -178,23 +193,33 @@ async function saveAllocation(
   if (policy.mode === "single") {
     // Each submitted idea reserves exactly one vote from its author's allowance.
     // Prevent reclaiming that vote and then submitting unlimited new ideas.
-    const own = (await tx.query(
-      "SELECT id FROM sound_waves WHERE round_id=$1 AND author_id=$2 AND NOT moderated",
-      [roundId, participantId],
-    )).rows;
+    const own = (
+      await tx.query(
+        "SELECT id FROM sound_waves WHERE round_id=$1 AND author_id=$2 AND NOT moderated",
+        [roundId, participantId],
+      )
+    ).rows;
     for (const wave of own)
-      requireThat(allocation[wave.id] === 1, "submission_vote_required",
-        "Each Sound Wave you submit uses one of your votes until the song ends.");
+      requireThat(
+        allocation[wave.id] === 1,
+        "submission_vote_required",
+        "Each Sound Wave you submit uses one of your votes until the song ends.",
+      );
   }
   const choices = Object.entries(allocation);
   const waveIds = choices.map(([waveId]) => waveId);
   if (waveIds.length) {
-    const valid = (await tx.query(
-      "SELECT count(*)::integer n FROM sound_waves WHERE round_id=$1 AND id=ANY($2::uuid[]) AND NOT moderated",
-      [roundId, waveIds],
-    )).rows[0].n;
-    requireThat(valid === waveIds.length, "invalid_wave",
-      "One or more Sound Waves are no longer available in this round.");
+    const valid = (
+      await tx.query(
+        "SELECT count(*)::integer n FROM sound_waves WHERE round_id=$1 AND id=ANY($2::uuid[]) AND NOT moderated",
+        [roundId, waveIds],
+      )
+    ).rows[0].n;
+    requireThat(
+      valid === waveIds.length,
+      "invalid_wave",
+      "One or more Sound Waves are no longer available in this round.",
+    );
   }
   await tx.query(
     "DELETE FROM allocations WHERE round_id=$1 AND participant_id=$2",
@@ -203,7 +228,7 @@ async function saveAllocation(
   if (choices.length)
     await tx.query(
       "INSERT INTO allocations(round_id,participant_id,wave_id,points) SELECT $1::uuid,$2::uuid,v.wave_id,v.points FROM unnest($3::uuid[],$4::smallint[]) AS v(wave_id,points)",
-      [roundId, participantId, waveIds, choices.map(([,points]) => points)],
+      [roundId, participantId, waveIds, choices.map(([, points]) => points)],
     );
   await tx.query(
     "UPDATE ballots SET revision=revision+1 WHERE round_id=$1 AND participant_id=$2",
@@ -248,8 +273,12 @@ function votePolicy(round: { settings?: Record<string, any> }): VotePolicy {
   if (round.settings?.voteMode !== "single")
     return { mode: "weighted", limit: VOTE_BUDGET };
   const proposed = round.settings.votesPerListener ?? VOTE_BUDGET;
-  const limit = Number.isSafeInteger(proposed) && proposed >= 1 && proposed <= MAX_VOTE_CHOICES
-    ? proposed : VOTE_BUDGET;
+  const limit =
+    Number.isSafeInteger(proposed) &&
+    proposed >= 1 &&
+    proposed <= MAX_VOTE_CHOICES
+      ? proposed
+      : VOTE_BUDGET;
   return { mode: "single", limit };
 }
 export async function allocate(
@@ -268,7 +297,13 @@ export async function allocate(
     if (cache.response) return cache.response;
     open(r);
     await ballot(tx, roundId, actor.participantId, input.expectedRevision);
-    await saveAllocation(tx, roundId, actor.participantId, input.allocations, votePolicy(r));
+    await saveAllocation(
+      tx,
+      roundId,
+      actor.participantId,
+      input.allocations,
+      votePolicy(r),
+    );
     const result = { revision: input.expectedRevision + 1 };
     await remember(
       tx,
@@ -315,7 +350,8 @@ export async function submitWave(
       if (--allocation[input.moveFrom] === 0) delete allocation[input.moveFrom];
     }
     requireThat(
-      Object.values(allocation).reduce((a, b) => a + b, 0) < votePolicy(r).limit,
+      Object.values(allocation).reduce((a, b) => a + b, 0) <
+        votePolicy(r).limit,
       "vote_budget_exceeded",
       "All your votes are in use. Take one back from another Sound Wave to share your idea.",
     );
@@ -332,12 +368,16 @@ export async function submitWave(
         "That Sound Wave is unavailable.",
       );
     if (!wave) {
-      const ownCount = (await tx.query(
-        "SELECT count(*)::integer n FROM sound_waves WHERE round_id=$1 AND author_id=$2 AND NOT moderated",
-        [roundId, actor.participantId],
-      )).rows[0].n;
+      const ownCount = (
+        await tx.query(
+          "SELECT count(*)::integer n FROM sound_waves WHERE round_id=$1 AND author_id=$2 AND NOT moderated",
+          [roundId, actor.participantId],
+        )
+      ).rows[0].n;
       requireThat(
-        votePolicy(r).mode === "single" ? ownCount < votePolicy(r).limit : ownCount === 0,
+        votePolicy(r).mode === "single"
+          ? ownCount < votePolicy(r).limit
+          : ownCount === 0,
         "submission_limit",
         "You've already submitted the maximum number of Sound Waves for this song.",
       );
@@ -360,7 +400,13 @@ export async function submitWave(
       );
     }
     allocation[wave.id] = (allocation[wave.id] ?? 0) + 1;
-    await saveAllocation(tx, roundId, actor.participantId, allocation, votePolicy(r));
+    await saveAllocation(
+      tx,
+      roundId,
+      actor.participantId,
+      allocation,
+      votePolicy(r),
+    );
     const result = { revision: input.expectedRevision + 1, waveId: wave.id };
     await remember(
       tx,
@@ -379,11 +425,28 @@ export async function createEvent(
   input: z.infer<typeof eventInput>,
 ) {
   requireThat(
-    input.voteMode !== "weighted" || input.votesPerListener === undefined || input.votesPerListener === VOTE_BUDGET,
+    input.voteMode !== "weighted" ||
+      input.votesPerListener === undefined ||
+      input.votesPerListener === VOTE_BUDGET,
     "invalid_vote_policy",
     "Legacy weighted voting uses the existing event limit; choose one vote per Sound Wave for a different limit.",
   );
-  requireThat(input.purchaseMode !== "direct" || Boolean(preferredPurchaseUrl(input.purchaseLinks ?? (input.purchaseUrl ? [{ provider: "other", url: input.purchaseUrl }] : []), input.purchaseMode, input.preferredPurchaseProvider)), "invalid_purchase_destination", "Choose a listed provider for direct purchase.", 400);
+  requireThat(
+    input.purchaseMode !== "direct" ||
+      Boolean(
+        preferredPurchaseUrl(
+          input.purchaseLinks ??
+            (input.purchaseUrl
+              ? [{ provider: "other", url: input.purchaseUrl }]
+              : []),
+          input.purchaseMode,
+          input.preferredPurchaseProvider,
+        ),
+      ),
+    "invalid_purchase_destination",
+    "Choose a listed provider for direct purchase.",
+    400,
+  );
   return db.transaction(async (tx) => {
     const platform = await readPlatformVotePolicy(tx, true);
     const eventId = randomUUID();
@@ -393,11 +456,19 @@ export async function createEvent(
       maxWaves: input.maxWaves,
       maxGenerations: input.maxGenerations,
       voteMode: input.voteMode ?? "weighted",
-      votesPerListener: input.voteMode === "single" ? resolveVoteLimit(platform, input.votesPerListener) : VOTE_BUDGET,
+      votesPerListener:
+        input.voteMode === "single"
+          ? resolveVoteLimit(platform, input.votesPerListener)
+          : VOTE_BUDGET,
+
       promptLimit: 3500,
       releaseMode: input.releaseMode,
       admissionMode: input.admissionMode,
-      purchaseLinks: input.purchaseLinks ?? (input.purchaseUrl ? [{ provider: "other", url: input.purchaseUrl }] : []),
+      purchaseLinks:
+        input.purchaseLinks ??
+        (input.purchaseUrl
+          ? [{ provider: "other", url: input.purchaseUrl }]
+          : []),
       purchaseMode: input.purchaseMode ?? "menu",
       preferredPurchaseProvider: input.preferredPurchaseProvider ?? null,
       participantLimit: input.participantLimit,
@@ -469,7 +540,12 @@ export async function closeRound(
   ).rows[0].n;
   let reason: string | null = !providerReady ? "provider_not_configured" : null;
   if (!compiled.selected.length) reason = "no_supported_waves";
-  if (elapsed < r.settings.minimumRoundSeconds)
+  if (
+    Math.max(
+      0,
+      elapsed - Number(r.settings.sponsorBreak?.durationSeconds ?? 0),
+    ) < r.settings.minimumRoundSeconds
+  )
     reason = "participation_window_too_short";
   if (count >= r.settings.maxGenerations) reason = "event_generation_limit";
   await tx.query(
@@ -507,6 +583,7 @@ export async function advance(
   expectedRevision: number,
   command: PlaybackCommand,
   providerReady = false,
+  commerceEnabled = false,
 ) {
   return db.transaction(async (tx) => {
     const event = await ownedEvent(tx, eventId, artistId, true);
@@ -518,6 +595,7 @@ export async function advance(
     });
     if (cache.response) return cache.response;
     await verifyLease(tx, eventId, command);
+    if (commerceEnabled) await requireEventAccess(tx, eventId);
     requireThat(
       event.revision === expectedRevision,
       "revision_conflict",
@@ -580,10 +658,26 @@ export async function advance(
             seed,
             digest(seed),
             source.core_prompt,
-            JSON.stringify(event.settings.voteMode === "single" ? {
+            JSON.stringify({
               ...event.settings,
-              votesPerListener: effectiveVoteLimit(await readPlatformVotePolicy(tx, true), event.settings.votesPerListener),
-            } : event.settings),
+              ...(event.settings.voteMode === "single"
+                ? {
+                    votesPerListener: effectiveVoteLimit(
+                      await readPlatformVotePolicy(tx, true),
+                      event.settings.votesPerListener,
+                    ),
+                  }
+                : {}),
+              ...(commerceEnabled
+                ? {
+                    sponsorBreak: await freezeSponsorPlan(
+                      tx,
+                      eventId,
+                      Number(source.duration_seconds),
+                    ),
+                  }
+                : {}),
+            }),
           ],
         );
       }
@@ -699,6 +793,15 @@ export async function snapshot(
         deadlineAt: round.deadline_at,
         remainingMs: round.remaining_ms,
         pauseReason: round.pause_reason,
+        ...(round.settings?.sponsorBreak
+          ? {
+              sponsorBreak: {
+                ...round.settings.sponsorBreak,
+                elapsedMs: sponsorElapsed(round),
+                paused: round.state === "paused",
+              },
+            }
+          : {}),
         seedCommitment: round.seed_commitment,
         ...(round.state === "closed" ? { seed: round.seed } : {}),
         revision,
@@ -726,9 +829,19 @@ export async function snapshot(
       artistName: event.artist_name,
       artistId: event.artist_id,
       purchaseUrl: event.purchase_url,
-      purchaseLinks: publicPurchaseLinks(event.settings.purchaseLinks, event.purchase_url),
-      purchaseMode: preferredPurchaseUrl(publicPurchaseLinks(event.settings.purchaseLinks, event.purchase_url), event.settings.purchaseMode, event.settings.preferredPurchaseProvider) ? "direct" : "menu",
-      preferredPurchaseProvider: event.settings.preferredPurchaseProvider ?? null,
+      purchaseLinks: publicPurchaseLinks(
+        event.settings.purchaseLinks,
+        event.purchase_url,
+      ),
+      purchaseMode: preferredPurchaseUrl(
+        publicPurchaseLinks(event.settings.purchaseLinks, event.purchase_url),
+        event.settings.purchaseMode,
+        event.settings.preferredPurchaseProvider,
+      )
+        ? "direct"
+        : "menu",
+      preferredPurchaseProvider:
+        event.settings.preferredPurchaseProvider ?? null,
       state: event.state,
       settings: event.settings,
       revision: event.revision,

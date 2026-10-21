@@ -54,6 +54,12 @@ export type EventState = {
     deadlineAt: string;
     remainingMs?: number;
     pauseReason?: string;
+    sponsorBreak?: {
+      durationSeconds: number;
+      elapsedMs: number;
+      paused: boolean;
+      clips: { id: string; sponsorName: string; slotSeconds: number }[];
+    };
     revision: number;
     waves: Wave[];
   };

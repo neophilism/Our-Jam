@@ -130,13 +130,19 @@ test("performer prepares audio, reorders tracks and preserves unsaved settings a
   const form = page.locator(".show-setup .source-form").filter({
     has: page.getByRole("heading", { name: "Second song", exact: true }),
   });
-  await form
-    .getByLabel("Track duration in seconds", { exact: true })
-    .fill("20");
+  await expect(
+    form.getByLabel("Track duration in seconds", { exact: true }),
+  ).toHaveCount(0);
   await form
     .getByRole("button", { name: "Save album track", exact: true })
     .click();
   await expect(form).toHaveCount(0);
+  const saved = await (
+    await page.request.get(`/api/operator/events/${event.id}/sources`)
+  ).json();
+  expect(
+    saved.sources.find((s: any) => s.title === "Second song").duration_seconds,
+  ).toBe(20);
   await page
     .getByRole("button", {
       name: "Check this device’s audio links",
