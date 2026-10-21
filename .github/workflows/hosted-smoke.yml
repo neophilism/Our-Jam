@@ -1,7 +1,10 @@
-name: Hosted rehearsal read-only smoke
+name: Hosted rehearsal readiness (opt-in)
 on:
   workflow_dispatch:
   pull_request:
+    paths:
+      - .github/workflows/hosted-smoke.yml
+      - .github/workflows/portable-image.yml
   push:
     branches: [main]
 permissions:
@@ -11,11 +14,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Declare missing verified external origin, without claiming a passing host
+        if: ${{ vars.OUR_JAM_HOSTED_URL == '' }}
+        run: echo 'Hosted readiness NOT VERIFIED. Set OUR_JAM_HOSTED_URL to a restored, verified HTTPS origin; suspended Render is not tested.' >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@v4
+        if: ${{ vars.OUR_JAM_HOSTED_URL != '' }}
       - uses: actions/setup-node@v4
+        if: ${{ vars.OUR_JAM_HOSTED_URL != '' }}
         with:
           node-version: 24
-      - name: Verify hosted rehearsal security and media readiness (no credentials or spending)
+      - name: Verify exact URL and hosted authorization/media readiness
+        if: ${{ vars.OUR_JAM_HOSTED_URL != '' }}
         env:
+          OUR_JAM_HOSTED_URL: ${{ vars.OUR_JAM_HOSTED_URL }}
           OUR_JAM_REQUIRE_MEDIA_VERIFIED: "1"
-        run: node scripts/check-hosted-readiness.mjs https://our-jam-rehearsal.onrender.com
+        run: |
+          node --input-type=module -e 'const u=new URL(process.env.OUR_JAM_HOSTED_URL);if(u.protocol!=="https:"||u.username||u.password||u.pathname!=="/"||u.search||u.hash)process.exit(1)'
+          node scripts/check-hosted-readiness.mjs "$OUR_JAM_HOSTED_URL"
