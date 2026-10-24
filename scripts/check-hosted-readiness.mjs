@@ -4,8 +4,26 @@ if (!origin || !/^https:\/\/[^/?#]+$/.test(origin) || new URL(origin).origin !==
   console.error("Supply a valid HTTPS origin without path or query.");
   process.exit(2);
 }
+// Retry network timeouts and transient 5xx from a cold free-tier service.
+// Never retry bad authentication responses, authorization denials, or mismatched data.
+async function resilientFetch(url, options) {
+  let lastError;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const response = await fetch(url, { ...options, signal: AbortSignal.timeout(25000) });
+      if (response.status < 500 || attempt === 2) return response;
+      await response.body?.cancel();
+      lastError = new Error("Temporary server error " + response.status);
+    } catch (error) {
+      lastError = error;
+      if (attempt === 2) throw error;
+    }
+    await new Promise(resolve => setTimeout(resolve, 2500));
+  }
+  throw lastError;
+}
 async function check(path, verify) {
-  const response = await fetch(origin + path, {redirect:"error", signal:AbortSignal.timeout(20000), headers:{accept:"application/json"}});
+  const response = await resilientFetch(origin + path, {redirect:"error", headers:{accept:"application/json"}});
   if (!response.ok) throw new Error(path + " returned HTTP " + response.status);
   const data = await response.json();
   verify(data);
@@ -28,8 +46,8 @@ try {
   });
   // Real HTTPS negative-authorization and browser-entry probes, no test users,
   // provider calls, secret-bearing URLs, event writes or uploaded files.
-  const site = await fetch(origin + "/performer", {
-    redirect: "error", signal: AbortSignal.timeout(20000),
+  const site = await resilientFetch(origin + "/performer", {
+    redirect: "error", 
     headers: { "user-agent": "OurJam-Mobile-Rehearsal-Smoke/1.0" },
   });
   if (!site.ok || !site.headers.get("content-type")?.includes("text/html") ||
@@ -46,8 +64,8 @@ try {
     "/api/operator/events",
     "/api/operator/sources/00000000-0000-4000-8000-000000000001/audio/" + "0".repeat(64),
   ]) {
-    const response = await fetch(origin + path, {
-      redirect: "error", signal: AbortSignal.timeout(20000),
+    const response = await resilientFetch(origin + path, {
+      redirect: "error", 
     });
     if (response.status !== 401) throw new Error("Private route did not reject an unauthenticated request: " + path);
     if (!response.headers.get("cache-control")?.includes("no-store"))
@@ -55,8 +73,8 @@ try {
     console.log(path + " unauthenticated: PASS");
   }
   for (const path of ["/api/operator/login", "/api/mobile/session", "/api/session"]) {
-    const response = await fetch(origin + path, {
-      method: "POST", redirect: "error", signal: AbortSignal.timeout(20000),
+    const response = await resilientFetch(origin + path, {
+      method: "POST", redirect: "error", 
       headers: { "content-type": "application/json", origin: "https://untrusted.example.invalid" },
       body: "{}",
     });
