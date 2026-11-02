@@ -85,3 +85,17 @@ test("P003 migrations are repeatable and reject cross-event references", async (
     ),
   );
 });
+
+
+// Queue/release composite ownership is exercised separately from source ownership.
+test("a queue cannot borrow another event's valid published release", async t => {
+  const db = await testDatabase(); t.after(() => db.close());
+  const a = randomUUID(), b = randomUUID(), source = randomUUID(), round = randomUUID(), job = randomUUID(), release = randomUUID();
+  for (const event of [a,b]) await db.query("INSERT INTO events(id,artist_id,slug,title,artist_name,settings) VALUES($1,'our-jam',$2,'Queue schema','Artist','{}')",[event,'queue-'+event]);
+  await db.query("INSERT INTO source_tracks(id,event_id,title,core_prompt,duration_seconds,ordinal) VALUES($1,$2,'Source','private',120,0)",[source,b]);
+  await db.query("INSERT INTO rounds(id,event_id,source_id,state,deadline_at,seed,seed_commitment,core_prompt,settings) VALUES($1,$2,$3,'closed',now(),'s','c','private','{}')",[round,b,source]);
+  await db.query("INSERT INTO generation_jobs(id,event_id,round_id,state,snapshot,prompt,prompt_hash) VALUES($1,$2,$3,'published','{}','private','h')",[job,b,round]);
+  await db.query("INSERT INTO releases(id,event_id,job_id,title,audio_url,download_url,duration_seconds,published_at) VALUES($1,$2,$3,'Release','https://example.test/a','https://example.test/a',60,now())",[release,b,job]);
+  await assert.rejects(db.query("INSERT INTO queue_items(id,event_id,release_id,position) VALUES($1,$2,$3,0)",[randomUUID(),a,release]),{code:'23503'});
+  await db.query("INSERT INTO queue_items(id,event_id,release_id,position) VALUES($1,$2,$3,0)",[randomUUID(),b,release]);
+});
