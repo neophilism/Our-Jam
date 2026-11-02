@@ -79,6 +79,7 @@ export type RankedWave = {
   mine?: number;
   name?: string;
   avatarSeed?: string;
+  avatarUrl?: string | null;
 };
 export function digest(value: string): string {
   return createHash("sha256").update(value).digest("hex");
@@ -145,3 +146,4 @@ export function listenedSeconds(
     0,
   );
 }
+

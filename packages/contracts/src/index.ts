@@ -3,7 +3,20 @@ import { purchaseLinksInput } from "./purchase-providers.js";
 export const id = z.uuid();
 export const command = z.object({ commandId: id });
 export const profileInput = z.object({
-  name: z.string().trim().min(1).max(32),
+  name: z
+    .string()
+    .max(256)
+    .transform((value) => value.normalize("NFKC").trim())
+    .pipe(
+      z
+        .string()
+        .min(1)
+        .max(32)
+        .refine(
+          (value) => !/[\x00-\x1f\x7f\u202a-\u202e\u2066-\u2069]/u.test(value),
+          "Use a display name without control characters.",
+        ),
+    ),
   anonymous: z.boolean().default(false),
 });
 export const waveInput = command.extend({

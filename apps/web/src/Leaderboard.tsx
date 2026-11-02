@@ -1,3 +1,4 @@
+import { PublicAvatar } from "./ProfilePicture";
 import { useEffect, useState } from "react";
 import { api } from "./api";
 export function Leaderboard({
@@ -11,7 +12,9 @@ export function Leaderboard({
     [metric, setMetric] = useState("included"),
     [scope, setScope] = useState("artist"),
     [entries, setEntries] = useState<any[]>([]),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [timezone, setTimezone] = useState("UTC"),
+    [visible, setVisible] = useState(true);
   useEffect(() => {
     let active = true;
     api(
@@ -20,6 +23,8 @@ export function Leaderboard({
       .then((r) => {
         if (active) {
           setEntries(r.entries);
+          setTimezone(r.timezone);
+          setVisible(r.visible !== false);
           setError("");
         }
       })
@@ -43,8 +48,8 @@ export function Leaderboard({
           Time period
           <select value={period} onChange={(e) => setPeriod(e.target.value)}>
             <option value="all">All time</option>
-            <option value="week">This week (UTC)</option>
-            <option value="month">This month (UTC)</option>
+            <option value="week">This week ({timezone})</option>
+            <option value="month">This month ({timezone})</option>
           </select>
         </label>
         <label>
@@ -63,28 +68,30 @@ export function Leaderboard({
         </label>
       </div>
       {error && <p className="notice">{error}</p>}
-      {entries.map((p, i) => (
-        <div className="person" key={p.id}>
-          <b>{String(i + 1).padStart(2, "0")}</b>
-          <span className="avatar" aria-hidden="true">
-            {[0, 1, 2, 3, 4].map((n) => (
-              <i
-                key={n}
-                style={{ height: 8 + (p.avatarSeed.charCodeAt(n) % 18) }}
-              />
-            ))}
-          </span>
-          <div>
-            <strong>{p.name}</strong>
-            <small>
-              {p.included} {p.included === 1 ? "Sound Wave" : "Sound Waves"} in released tracks · {p.support} {p.support === 1 ? "vote" : "votes"} from other listeners
-            </small>
-          </div>
-        </div>
-      ))}
-      {!entries.length && !error && (
+      {!visible && (
         <p className="empty-inline muted">
-          Contributors appear here when the artist releases a crowd-created track.
+          The artist has turned off public leaderboards.
+        </p>
+      )}
+      {visible &&
+        entries.map((p, i) => (
+          <div className="person" key={p.id}>
+            <b>{String(i + 1).padStart(2, "0")}</b>
+            <PublicAvatar seed={p.avatarSeed} url={p.avatarUrl} />
+            <div>
+              <strong>{p.name}</strong>
+              <small>
+                {p.included} {p.included === 1 ? "Sound Wave" : "Sound Waves"}{" "}
+                in released tracks · {p.support}{" "}
+                {p.support === 1 ? "vote" : "votes"} from other listeners
+              </small>
+            </div>
+          </div>
+        ))}
+      {visible && !entries.length && !error && (
+        <p className="empty-inline muted">
+          Contributors appear here when the artist releases a crowd-created
+          track.
         </p>
       )}
     </section>
