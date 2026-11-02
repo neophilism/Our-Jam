@@ -1,3 +1,5 @@
+import { avatarInput, avatarDeleteInput, saveAvatar, removeAvatar } from "./profile-avatar.js";
+import { recognitionSettings, updateRecognitionSettings, recognitionSettingsInput } from "./recognition-settings.js";
 import { readPlatformVotePolicy } from "./vote-policy.js";
 import { registerPlatformAdmin } from "./platform-admin.js";
 import {
@@ -273,11 +275,11 @@ export async function createApp(db: Database, config: AppConfig) {
   app.get("/api/ready", async () => {
     const rows = (
       await db.query(
-        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql','005_artist_profiles.sql','006_release_controls.sql','007_audience_admission.sql','008_profile_recovery.sql','009_platform_vote_policy.sql')",
+        "SELECT name FROM schema_migrations WHERE name IN ('001_core.sql','002_playback.sql','003_generation.sql','004_release_email.sql','005_artist_profiles.sql','006_release_controls.sql','007_audience_admission.sql','008_profile_recovery.sql','009_platform_vote_policy.sql','024_recognition_settings.sql')",
       )
     ).rows;
     requireThat(
-      rows.length === 9,
+      rows.length === 10,
       "schema_not_ready",
       "Required database migrations have not been applied.",
       503,
@@ -374,6 +376,14 @@ export async function createApp(db: Database, config: AppConfig) {
       );
     });
   });
+  app.get("/api/operator/recognition-settings", async (req) => {
+    const op = await session(req, "operator");
+    return recognitionSettings(db, op.artist_id);
+  });
+  app.put("/api/operator/recognition-settings", async (req) => {
+    const op = await session(req, "operator");
+    return updateRecognitionSettings(db, op.artist_id, recognitionSettingsInput.parse(req.body));
+  });
   app.get("/api/artists/:id/leaderboard", async (req) => {
     const params = z
       .object({ id: z.string().min(1).max(100) })
@@ -428,7 +438,7 @@ export async function createApp(db: Database, config: AppConfig) {
     const p = s
       ? (
           await db.query(
-            "SELECT id,name,anonymous,avatar_seed FROM participants WHERE id=$1",
+            "SELECT id,name,anonymous,avatar_seed,avatar_sha,avatar_revision FROM participants WHERE id=$1",
             [s.participant_id],
           )
         ).rows[0]
@@ -577,6 +587,20 @@ export async function createApp(db: Database, config: AppConfig) {
   app.get("/api/following", async (req) => {
     const s = await session(req, "guest");
     return followingFeed(db, s.participant_id);
+  });
+  app.put("/api/profile/avatar", { bodyLimit: 190000, config: { rateLimit: { max: 6, timeWindow: "1 minute" } } }, async req => {
+    const actor = await session(req, "guest");
+    return saveAvatar(db, actor.participant_id, avatarInput.parse(req.body));
+  });
+  app.delete("/api/profile/avatar", async req => {
+    const actor = await session(req, "guest");
+    return removeAvatar(db, actor.participant_id, avatarDeleteInput.parse(req.body).expectedRevision);
+  });
+  app.get("/api/avatars/:sha", async (req, reply) => {
+    const sha = z.string().regex(/^[a-f0-9]{64}$/).parse((req.params as any).sha);
+    const image = (await db.query("SELECT avatar_png FROM participants WHERE avatar_sha=$1 AND NOT anonymous LIMIT 1", [sha])).rows[0];
+    requireThat(image, "not_found", "Profile picture not available.", 404);
+    return reply.header("Cache-Control", "no-store").header("X-Content-Type-Options", "nosniff").type("image/png").send(Buffer.from(image.avatar_png));
   });
   app.patch("/api/profile", async (req) => {
     const s = await session(req, "guest");
@@ -1284,3 +1308,4 @@ export async function createApp(db: Database, config: AppConfig) {
   }
   return app;
 }
+

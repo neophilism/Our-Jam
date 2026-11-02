@@ -88,6 +88,10 @@ test("released-only credit preserves anonymity, date windows and excludes self s
     (await releaseCredits(db, release)).credits[0].name,
     "Anonymous",
   );
+  const privateBoard = await leaderboard(db, "our-jam", "all", "included", e.slug);
+  assert.equal(privateBoard.entries[0].name, "Anonymous");
+  assert.equal(privateBoard.entries[0].avatarSeed, "anonymous");
+  assert.equal((await releaseCredits(db, release)).credits[0].avatar_seed, "anonymous");
   await db.query(
     "UPDATE releases SET published_at=now()-interval '2 months' WHERE id=$1",
     [release],

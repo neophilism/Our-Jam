@@ -7,6 +7,7 @@ export type Wave = {
   own: boolean;
   name: string;
   avatarSeed: string;
+  avatarUrl?: string | null;
 };
 export type Release = {
   id: string;
@@ -89,3 +90,4 @@ export type EventState = {
   isOperator: boolean;
   queue?: any[];
 };
+

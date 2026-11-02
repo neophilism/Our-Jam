@@ -1,3 +1,5 @@
+import { ProfilePicture, PublicAvatar } from "./ProfilePicture";
+import { RecognitionSettings } from "./RecognitionSettings";
 import { PurchaseEditor, PurchaseChoices, PurchaseLanding } from "./PurchaseLinks";
 import { preferredPurchaseUrl, type PurchaseLink, type PurchaseMode } from "../../../packages/contracts/src/purchase-providers";
 import "./purchase-links.css";
@@ -105,17 +107,8 @@ function QR({ url, label }: { url: string; label: string }) {
     </a>
   );
 }
-function Avatar({ seed = "music" }: { seed?: string }) {
-  return (
-    <span className="avatar" aria-hidden="true">
-      {[0, 1, 2, 3, 4].map((i) => (
-        <i
-          key={i}
-          style={{ height: 7 + (seed.charCodeAt(i % seed.length) % 18) }}
-        />
-      ))}
-    </span>
-  );
+function Avatar({ seed = "music", url }: { seed?: string; url?: string | null }) {
+  return <PublicAvatar seed={seed} url={url} />;
 }
 function Home() {
   const [events, setEvents] = useState<any[]>([]),
@@ -285,6 +278,7 @@ function Profile({ close }: { close: () => void }) {
         </button>
         <span className="eyebrow">YOUR PLACE IN THE ROOM</span>
         <h2 id="profile-title">Make your mark.</h2>
+        <ProfilePicture />
         <form
           onSubmit={async (e) => {
             e.preventDefault();
@@ -738,7 +732,7 @@ function Audience({ slug }: { slug: string }) {
             {waves.slice(0, 10).map((w, i) => (
               <div className="person" key={w.id}>
                 <b>{String(i + 1).padStart(2, "0")}</b>
-                <Avatar seed={w.avatarSeed} />
+                <Avatar seed={w.avatarSeed} url={w.avatarUrl} />
                 <div>
                   <strong>{w.name}</strong>
                   <small>{w.text}</small>
@@ -1792,6 +1786,7 @@ function Console({ slug }: { slug: string }) {
             </details>
           ))}
         </section>
+        <RecognitionSettings />
         <AdmissionSettings data={data} refresh={refresh} />
         <ShowSetup data={data} refresh={refresh} />
         <AlbumBackup
