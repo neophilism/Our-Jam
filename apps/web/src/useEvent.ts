@@ -1,42 +1,75 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, type EventState } from "./api";
+import { EventSnapshotFence } from "./event-snapshot";
+
+interface EventView {
+  data: EventState | null;
+  error: string;
+  fetchError: string;
+  streamReady: boolean;
+  fresh: boolean;
+}
+const emptyView = (): EventView => ({
+  data: null,
+  error: "",
+  fetchError: "",
+  streamReady: false,
+  fresh: false,
+});
 
 export function useEvent(slug: string, operator = false) {
-  const [data, setData] = useState<EventState | null>(null),
-    [error, setError] = useState(""),
-    [fetchError, setFetchError] = useState(""),
-    [streamReady, setStreamReady] = useState(false),
-    [fresh, setFresh] = useState(false);
-  const issued = useRef(0),
-    applied = useRef(0),
-    lastSuccess = useRef(0);
+  // Scope identity changes before effects run: never flash the previous view.
+  const scope = useMemo(
+    () => ({ fence: new EventSnapshotFence(), lastSuccess: 0 }),
+    [slug, operator],
+  );
+  const [state, setState] = useState<{ scope: typeof scope; view: EventView }>(
+    () => ({ scope, view: emptyView() }),
+  );
+  const update = useCallback(
+    (patch: Partial<EventView>) => {
+      if (!scope.fence.isActive()) return;
+      const stamp = scope.fence.stamp();
+      setState((current) =>
+        scope.fence.current(stamp)
+          ? {
+              scope,
+              view: {
+                ...(current.scope === scope ? current.view : emptyView()),
+                ...patch,
+              },
+            }
+          : current,
+      );
+    },
+    [scope],
+  );
   const refresh = useCallback(async () => {
-    const request = ++issued.current;
+    const request = scope.fence.issue();
+    if (!request) return;
     try {
       const next = await api<EventState>(
-        `${operator ? "/operator" : ""}/events/${encodeURIComponent(slug)}`,
+        (operator ? "/operator" : "") + "/events/" + encodeURIComponent(slug),
       );
-      if (request < applied.current) return;
-      applied.current = request;
-      lastSuccess.current = Date.now();
-      setData(next);
-      setFetchError("");
-      setFresh(navigator.onLine);
+      if (!scope.fence.accept(request)) return;
+      scope.lastSuccess = Date.now();
+      update({ data: next, fetchError: "", fresh: navigator.onLine });
     } catch (e) {
-      if (request < applied.current) return;
-      applied.current = request;
-      setFetchError((e as Error).message);
-      setFresh(false);
+      if (!scope.fence.accept(request)) return;
+      update({ fetchError: (e as Error).message, fresh: false });
     }
-  }, [slug, operator]);
+  }, [slug, operator, scope, update]);
   useEffect(() => {
+    scope.fence.activate();
+    scope.lastSuccess = 0;
+    update(emptyView());
     void refresh();
     const stream = new EventSource(
-      `/api/events/${encodeURIComponent(slug)}/stream`,
+      "/api/events/" + encodeURIComponent(slug) + "/stream",
     );
     let pending: ReturnType<typeof setTimeout> | undefined;
     const sync = () => {
-      setStreamReady(true);
+      update({ streamReady: true });
       if (!pending)
         pending = setTimeout(() => {
           pending = undefined;
@@ -45,18 +78,15 @@ export function useEvent(slug: string, operator = false) {
     };
     stream.addEventListener("update", sync);
     stream.addEventListener("reconnect", () => {
-      setFresh(false);
+      update({ fresh: false });
       void refresh();
     });
-    stream.onopen = () => {
-      setStreamReady(true);
-      // The stream's initial update schedules the snapshot; avoid a duplicate.
-    };
-    stream.onerror = () => setStreamReady(false);
-    const suspend = () => setFresh(false);
+    stream.onopen = () => update({ streamReady: true });
+    stream.onerror = () => update({ streamReady: false });
+    const suspend = () => update({ fresh: false });
     const resume = () => {
       if (document.visibilityState === "visible") {
-        setFresh(false);
+        update({ fresh: false });
         void refresh();
       }
     };
@@ -65,15 +95,15 @@ export function useEvent(slug: string, operator = false) {
     window.addEventListener("pageshow", resume);
     document.addEventListener("visibilitychange", resume);
     const stale = setInterval(() => {
-      if (Date.now() - lastSuccess.current > 15000 || !navigator.onLine)
-        setFresh(false);
+      if (Date.now() - scope.lastSuccess > 15000 || !navigator.onLine)
+        update({ fresh: false });
     }, 1000);
     const fallback = setInterval(() => {
       if (document.visibilityState === "visible" && navigator.onLine)
         void refresh();
     }, 12000);
     return () => {
-      applied.current = ++issued.current;
+      scope.fence.deactivate();
       stream.close();
       clearInterval(stale);
       clearInterval(fallback);
@@ -83,13 +113,15 @@ export function useEvent(slug: string, operator = false) {
       window.removeEventListener("pageshow", resume);
       document.removeEventListener("visibilitychange", resume);
     };
-  }, [slug, refresh]);
+  }, [slug, refresh, scope, update]);
+  const view = state.scope === scope ? state.view : emptyView();
+  const setError = useCallback((error: string) => update({ error }), [update]);
   return {
-    data,
-    error: error || fetchError,
+    data: view.data,
+    error: view.error || view.fetchError,
     setError,
     refresh,
-    fresh,
-    connected: streamReady && fresh,
+    fresh: view.fresh,
+    connected: view.streamReady && view.fresh,
   };
 }

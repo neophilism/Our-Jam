@@ -30,10 +30,13 @@ export async function logEvent(
   type: string,
   payload: unknown = {},
 ) {
-  if (["playback.advanced", "queue.changed", "setup.changed"].includes(type))
-    await tx.query("UPDATE events SET revision=revision+1 WHERE id=$1", [
-      eventId,
-    ]);
+  const operatorRevision = ["playback.advanced", "queue.changed", "setup.changed"].includes(type);
+  await tx.query(
+    operatorRevision
+      ? "UPDATE events SET revision=revision+1,change_seq=change_seq+1 WHERE id=$1"
+      : "UPDATE events SET change_seq=change_seq+1 WHERE id=$1",
+    [eventId],
+  );
   await tx.query(
     "INSERT INTO event_log(event_id,type,payload) VALUES($1,$2,$3)",
     [eventId, type, JSON.stringify(payload)],
